@@ -1,0 +1,78 @@
+/** styles for buttons */
+
+.btn.random{
+  /* have to set background image */
+  background-image: url('/path/to/icon.svg');
+}
+
+.btn.play {
+  /* have to set background image */
+  background-image: url('/path/to/icon.svg');
+}
+
+.btn.pause {
+  /* have to set background image */
+  background-image: url('/path/to/icon.svg');
+}
+
+.btn.stop{
+  /* have to set background image */
+  background-image: url('/path/to/icon.svg');
+}
+
+.btn.seekLeft{
+  /* have to set background image */
+  background-image: url('/path/to/icon.svg');
+}
+
+.btn.seekRight{
+  /* have to set background image */
+  background-image: url('/path/to/icon.svg');
+}
+
+
+.btn.bubble {
+  /* have to set background image */
+  background-image: url('/path/to/icon.svg');
+  position: absolute;
+  right: 20px;
+  top: 80px;
+}
+
+.btn.merge {
+  /* have to set background image */
+  background-image: url('/path/to/icon.svg');
+  position: absolute;
+  right: 20px;
+  top: 130px;
+}
+
+.arrayContainer {
+  display: flex; /* note: Makes the container a flexbox - allows flexible arrangement of child elements */
+  align-items: flex-end; /* note: Aligns all bars to the bottom of the container (so they grow upward) */
+  justify-content: center; /* note Centers the bars horizontally in the container */
+  height: 500px; /* note: Sets container height to 500px - bars can grow up to this height */
+  gap: 2px; /* note: creates 2px gaps so bars don't touch */
+  margin: 20px; /* note: 20px spacing around the entire container (top, right, bottom, left) */
+}
+
+.arrayBar {
+  width: 20px; /* note: Each bar is 20px wide */
+  background-color: #00a4db; /* note: Bars are blue colored */
+  display: flex;
+  flex-direction: column; /* note: Stacks content vertically (value on top, index on bottom) */
+  align-items: center;
+  justify-content: flex-end; /* note: Pushes content to the bottom of the bar */
+  position: relative; /* note: Creates a positioning context for the absolutely positioned .indexLabel */
+}
+
+.arrayBar span {
+  font-size: 10px;
+  color: white;
+}
+
+.indexLabel {
+  position: absolute;
+  bottom: -20px;
+  color: black;
+}

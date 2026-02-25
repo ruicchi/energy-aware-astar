@@ -1,0 +1,15 @@
+.App {
+  text-align: center;
+  min-height: 100vh;
+}
+
+h1 {
+  text-align: center;
+  margin-top: 0;
+  padding-top: 1rem;
+}
+
+.btn{
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
