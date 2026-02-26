@@ -57,54 +57,16 @@ const SortingVisualizerLogic = () => {
         {arrayBars}
       </div>
 
-      <h1>Sorting Visualizer</h1>
-      <p>Algorithm: {selectedAlgorithm}</p>
+      <h1>A* Visualizer</h1>
+
+      <p>Click on a cell to add a start, end, and barrier nodes </p>
+      
+      {/* //* must have input box*/}
+      <p>Maze size: </p>
 
         {/* //* buttons */}
-        <button className='btn random' onClick={randomize}>randomize</button>
-        <button className='btn play' onClick={play}>play</button>
-        <button className='btn pause' onClick={pause}>pause</button>
-        <button className='btn stop' onClick={reset}>reset</button>
-        <button 
-          className='btn seekLeft' 
-          onClick={seekLeft}
-          disabled={currentStepIndex === 0 || steps.length === 0}
-        >seek left</button>
-        <button 
-          className='btn seekRight'
-          onClick={seekRight}
-          disabled={currentStepIndex >= steps.length - 1 || steps.length === 0}
-        >seek right</button>
-
-        {/* //debug: Show array as text */}
-        <p>Array: {JSON.stringify(array)}</p>
-
-        {/* //* algorithm selector | planning to add more*/}
-        <button 
-          className={`btn bubble`}
-          onClick={() => handleSortTypeClick('bubble', array, setSelectedAlgorithm, setSteps, setCurrentStepIndex, setIsPlaying)}
-        >
-          bubble sort
-        </button>
-        <button 
-          className={`btn merge`}
-          onClick={() => handleSortTypeClick('merge', array, setSelectedAlgorithm, setSteps, setCurrentStepIndex, setIsPlaying)}
-        >
-          merge sort
-        </button>
-        
-      {/* //study slider for progress through steps */}
-      <div className='slider progress'>
-        <label>Progress: {currentStepIndex + 1} of {steps.length}</label>
-        <input
-          type='range'
-          min='0'
-          max={Math.max(0, steps.length - 1)}
-          value={currentStepIndex}
-          onChange={handleProgressChange}
-          disabled={steps.length === 0}
-        />
-      </div>
+        <button className='btn start' onClick={randomize}>randomize</button>
+        <button className='btn reload' onClick={play}>play</button>
 
         {/* //* slider for progress speed, planning to have thresholds or marks*/}
         <div className='slider progressSpeed'>
@@ -115,18 +77,6 @@ const SortingVisualizerLogic = () => {
             max = '100'
             value = {progressSpeed} 
             onChange={handleSpeedChange}
-          />
-        </div>
-
-        {/* //* slider for array size*/}
-        <div className='slider arraySize'>
-          <label>Array size: {arraySize}</label>
-          <input 
-            type = 'range'
-            min = '4'
-            max = '30'
-            value = {arraySize} 
-            onChange={handleArraySize}
           />
         </div>
     </div>
