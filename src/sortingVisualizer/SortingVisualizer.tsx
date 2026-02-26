@@ -65,8 +65,8 @@ const SortingVisualizerLogic = () => {
       <p>Maze size: </p>
 
         {/* //* buttons */}
-        <button className='btn start' onClick={randomize}>randomize</button>
-        <button className='btn reload' onClick={play}>play</button>
+        <button className='btn start' onClick={randomize}>start</button>
+        <button className='btn reload' onClick={play}>reload</button>
 
         {/* //* slider for progress speed, planning to have thresholds or marks*/}
         <div className='slider progressSpeed'>
