@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export const useArrayGenerator = () => {
-
   //* initializing empty array and array size for random array generator
   const [array, setArray] = useState<number[]>([]);
   const [arraySize, setArraySize] = useState<number>(15);
@@ -29,6 +28,5 @@ export const useArrayGenerator = () => {
     setArray,
     arraySize,
     setArraySize,
-    generateNewArray,
   };
 };

@@ -1,6 +1,5 @@
 .App {
   text-align: center;
-  min-height: 100vh;
 }
 
 h1 {
@@ -9,7 +8,34 @@ h1 {
   padding-top: 1rem;
 }
 
-.btn{
+.btn {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
+.btn {
+  background: #1f1f1f;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  display: flex;
+  transition:
+    0.2s ease-out,
+    color 0.2s ease-out,
+    transform 0.2s ease-out;
+}
+
+.btn:hover {
+  background: #9f9f9f;
+  transform: translateY(-2px) scale(1.04);
+  transition:
+    filter 0.2s ease-out,
+    transform 0.2s ease-out;
+  outline: none;
+}

@@ -1,50 +1,85 @@
 /** styles for buttons */
 
-.btn.random{
-  /* have to set background image */
-  background-image: url('/path/to/icon.svg');
+/** Center the control buttons horizontally */
+.controlButtons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 24px;
 }
 
-.btn.play {
-  /* have to set background image */
-  background-image: url('/path/to/icon.svg');
+.controlButtons .btn {
+  border: 2px solid black;
 }
 
-.btn.pause {
-  /* have to set background image */
-  background-image: url('/path/to/icon.svg');
+.btn.playPause.play:hover {
+  background: #27ae60;
+  color: white;
+  transition: 0.2s ease;
 }
 
-.btn.stop{
-  /* have to set background image */
-  background-image: url('/path/to/icon.svg');
+.controlButtons .btn:not(.playPause):active {
+  background: hsla(0, 0%, 95%, 0.301);
+  transition:
+    0.05s ease-out,
+    transform 0.5s ease-out;
 }
 
-.btn.seekLeft{
-  /* have to set background image */
-  background-image: url('/path/to/icon.svg');
+.btn.playPause.pause:hover {
+  background: #e74c3c;
+  color: white;
+  transition: 0.2s ease;
 }
 
-.btn.seekRight{
-  /* have to set background image */
-  background-image: url('/path/to/icon.svg');
+.sortingButtons {
+  position: fixed;
+  top: 24px; /** distance from the top of the screen */
+  right: 24px; /** distance from the right of the screen */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+  margin: 0; /** remove margin if using position fixed/absolute */
 }
 
-
-.btn.bubble {
-  /* have to set background image */
-  background-image: url('/path/to/icon.svg');
-  position: absolute;
-  right: 20px;
-  top: 80px;
+.sortingButtons .btn {
+  min-width: 150px;
+  min-height: 50px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 600;
+  gap: 2px;
+  flex-wrap: wrap;
+  border: 2px solid black;
 }
 
-.btn.merge {
-  /* have to set background image */
-  background-image: url('/path/to/icon.svg');
-  position: absolute;
-  right: 20px;
-  top: 130px;
+.rangeSliders {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/** focus effect ONLY for algorithm buttons */
+.btn.bubble:focus,
+.btn.merge:focus,
+.btn.quick:focus,
+.btn.selection:focus,
+.btn.heap:focus,
+.btn.insertion:focus,
+.btn.radix:focus {
+  background: #9f9f9f;
+  transform: translateY(-2px) scale(1.04);
+  transition:
+    filter 0.2s ease-out,
+    transform 0.2s ease-out;
+  outline: none;
 }
 
 .arrayContainer {
@@ -57,7 +92,7 @@
 }
 
 .arrayBar {
-  width: 20px; /* note: Each bar is 20px wide */
+  width: 30px; /* note: Each bar is 30px wide */
   background-color: #00a4db; /* note: Bars are blue colored */
   display: flex;
   flex-direction: column; /* note: Stacks content vertically (value on top, index on bottom) */
@@ -67,12 +102,50 @@
 }
 
 .arrayBar span {
-  font-size: 10px;
+  font-size: 12px;
   color: white;
 }
 
 .indexLabel {
   position: absolute;
   bottom: -20px;
-  color: black;
+}
+
+/**color legends */
+.colorLegends {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+/** slider styles */
+input[type='range'] {
+  width: 200px;
+  height: 11px;
+  background: #008dbc;
+  border-radius: 5px;
+  margin: 8px 5px;
+  transition: left 0.3s ease-in-out;
+}
+
+.githubBtn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  border-radius: 500px;
+  width: 50px;
+  height: 50px;
+}
+
+.githubBtn img {
+  border-radius: 100px;
+  object-fit: contain;
+  transition:
+    0.2s ease-out,
+    transform 0.2s ease-out;
+}
+
+.githubBtn img:hover {
+  transform: translateY(-2px) scale(1.04);
 }

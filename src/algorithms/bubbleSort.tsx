@@ -14,23 +14,21 @@ function generateBubbleSortSteps(inputArray: number[]): Step[] {
   //* Step: pushes initial state
   steps.push({
     array: [...array],
-    sortedIndices: [...sortedIndices]
+    sortedIndices: [...sortedIndices],
   });
 
   //# Outer loop: controls the number of passes through the array
   for (let i = 0; i < array.length - 1; i++) {
-    
     //# Inner loop: compares adjacent elements
     //* After each pass, the largest element "bubbles up" to the end, so we can reduce the inner loop range by i each time
     for (let j = 0; j < array.length - i - 1; j++) {
-      
       //* Step: comparison and pushes to step
       steps.push({
         array: [...array],
         comparingIndices: [j, j + 1],
-        sortedIndices: [...sortedIndices]
+        sortedIndices: [...sortedIndices],
       });
-      
+
       //* Compare adjacent elements
       if (array[j] > array[j + 1]) {
         //* Swap if they're in the wrong order
@@ -42,7 +40,7 @@ function generateBubbleSortSteps(inputArray: number[]): Step[] {
         steps.push({
           array: [...array],
           swappingIndices: [j, j + 1],
-          sortedIndices: [...sortedIndices]
+          sortedIndices: [...sortedIndices],
         });
       }
     }
@@ -53,7 +51,7 @@ function generateBubbleSortSteps(inputArray: number[]): Step[] {
     //* Step: Show newly sorted element
     steps.push({
       array: [...array],
-      sortedIndices: [...sortedIndices]
+      sortedIndices: [...sortedIndices],
     });
   }
 
