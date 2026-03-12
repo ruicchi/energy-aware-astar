@@ -62,14 +62,14 @@ const SortingVisualizerLogic = () => {
   const displayName = algorithmNames[selectedAlgorithm] || selectedAlgorithm;
 
   return (
-    <div className="SortingVisualizer">
+    <div className='SortingVisualizer'>
       {/* //# Visual UI is here*/}
 
       {/* //* calls the arrayBars function and gives classname*/}
-      <div className="arrayContainer">{arrayBars}</div>
+      <div className='arrayContainer'>{arrayBars}</div>
 
       {/* //* algorithm selector */}
-      <div className="sortingButtons">
+      <div className='sortingButtons'>
         <button
           className={`btn bubble`}
           onClick={() =>
@@ -181,7 +181,7 @@ const SortingVisualizerLogic = () => {
       <p>Algorithm: {displayName}</p>
 
       {/* //* color legends */}
-      <div className="colorLegends">
+      <div className='colorLegends'>
         <span style={{ color: '#00a4db', marginRight: 10 }}>■ Default</span>
         <span style={{ color: '#f59e0b', marginRight: 10 }}>■ Comparing</span>
         <span style={{ color: '#CD3A3A', marginRight: 10 }}>■ Swapping</span>
@@ -193,27 +193,27 @@ const SortingVisualizerLogic = () => {
 
       {/* //* noopener noreferrer for security, target blank for new window */}
       <a
-        href="https://github.com/ruicchi/sorting-visualizer"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="githubBtn"
+        href='https://github.com/ruicchi/sorting-visualizer'
+        target='_blank'
+        rel='noopener noreferrer'
+        className='githubBtn'
       >
         <img
-          src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-          alt="GitHub"
+          src='https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'
+          alt='GitHub'
         />
       </a>
 
       {/* //* buttons */}
-      <div className="controlButtons">
+      <div className='controlButtons'>
         <button
-          className="btn seekLeft"
+          className='btn seekLeft'
           onClick={seekLeft}
           disabled={currentStepIndex === 0 || steps.length === 0}
         >
           ᐸ
         </button>
-        <button className="btn random" onClick={randomize}>
+        <button className='btn random' onClick={randomize}>
           ↳↰
         </button>
         <button
@@ -223,11 +223,11 @@ const SortingVisualizerLogic = () => {
         >
           {isPlaying ? '❚❚' : '▶'}
         </button>
-        <button className="btn stop" onClick={reset}>
+        <button className='btn stop' onClick={reset}>
           ⟳
         </button>
         <button
-          className="btn seekRight"
+          className='btn seekRight'
           onClick={seekRight}
           disabled={currentStepIndex >= steps.length - 1 || steps.length === 0}
         >
@@ -239,14 +239,14 @@ const SortingVisualizerLogic = () => {
       <p>Array: {JSON.stringify(array)}</p>
 
       {/* //study slider for progress through steps */}
-      <div className="rangeSliders">
-        <div className="slider progress">
+      <div className='rangeSliders'>
+        <div className='slider progress'>
           <label>
             Progress: {currentStepIndex + 1} of {steps.length}
           </label>
           <input
-            type="range"
-            min="0"
+            type='range'
+            min='0'
             max={Math.max(0, steps.length - 1)}
             value={currentStepIndex}
             onChange={handleProgressChange}
@@ -255,24 +255,24 @@ const SortingVisualizerLogic = () => {
         </div>
 
         {/* //* slider for progress speed, planning to have thresholds or marks*/}
-        <div className="slider progressSpeed">
+        <div className='slider progressSpeed'>
           <label>Speed: {progressSpeed}%</label>
           <input
-            type="range"
-            min="1"
-            max="100"
+            type='range'
+            min='1'
+            max='100'
             value={progressSpeed}
             onChange={handleSpeedChange}
           />
         </div>
 
         {/* //* slider for array size*/}
-        <div className="slider arraySize">
+        <div className='slider arraySize'>
           <label>Size: {arraySize}</label>
           <input
-            type="range"
-            min="4"
-            max="30"
+            type='range'
+            min='4'
+            max='30'
             value={arraySize}
             onChange={handleArraySize}
           />
