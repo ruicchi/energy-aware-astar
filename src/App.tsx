@@ -1,11 +1,11 @@
 import React from 'react';
-import SortingVisualizerLogic from './sortingVisualizer/SortingVisualizer';
+import FullBorderedGrid from './grid/gridCell';
 import './App.css';
 
 function App() {
   return (
     <div className="App">
-      <SortingVisualizerLogic />
+      <FullBorderedGrid />
     </div>
   );
 }
