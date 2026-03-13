@@ -1,22 +1,21 @@
 //# Builds the grid cell
 
-import { Box, useMemo, useViewport, useGridMouseClicks } from './index';
+import Box from '@mui/material/Box';
+import { useMemo } from 'react';
+import { useViewport, useGridMouseClicks, MemoizedCell } from './index';
 
 const FullBorderedGrid = ({ cellSize = 28 }) => {
   //* Use viewport hook
   const viewport = useViewport();
 
   //* Use the extracted mouse logic hook
-  const { activeCells, 
-    handleMouseDown, 
-    handleMouseEnter, 
-    handleMouseUp } = useGridMouseClicks();
+  const { activeCells, handleMouseDown, handleMouseEnter, handleMouseUp } = useGridMouseClicks();
 
   //* Grid dimensions
   const cols = Math.floor(viewport.width / cellSize);
   const rows = Math.floor(viewport.height / cellSize);
-  
-  //* For caching user inputs
+
+  //* For caching grid from user inputs
   const cells = useMemo(() => {
     return Array.from({ length: rows * cols }, (_, index) => {
       const row = Math.floor(index / cols);
@@ -37,7 +36,6 @@ const FullBorderedGrid = ({ cellSize = 28 }) => {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-
       {/* //* Render each cell into clickable Box cells */}
       <Box
         sx={{
@@ -50,30 +48,22 @@ const FullBorderedGrid = ({ cellSize = 28 }) => {
         }}
       >
         {cells.map((cell) => {
-          const isActive = activeCells.has(cell.key);
-
           return (
-            <Box
+            <MemoizedCell
               key={cell.key}
-              onMouseDown={() => handleMouseDown(cell.key)}
-              onMouseEnter={() => handleMouseEnter(cell.key)}
-              sx={{
-                width: cellSize,
-                height: cellSize,
-                boxSizing: 'border-box',
-                borderRight: '1px solid #b8b8b8',
-                borderBottom: '1px solid #b8b8b8',
-                borderTop: cell.row === 0 ? '1px solid #b8b8b8' : 'none',
-                borderLeft: cell.col === 0 ? '1px solid #b8b8b8' : 'none',
-                backgroundColor: isActive ? '#1a88e2' : 'transparent',
-                cursor: 'pointer',
-              }}
+              cellKey={cell.key}
+              cellSize={cellSize}
+              row={cell.row}
+              col={cell.col}
+              isActive={activeCells.has(cell.key)}
+              onMouseDown={handleMouseDown}
+              onMouseEnter={handleMouseEnter}
             />
           );
         })}
       </Box>
     </Box>
   );
-}
+};
 
 export default FullBorderedGrid;
