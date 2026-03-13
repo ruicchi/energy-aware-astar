@@ -1,5 +1,5 @@
 import React from 'react';
-import FullBorderedGrid from './grid/gridCell';
+import FullBorderedGrid from './game/game';
 import './App.css';
 
 function App() {
