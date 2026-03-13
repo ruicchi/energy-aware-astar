@@ -1,2 +1,2 @@
-export { useArrayGenerator } from './useArrayGenerator';
-export { useSortingAnimation } from './useSortingAnimation';
+export { useArrayGenerator } from './useGridGenerator';
+export { useSortingAnimation } from './usePathFindingAnimation';
