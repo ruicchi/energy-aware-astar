@@ -37,6 +37,7 @@ export const MemoizedCell = memo(
 
     return (
       <Box
+        id={`cell-${cellKey}`}
         onMouseDown={() => onMouseDown(cellKey)}
         onMouseEnter={() => onMouseEnter(cellKey)}
         sx={{

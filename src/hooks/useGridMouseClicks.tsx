@@ -15,28 +15,46 @@ export const useGridMouseClicks = (
   const drawValue = useRef(false);
   const dragMode = useRef<DragMode>(null);
 
-    const toggleWallState = useCallback((key: string, isInitialClick: boolean) => {
-    setwallNode((prev) => {
-      let isDrawingWall = drawValue.current;
+  const wallNodeRef = useRef<Set<string>>(new Set());
 
-      if (isInitialClick) {
-        // On initial click, we flip the state of the current cell and lock it in
-        isDrawingWall = !prev.has(key);
-        drawValue.current = isDrawingWall;
-      } else if (isDrawingWall === prev.has(key)) {
-        // While dragging, if the cell is already in the correct state, do nothing
-        return prev;
-      }
+  const toggleWallState = useCallback((key: string, isInitialClick: boolean) => {
+    let isDrawingWall = drawValue.current;
+    
+    // Check if drawing or erasing
+    if (isInitialClick) {
+      isDrawingWall = !wallNodeRef.current.has(key);
+      drawValue.current = isDrawingWall;
+    } else if (isDrawingWall === wallNodeRef.current.has(key)) {
+      return; // Quick exit
+    }
 
-      // Create new set and apply the change
-      const next = new Set(prev);
-      if (isDrawingWall) next.add(key);
-      else next.delete(key);
-      return next;
-    });
+    // Update our silent Ref instead of State!
+    if (isDrawingWall) {
+      wallNodeRef.current.add(key);
+    } else {
+      wallNodeRef.current.delete(key);
+    }
+
+    // INSTANTLY update the color on the screen to prevent lag
+    const element = document.getElementById(`cell-${key}`);
+    if (element) {
+      element.style.backgroundColor = isDrawingWall ? '#1a88e2' : 'transparent';
+    }
   }, []);
 
   const clearWalls = useCallback(() => {
+    // 1. Visually reset all the current walls back to transparent
+    wallNodeRef.current.forEach((key) => {
+      const element = document.getElementById(`cell-${key}`);
+      if (element) {
+        element.style.backgroundColor = 'transparent';
+      }
+    });
+
+    // 2. Clear our silent tracking Ref
+    wallNodeRef.current.clear();
+    
+    // 3. Clear the official React state
     setwallNode(new Set());
   }, []);
 
@@ -87,7 +105,12 @@ export const useGridMouseClicks = (
     [robotNode, destinationNode, wallNode, toggleWallState],
   ); // Added wallNode to dependencies
 
-  const handleMouseUp = useCallback(() => {
+    const handleMouseUp = useCallback(() => {
+    if (isDrawing.current && dragMode.current === 'wall') {
+      // Sync the final drawing to React state ONLY when you finish dragging
+      setwallNode(new Set(wallNodeRef.current)); 
+    }
+    
     isDrawing.current = false;
     dragMode.current = null;
   }, []);
