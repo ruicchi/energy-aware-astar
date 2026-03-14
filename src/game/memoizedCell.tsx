@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import Box from '@mui/material/Box';
 
+//study
 type MemoizedCellProps = {
   cellKey: string;
   cellSize: number;

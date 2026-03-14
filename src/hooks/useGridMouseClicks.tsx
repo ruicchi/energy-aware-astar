@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 
+//study
 export const useGridMouseClicks = () => {
   const [activeCells, setActiveCells] = useState<Set<string>>(new Set());
   
