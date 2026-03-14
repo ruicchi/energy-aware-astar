@@ -1,19 +1,30 @@
 //# Builds the grid cell
-
 import Box from '@mui/material/Box';
 import { useMemo } from 'react';
-import { useViewport, useGridMouseClicks, MemoizedCell } from './index';
+import { useViewport, useGridMouseClicks, MemoizedCell, FloatingMenu } from './index';
 
 const FullBorderedGrid = ({ cellSize = 28 }) => {
-  //* Use viewport hook
   const viewport = useViewport();
-
-  //* Use the extracted mouse logic hook
-  const { activeCells, handleMouseDown, handleMouseEnter, handleMouseUp } = useGridMouseClicks();
 
   //* Grid dimensions
   const cols = Math.floor(viewport.width / cellSize);
   const rows = Math.floor(viewport.height / cellSize);
+
+  //* Set default coordinates
+  const defaultRobotCol = Math.floor(cols / 4);
+  const defaultDestCol = Math.floor((cols / 4) * 3);
+  const defaultRow = Math.floor(rows / 2);
+
+  // Note: we calculate defaults, and pass them into the hook
+  const { 
+    activeCells, 
+    robotNode,
+    destinationNode,
+    handleMouseDown, 
+    handleMouseEnter, 
+    handleMouseUp,
+    clearWalls
+  } = useGridMouseClicks(`${defaultRow}-${defaultRobotCol}`, `${defaultRow}-${defaultDestCol}`);
 
   //* For caching grid from user inputs
   const cells = useMemo(() => {
@@ -32,10 +43,14 @@ const FullBorderedGrid = ({ cellSize = 28 }) => {
         height: '100vh',
         overflow: 'hidden',
         userSelect: 'none',
+        position: 'relative'
       }}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
+      {/* //* ADD FLOATING MENU */}
+      <FloatingMenu onClearWalls={clearWalls} />
+
       {/* //* Render each cell into clickable Box cells */}
       <Box
         sx={{
@@ -56,6 +71,8 @@ const FullBorderedGrid = ({ cellSize = 28 }) => {
               row={cell.row}
               col={cell.col}
               isActive={activeCells.has(cell.key)}
+              isRobot={cell.key === robotNode}            
+              isDestination={cell.key === destinationNode}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
             />
