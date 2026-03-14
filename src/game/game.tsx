@@ -22,7 +22,7 @@ const GameGrid = ({ cellSize = 28 }) => {
 
   // Note: we calculate defaults, and pass them into the hook
   const {
-    activeCells,
+    wallNode,
     robotNode,
     destinationNode,
     handleMouseDown,
@@ -78,7 +78,7 @@ const GameGrid = ({ cellSize = 28 }) => {
               cellSize={cellSize}
               row={cell.row}
               col={cell.col}
-              isActive={activeCells.has(cell.key)}
+              isWall={wallNode.has(cell.key)}
               isRobot={cell.key === robotNode}
               isDestination={cell.key === destinationNode}
               onMouseDown={handleMouseDown}
