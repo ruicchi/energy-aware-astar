@@ -35,10 +35,11 @@ export const useGridMouseClicks = (
       wallNodeRef.current.delete(key);
     }
 
-    // INSTANTLY update the color on the screen to prevent lag
+        // INSTANTLY update the color on the screen to prevent lag
     const element = document.getElementById(`cell-${key}`);
     if (element) {
-      element.style.backgroundColor = isDrawingWall ? '#1a88e2' : 'transparent';
+      // Change 'transparent' to ''
+      element.style.backgroundColor = isDrawingWall ? '#1a88e2' : ''; 
     }
   }, []);
 
@@ -47,7 +48,7 @@ export const useGridMouseClicks = (
     wallNodeRef.current.forEach((key) => {
       const element = document.getElementById(`cell-${key}`);
       if (element) {
-        element.style.backgroundColor = 'transparent';
+        element.style.backgroundColor = '';
       }
     });
 
