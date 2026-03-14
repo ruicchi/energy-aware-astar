@@ -1,9 +1,14 @@
 //# Builds the grid cell
 import Box from '@mui/material/Box';
 import { useMemo } from 'react';
-import { useViewport, useGridMouseClicks, MemoizedCell, FloatingMenu } from './index';
+import {
+  useViewport,
+  useGridMouseClicks,
+  MemoizedCell,
+  FloatingMenu,
+} from './index';
 
-const FullBorderedGrid = ({ cellSize = 28 }) => {
+const GameGrid = ({ cellSize = 28 }) => {
   const viewport = useViewport();
 
   //* Grid dimensions
@@ -16,15 +21,18 @@ const FullBorderedGrid = ({ cellSize = 28 }) => {
   const defaultRow = Math.floor(rows / 2);
 
   // Note: we calculate defaults, and pass them into the hook
-  const { 
-    activeCells, 
+  const {
+    activeCells,
     robotNode,
     destinationNode,
-    handleMouseDown, 
-    handleMouseEnter, 
+    handleMouseDown,
+    handleMouseEnter,
     handleMouseUp,
-    clearWalls
-  } = useGridMouseClicks(`${defaultRow}-${defaultRobotCol}`, `${defaultRow}-${defaultDestCol}`);
+    clearWalls,
+  } = useGridMouseClicks(
+    `${defaultRow}-${defaultRobotCol}`,
+    `${defaultRow}-${defaultDestCol}`,
+  );
 
   //* For caching grid from user inputs
   const cells = useMemo(() => {
@@ -43,7 +51,7 @@ const FullBorderedGrid = ({ cellSize = 28 }) => {
         height: '100vh',
         overflow: 'hidden',
         userSelect: 'none',
-        position: 'relative'
+        position: 'relative',
       }}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
@@ -71,7 +79,7 @@ const FullBorderedGrid = ({ cellSize = 28 }) => {
               row={cell.row}
               col={cell.col}
               isActive={activeCells.has(cell.key)}
-              isRobot={cell.key === robotNode}            
+              isRobot={cell.key === robotNode}
               isDestination={cell.key === destinationNode}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
@@ -83,4 +91,4 @@ const FullBorderedGrid = ({ cellSize = 28 }) => {
   );
 };
 
-export default FullBorderedGrid;
+export default GameGrid;
