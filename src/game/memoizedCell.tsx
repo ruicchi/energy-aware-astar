@@ -8,6 +8,8 @@ type MemoizedCellProps = {
   row: number;
   col: number;
   isActive: boolean;
+  isRobot: boolean;
+  isDestination: boolean;
   onMouseDown: (key: string) => void;
   onMouseEnter: (key: string) => void;
 };
@@ -19,9 +21,18 @@ export const MemoizedCell = memo(({
   row,
   col,
   isActive,
+  isRobot,
+  isDestination,
   onMouseDown,
   onMouseEnter,
 }: MemoizedCellProps) => {
+
+  //* Determine backgroundColor based on cell state. Priority goes to robot/destination
+  let bgColor = 'transparent';
+  if (isRobot) bgColor = '#4caf50'; //* Green for Robot
+  else if (isDestination) bgColor = '#f44336'; //* Red for Destination
+  else if (isActive) bgColor = '#1a88e2'; //* Blue for walls/active cells
+
   return (
     <Box
       onMouseDown={() => onMouseDown(cellKey)}
@@ -34,15 +45,17 @@ export const MemoizedCell = memo(({
         borderBottom: '1px solid #b8b8b8',
         borderTop: row === 0 ? '1px solid #b8b8b8' : 'none',
         borderLeft: col === 0 ? '1px solid #b8b8b8' : 'none',
-        backgroundColor: isActive ? '#1a88e2' : 'transparent',
+        backgroundColor: bgColor,
         cursor: 'pointer',
       }}
     />
   );
 }, (prevProps, nextProps) => {
-  //* This only re-renders if the cell size, position, or active state changes
+  //* This only re-renders if the cell state tracking changes
   return (
     prevProps.isActive === nextProps.isActive &&
+    prevProps.isRobot === nextProps.isRobot &&
+    prevProps.isDestination === nextProps.isDestination &&
     prevProps.cellSize === nextProps.cellSize
   );
 });
