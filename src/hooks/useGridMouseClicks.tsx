@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { toggleWallState, clearWalls } from '../index';
 
 //* The different dragging actions possible
 type DragMode = 'wall' | 'robot' | 'destination' | null;
@@ -19,54 +20,9 @@ export const useGridMouseClicks = (
 
   const wallNodeRef = useRef<Set<string>>(new Set());
   const modifiedCellsRef = useRef<Set<string>>(new Set());
-
-  //* Function to draw or erase walls
-  const toggleWallState = useCallback(
-    (key: string, isInitialClick: boolean) => {
-      let isDrawingWall = drawValue.current;
-
-      //^ Check if drawing or erasing
-      if (isInitialClick) {
-        isDrawingWall = !wallNodeRef.current.has(key);
-        drawValue.current = isDrawingWall;
-      } else if (isDrawingWall === wallNodeRef.current.has(key)) {
-        return;
-      }
-
-      //^ Update ref instead of state
-      if (isDrawingWall) {
-        wallNodeRef.current.add(key);
-      } else {
-        wallNodeRef.current.delete(key);
-      }
-
-      modifiedCellsRef.current.add(key);
-
-      //^ INSTANTLY update the color on the screen to prevent lag
-      const element = document.getElementById(`cell-${key}`);
-      if (element) {
-        element.style.backgroundColor = isDrawingWall
-          ? '#1a88e2'
-          : 'transparent';
-      }
-    },
-    [],
-  );
-
-  const clearWalls = useCallback(() => {
-    wallNodeRef.current.forEach((key) => {
-      const element = document.getElementById(`cell-${key}`);
-      if (element) {
-        element.style.backgroundColor = '';
-      }
-    });
-
-    //* Clears silent tracking ref
-    wallNodeRef.current.clear();
-    modifiedCellsRef.current.clear();
-
-    //* Clear the official React state
-    setwallNode(new Set());
+  
+  const handleClearWalls = useCallback(() => {
+    clearWalls(wallNodeRef, modifiedCellsRef, setwallNode);
   }, []);
 
   const handleMouseDown = useCallback(
@@ -82,11 +38,11 @@ export const useGridMouseClicks = (
           return;
         default:
           dragMode.current = 'wall';
-          toggleWallState(key, true);
+          toggleWallState(key, true, drawValue, wallNodeRef, modifiedCellsRef);
           break;
       }
     },
-    [robotNode, destinationNode, toggleWallState],
+    [robotNode, destinationNode],
   );
 
   const handleMouseEnter = useCallback(
@@ -111,11 +67,11 @@ export const useGridMouseClicks = (
         case 'wall':
           //* Don't paint walls over robot or destination
           if (key === robotNode || key === destinationNode) break;
-          toggleWallState(key, false);
+          toggleWallState(key, false, drawValue, wallNodeRef, modifiedCellsRef);
           break;
       }
     },
-    [robotNode, destinationNode, wallNode, toggleWallState],
+    [robotNode, destinationNode, wallNode],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -144,6 +100,6 @@ export const useGridMouseClicks = (
     handleMouseDown,
     handleMouseEnter,
     handleMouseUp,
-    clearWalls,
+    clearWalls: handleClearWalls,
   };
 };

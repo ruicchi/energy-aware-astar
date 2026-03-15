@@ -6,7 +6,7 @@ import {
   useGridMouseClicks,
   MemoizedCell,
   FloatingMenu,
-} from './index';
+} from '../index';
 
 const GameGrid = ({ cellSize = 28 }) => {
   const viewport = useViewport();
