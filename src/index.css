@@ -4,8 +4,6 @@ body,
   padding: 0;
 }
 
-/* Add to src/index.css */
-
 .node-visited {
   animation-name: visitedAnimation;
   animation-duration: 1.5s;
