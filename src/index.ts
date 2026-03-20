@@ -1,5 +1,5 @@
 export { MemoizedCell } from './game/MemoizedCell';
-export { FloatingMenu } from './game/floatingMenu';
+export { FloatingMenu } from './game/FloatingMenu';
 
 export { useViewport } from './hooks/useViewport';
 export { useGridMouseClicks } from './hooks/useGridMouseClicks';
