@@ -5,9 +5,10 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 type FloatingMenuProps = {
   onClearWalls: () => void;
+  onVisualizeAStar: () => void;
 };
 
-export const FloatingMenu = ({ onClearWalls }: FloatingMenuProps) => {
+export const FloatingMenu = ({ onClearWalls, onVisualizeAStar }: FloatingMenuProps) => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   
@@ -95,6 +96,16 @@ export const FloatingMenu = ({ onClearWalls }: FloatingMenuProps) => {
             onClick={onClearWalls}
           >
             Clear Walls
+          </Button>
+
+          <Button 
+            variant="contained" 
+            color="success" 
+            fullWidth
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onVisualizeAStar}
+          >
+            Visualize Classic A*
           </Button>
           
           {/* More Button should be placed here */}
