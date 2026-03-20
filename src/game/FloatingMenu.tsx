@@ -1,8 +1,5 @@
 import { useState, useRef } from 'react';
 import { Paper, Typography, Button, Box, IconButton, Collapse } from '@mui/material';
-// Add material icons for the dropdown caret
-// If you don't have these installed, run `npm install @mui/icons-material` 
-// Or just use text like "▼" if you don't want to install icons.
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
@@ -14,13 +11,13 @@ export const FloatingMenu = ({ onClearWalls }: FloatingMenuProps) => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   
-  // NEW: State for dropdown
+  //* State for dropdown
   const [isExpanded, setIsExpanded] = useState(true);
 
   const dragStart = useRef({ x: 0, y: 0 });
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Only start dragging if we didn't click a button inside the menu
+    //* Only start dragging if we didn't click a button inside the menu
     if ((e.target as HTMLElement).closest('button')) return;
 
     setIsDragging(true);
@@ -60,7 +57,6 @@ export const FloatingMenu = ({ onClearWalls }: FloatingMenuProps) => {
         width: 200,
         cursor: isDragging ? 'grabbing' : 'grab',
         userSelect: 'none',
-        // Change from padding globally to internal so collapse works properly
         overflow: 'hidden', 
       }}
     >
@@ -101,8 +97,8 @@ export const FloatingMenu = ({ onClearWalls }: FloatingMenuProps) => {
             Clear Walls
           </Button>
           
-          {/* You can easily add more buttons here later! */}
-          {/* <Button variant="outlined" fullWidth>Another Tool</Button> */}
+          {/* More Button should be placed here */}
+
         </Box>
       </Collapse>
     </Paper>
