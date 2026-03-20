@@ -6,7 +6,7 @@ import {
   useGridMouseClicks,
   MemoizedCell,
   FloatingMenu,
-  runAStar
+  runAStar,
 } from '../index';
 
 const GameGrid = ({ cellSize = 28 }) => {
@@ -20,6 +20,8 @@ const GameGrid = ({ cellSize = 28 }) => {
   const defaultRobotCol = Math.floor(cols / 4);
   const defaultDestCol = Math.floor((cols / 4) * 3);
   const defaultRow = Math.floor(rows / 2);
+
+  const currentRunId = useRef<number>(0);
 
   //Note: we calculate defaults, and pass them into the hook
   const {
@@ -42,15 +44,21 @@ const GameGrid = ({ cellSize = 28 }) => {
     // 1. Clear any previous animations
     animationTimeouts.current.forEach(clearTimeout);
     animationTimeouts.current = [];
-    
+
     // Clear previous visual classes from the DOM
-    document.querySelectorAll('.node-visited, .node-shortest-path').forEach(el => {
-      el.classList.remove('node-visited', 'node-shortest-path');
-    });
+    document
+      .querySelectorAll('.node-visited, .node-shortest-path')
+      .forEach((el) => {
+        el.classList.remove('node-visited', 'node-shortest-path');
+      });
 
     // 2. Run calculation
     const { visitedNodesInOrder, shortestPath } = runAStar(
-      rows, cols, robotNode, destinationNode, wallNode
+      rows,
+      cols,
+      robotNode,
+      destinationNode,
+      wallNode,
     );
 
     // 3. Animate Visited Nodes
@@ -66,17 +74,36 @@ const GameGrid = ({ cellSize = 28 }) => {
     const pathDelay = visitedNodesInOrder.length * 10;
     for (let i = 0; i < shortestPath.length; i++) {
       // Don't overwrite the start and destination node colors
-      if (shortestPath[i] === robotNode || shortestPath[i] === destinationNode) continue;
-      
-      const timeout = setTimeout(() => {
-        const node = document.getElementById(`cell-${shortestPath[i]}`);
-        if (node) {
-          node.classList.remove('node-visited');
-          node.classList.add('node-shortest-path');
-        }
-      }, pathDelay + (30 * i)); // 30ms per path node
+      if (shortestPath[i] === robotNode || shortestPath[i] === destinationNode)
+        continue;
+
+      const timeout = setTimeout(
+        () => {
+          const node = document.getElementById(`cell-${shortestPath[i]}`);
+          if (node) {
+            node.classList.remove('node-visited');
+            node.classList.add('node-shortest-path');
+          }
+        },
+        pathDelay + 30 * i,
+      ); // 30ms per path node
       animationTimeouts.current.push(timeout);
     }
+  };
+
+  const handleReset = () => {
+    // 1. Increment run ID to instantly kill any currently running async animations
+    currentRunId.current += 1;
+
+    // 2. Wipe all visual path and visited node classes from the DOM
+    document
+      .querySelectorAll('.node-visited, .node-shortest-path')
+      .forEach((el) => {
+        el.classList.remove('node-visited', 'node-shortest-path');
+      });
+
+    // 3. Use your existing hook function to clear the walls state
+    clearWalls();
   };
 
   //* For caching grid from user inputs
@@ -102,7 +129,11 @@ const GameGrid = ({ cellSize = 28 }) => {
       onMouseLeave={handleMouseUp}
     >
       {/* //* ADD FLOATING MENU */}
-      <FloatingMenu onClearWalls={clearWalls} onVisualizeAStar={visualizeAStar}/>
+      <FloatingMenu
+        onClearWalls={clearWalls}
+        onVisualizeAStar={visualizeAStar}
+        onReset={handleReset}
+      />
 
       {/* //* Render each cell into clickable Box cells */}
       <Box

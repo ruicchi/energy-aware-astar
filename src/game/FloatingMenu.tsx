@@ -6,9 +6,10 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 type FloatingMenuProps = {
   onClearWalls: () => void;
   onVisualizeAStar: () => void;
+  onReset:() => void;
 };
 
-export const FloatingMenu = ({ onClearWalls, onVisualizeAStar }: FloatingMenuProps) => {
+export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onReset }: FloatingMenuProps) => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   
@@ -96,6 +97,16 @@ export const FloatingMenu = ({ onClearWalls, onVisualizeAStar }: FloatingMenuPro
             onClick={onClearWalls}
           >
             Clear Walls
+          </Button>
+
+          <Button 
+            variant="contained" 
+            color="warning" 
+            fullWidth
+            onPointerDown={(e) => e.stopPropagation()} 
+            onClick={onReset}
+          >
+            Reset Grid
           </Button>
 
           <Button 
