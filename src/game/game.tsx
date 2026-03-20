@@ -20,7 +20,7 @@ const GameGrid = ({ cellSize = 28 }) => {
   const defaultDestCol = Math.floor((cols / 4) * 3);
   const defaultRow = Math.floor(rows / 2);
 
-  // Note: we calculate defaults, and pass them into the hook
+  //Note: we calculate defaults, and pass them into the hook
   const {
     wallNode,
     robotNode,
