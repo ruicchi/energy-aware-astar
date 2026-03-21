@@ -1,3 +1,7 @@
+//* f = g + h, f is (total cost), h is (heuristic), g is (cost)
+//* key, row, col are ids and cell's position on the grid
+//* parent is the previous node in the path
+
 type Node = {
   key: string;
   row: number;
@@ -8,11 +12,12 @@ type Node = {
   parent: Node | null;
 };
 
-//* Manhattan distance heuristic
-const getHeuristic = (r1: number, c1: number, r2: number, c2: number) => {
+//* Manhattan distance heuristic (h)
+const getManhattanHeuristic = (r1: number, c1: number, r2: number, c2: number) => {
   return Math.abs(r1 - r2) + Math.abs(c1 - c2);
 };
 
+//* Function to run Astar
 export const runAStar = (
   rows: number,
   cols: number,
@@ -32,7 +37,7 @@ export const runAStar = (
     row: startRow,
     col: startCol,
     g: 0,
-    h: getHeuristic(startRow, startCol, destRow, destCol),
+    h: getManhattanHeuristic(startRow, startCol, destRow, destCol),
     f: 0,
     parent: null,
   };
@@ -97,7 +102,7 @@ export const runAStar = (
           row: n.r,
           col: n.c,
           g: Infinity,
-          h: getHeuristic(n.r, n.c, destRow, destCol),
+          h: getManhattanHeuristic(n.r, n.c, destRow, destCol),
           f: Infinity,
           parent: null,
         };
