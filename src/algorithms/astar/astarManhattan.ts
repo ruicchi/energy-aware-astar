@@ -116,5 +116,5 @@ export const runAStar = (
     }
   }
 
-  return { visitedNodesInOrder, shortestPath: [] }; // No path found
+  return { visitedNodesInOrder, shortestPath: [] };
 };
