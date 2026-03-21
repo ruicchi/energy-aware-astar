@@ -13,8 +13,27 @@ type Node = {
 };
 
 //* Manhattan distance heuristic (h)
-const getManhattanHeuristic = (r1: number, c1: number, r2: number, c2: number) => {
+const getManhattanHeuristic = (
+  r1: number,
+  c1: number,
+  r2: number,
+  c2: number,
+) => {
   return Math.abs(r1 - r2) + Math.abs(c1 - c2);
+};
+
+const reconstructPath = (endNode: Node): string[] => {
+  const shortestPath: string[] = [];
+  let temp: Node | null = endNode;
+
+  while (temp !== null) {
+    // unshift adds the key to the beginning of the array,
+    // naturally reversing the path from end->start to start->end
+    shortestPath.unshift(temp.key);
+    temp = temp.parent;
+  }
+
+  return shortestPath;
 };
 
 //* Function to run Astar
@@ -25,13 +44,17 @@ export const runAStar = (
   destKey: string,
   walls: Set<string>,
 ) => {
+  //* Stores the position of start and destination node
   const [startRow, startCol] = startKey.split('-').map(Number);
   const [destRow, destCol] = destKey.split('-').map(Number);
 
+  //* openSet -> list of discovered notes waiting to be evaluated
+  //* closedSet -> nodes that have already been evaluated
   const openSet: Node[] = [];
   const closedSet: Set<string> = new Set();
   const visitedNodesInOrder: string[] = [];
 
+  //* Initializes startNode
   const startNode: Node = {
     key: startKey,
     row: startRow,
@@ -41,36 +64,36 @@ export const runAStar = (
     f: 0,
     parent: null,
   };
+
   startNode.f = startNode.g + startNode.h;
 
+  //* Adds the startNode element at the end of the openSet array
   openSet.push(startNode);
+
+  //* allNodes check the map (if the node already exist, it retrieves it. If not, it creates it)
   const allNodes = new Map<string, Node>();
+
+  //* Adds or updates the entry for the allNodes map
   allNodes.set(startKey, startNode);
 
   while (openSet.length > 0) {
-    // Sort to find the node with the lowest f cost
+    //* Sort to find the node with the lowest f cost
     openSet.sort((a, b) => a.f - b.f);
     const current = openSet.shift()!;
 
     if (current.key === destKey) {
-      // We found the path, backtrack to get it
-      const shortestPath: string[] = [];
-      let temp: Node | null = current;
-      while (temp !== null) {
-        shortestPath.unshift(temp.key);
-        temp = temp.parent;
-      }
+      const shortestPath = reconstructPath(current);
       return { visitedNodesInOrder, shortestPath };
     }
 
     closedSet.add(current.key);
 
-    // Don't animate the start node
+    //* Don't animate the start node
     if (current.key !== startKey && current.key !== destKey) {
       visitedNodesInOrder.push(current.key);
     }
 
-    // Check neighbors (Up, Down, Left, Right)
+    //* Check neighbors (Up, Down, Left, Right)
     const neighbors = [
       { r: current.row - 1, c: current.col },
       { r: current.row + 1, c: current.col },
@@ -81,7 +104,7 @@ export const runAStar = (
     for (const n of neighbors) {
       const neighborKey = `${n.r}-${n.c}`;
 
-      // Check boundaries and walls
+      //* Check boundaries and walls
       if (
         n.r < 0 ||
         n.r >= rows ||
