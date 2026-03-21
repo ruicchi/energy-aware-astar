@@ -7,7 +7,8 @@ type Node = {
   f: number;
   parent: Node | null;
 };
-// Manhattan distance heuristic
+
+//* Manhattan distance heuristic
 const getHeuristic = (r1: number, c1: number, r2: number, c2: number) => {
   return Math.abs(r1 - r2) + Math.abs(c1 - c2);
 };
