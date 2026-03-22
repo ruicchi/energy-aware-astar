@@ -3,5 +3,5 @@ export { FloatingMenu } from './game/FloatingMenu';
 
 export { useViewport } from './hooks/useViewport';
 export { useGridMouseClicks } from './hooks/useGridMouseClicks';
-export { toggleWallState, clearWalls } from './utils/wallUtils'; 
-export { runAStar } from './algorithms/astar/astarManhattan';
+export { toggleWallState, clearWalls } from './utils/wallUtils';
+export { runAStarManhattan as runAStar } from './algorithms/astar/astarManhattan';

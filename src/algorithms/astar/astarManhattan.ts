@@ -37,7 +37,7 @@ const reconstructPath = (endNode: Node): string[] => {
 };
 
 //* Function to run Astar
-export const runAStar = (
+export const runAStarManhattan = (
   rows: number,
   cols: number,
   robotNode: string,
