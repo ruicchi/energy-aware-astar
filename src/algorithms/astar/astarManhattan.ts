@@ -27,8 +27,8 @@ const reconstructPath = (endNode: Node): string[] => {
   let temp: Node | null = endNode;
 
   while (temp !== null) {
-    // unshift adds the key to the beginning of the array,
-    // naturally reversing the path from end->start to start->end
+    //* unshift adds the key to the beginning of the array,
+    //* naturally reversing the path from end->start to start->end
     shortestPath.unshift(temp.key);
     temp = temp.parent;
   }
@@ -40,23 +40,25 @@ const reconstructPath = (endNode: Node): string[] => {
 export const runAStar = (
   rows: number,
   cols: number,
-  startKey: string,
-  destKey: string,
-  walls: Set<string>,
+  robotNode: string,
+  destinationNode: string,
+  wallNode: Set<string>,
 ) => {
   //* Stores the position of start and destination node
-  const [startRow, startCol] = startKey.split('-').map(Number);
-  const [destRow, destCol] = destKey.split('-').map(Number);
+  const [startRow, startCol] = robotNode.split('-').map(Number);
+  const [destRow, destCol] = destinationNode.split('-').map(Number);
 
   //* openSet -> list of discovered notes waiting to be evaluated
   //* closedSet -> nodes that have already been evaluated
   const openSet: Node[] = [];
   const closedSet: Set<string> = new Set();
+
+  //* Record the order in which nodes were visited
   const visitedNodesInOrder: string[] = [];
 
   //* Initializes startNode
   const startNode: Node = {
-    key: startKey,
+    key: robotNode,
     row: startRow,
     col: startCol,
     g: 0,
@@ -74,14 +76,14 @@ export const runAStar = (
   const allNodes = new Map<string, Node>();
 
   //* Adds or updates the entry for the allNodes map
-  allNodes.set(startKey, startNode);
+  allNodes.set(robotNode, startNode);
 
   while (openSet.length > 0) {
     //* Sort to find the node with the lowest f cost
     openSet.sort((a, b) => a.f - b.f);
     const current = openSet.shift()!;
 
-    if (current.key === destKey) {
+    if (current.key === destinationNode) {
       const shortestPath = reconstructPath(current);
       return { visitedNodesInOrder, shortestPath };
     }
@@ -89,43 +91,48 @@ export const runAStar = (
     closedSet.add(current.key);
 
     //* Don't animate the start node
-    if (current.key !== startKey && current.key !== destKey) {
+    if (current.key !== robotNode && current.key !== destinationNode) {
       visitedNodesInOrder.push(current.key);
     }
 
     //* Check neighbors (Up, Down, Left, Right)
     const neighbors = [
-      { r: current.row - 1, c: current.col },
-      { r: current.row + 1, c: current.col },
-      { r: current.row, c: current.col - 1 },
-      { r: current.row, c: current.col + 1 },
+      { row: current.row - 1, col: current.col },
+      { row: current.row + 1, col: current.col },
+      { row: current.row, col: current.col - 1 },
+      { row: current.row, col: current.col + 1 },
     ];
 
-    for (const n of neighbors) {
-      const neighborKey = `${n.r}-${n.c}`;
+    for (const adjacent of neighbors) {
+      const neighborKey = `${adjacent.row}-${adjacent.col}`;
 
       //* Check boundaries and walls
       if (
-        n.r < 0 ||
-        n.r >= rows ||
-        n.c < 0 ||
-        n.c >= cols ||
-        walls.has(neighborKey) ||
+        adjacent.row < 0 ||
+        adjacent.row >= rows ||
+        adjacent.col < 0 ||
+        adjacent.col >= cols ||
+        wallNode.has(neighborKey) ||
         closedSet.has(neighborKey)
       ) {
         continue;
       }
-
-      const tentativeG = current.g + 1; // 1 is the cost to move to an adjacent square
+      //* 1 is the cost to move to an adjacent square
+      const tentativeG = current.g + 1;
       let neighborNode = allNodes.get(neighborKey);
 
       if (!neighborNode) {
         neighborNode = {
           key: neighborKey,
-          row: n.r,
-          col: n.c,
+          row: adjacent.row,
+          col: adjacent.col,
           g: Infinity,
-          h: getManhattanHeuristic(n.r, n.c, destRow, destCol),
+          h: getManhattanHeuristic(
+            adjacent.row,
+            adjacent.col,
+            destRow,
+            destCol,
+          ),
           f: Infinity,
           parent: null,
         };
