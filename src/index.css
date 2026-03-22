@@ -17,7 +17,7 @@ body,
 
 @keyframes visitedAnimation {
   100% {
-    background-color: rgba(0, 190, 218, 0.75);
+    background-color: rgba(119, 181, 192, 0.75);
   }
 }
 

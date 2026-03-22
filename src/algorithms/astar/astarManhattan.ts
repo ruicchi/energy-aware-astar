@@ -14,12 +14,12 @@ type Node = {
 
 //* Manhattan distance heuristic (h)
 const getManhattanHeuristic = (
-  r1: number,
-  c1: number,
-  r2: number,
-  c2: number,
+  startRow: number,
+  startCol: number,
+  destRow: number,
+  destCol: number,
 ) => {
-  return Math.abs(r1 - r2) + Math.abs(c1 - c2);
+  return Math.abs(startRow - destRow) + Math.abs(startCol - destCol);
 };
 
 const reconstructPath = (endNode: Node): string[] => {
