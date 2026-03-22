@@ -116,7 +116,7 @@ export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onReset }: Floati
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onVisualizeAStar}
           >
-            Visualize Classic A*
+            Run A* Manhattan
           </Button>
           
           {/* More Button should be placed here */}
