@@ -54,7 +54,7 @@ export const runAStarManhattan = (
   const closedSet: Set<string> = new Set();
 
   //* Record the order in which nodes were visited
-  const visitedNodesInOrder: string[] = [];
+  const visitedNodesInOrder: { key: string; type: 'open' | 'closed' }[] = [];
 
   //* Initializes startNode
   const startNode: Node = {
@@ -92,7 +92,7 @@ export const runAStarManhattan = (
 
     //* Don't animate the start node
     if (current.key !== robotNode && current.key !== destinationNode) {
-      visitedNodesInOrder.push(current.key);
+      visitedNodesInOrder.push({ key: current.key, type: 'closed' });
     }
 
     //* Check neighbors (Up, Down, Left, Right)
@@ -146,6 +146,9 @@ export const runAStarManhattan = (
 
         if (!openSet.some((node) => node.key === neighborKey)) {
           openSet.push(neighborNode);
+          if (neighborKey !== robotNode && neighborKey !== destinationNode) {
+            visitedNodesInOrder.push({ key: neighborKey, type: 'open' });
+          }
         }
       }
     }

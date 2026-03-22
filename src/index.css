@@ -4,6 +4,23 @@ body,
   padding: 0;
 }
 
+.node-open {
+  animation-name: openAnimation;
+  animation-duration: .2s;
+  animation-timing-function: ease-out;
+  animation-delay: 0;
+  animation-direction: alternate;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  animation-play-state: running;
+}
+
+@keyframes openAnimation {
+  100% {
+    background-color: rgba(0, 217, 159, 0.75);
+  }
+}
+
 .node-visited {
   animation-name: visitedAnimation;
   animation-duration: .2s;

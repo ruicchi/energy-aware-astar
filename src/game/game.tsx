@@ -47,9 +47,9 @@ const GameGrid = ({ cellSize = 28 }) => {
 
     // Clear previous visual classes from the DOM
     document
-      .querySelectorAll('.node-visited, .node-shortest-path')
+      .querySelectorAll('.node-visited, .node-open, .node-shortest-path')
       .forEach((el) => {
-        el.classList.remove('node-visited', 'node-shortest-path');
+        el.classList.remove('node-visited', 'node-open', 'node-shortest-path');
       });
 
     // 2. Run calculation
@@ -61,11 +61,19 @@ const GameGrid = ({ cellSize = 28 }) => {
       wallNode,
     );
 
-    // 3. Animate Visited Nodes
+    // 3. Animate Visited/Open Nodes
     for (let i = 0; i < visitedNodesInOrder.length; i++) {
       const timeout = setTimeout(() => {
-        const node = document.getElementById(`cell-${visitedNodesInOrder[i]}`);
-        if (node) node.classList.add('node-visited');
+        const { key, type } = visitedNodesInOrder[i];
+        const node = document.getElementById(`cell-${key}`);
+        if (node) {
+          if (type === 'closed') {
+            node.classList.remove('node-open');
+            node.classList.add('node-visited');
+          } else if (type === 'open') {
+            node.classList.add('node-open');
+          }
+        }
       }, 10 * i); // 10ms per node
       animationTimeouts.current.push(timeout);
     }
@@ -82,6 +90,7 @@ const GameGrid = ({ cellSize = 28 }) => {
           const node = document.getElementById(`cell-${shortestPath[i]}`);
           if (node) {
             node.classList.remove('node-visited');
+            node.classList.remove('node-open');
             node.classList.add('node-shortest-path');
           }
         },
@@ -97,9 +106,9 @@ const GameGrid = ({ cellSize = 28 }) => {
 
     // 2. Wipe all visual path and visited node classes from the DOM
     document
-      .querySelectorAll('.node-visited, .node-shortest-path')
+      .querySelectorAll('.node-visited, .node-open, .node-shortest-path')
       .forEach((el) => {
-        el.classList.remove('node-visited', 'node-shortest-path');
+        el.classList.remove('node-visited', 'node-open', 'node-shortest-path');
       });
 
     // 3. Use your existing hook function to clear the walls state
