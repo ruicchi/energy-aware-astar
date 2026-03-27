@@ -37,7 +37,7 @@ const GameGrid = ({ cellSize = 28 }) => {
     `${defaultRow}-${defaultDestCol}`,
   );
 
-  // Keep track of timeouts so we can cancel them if needed
+  //* Keep track of timeouts so we can cancel them if needed
   const animationTimeouts = useRef<number[]>([]);
 
   const visualizeAStar = () => {
