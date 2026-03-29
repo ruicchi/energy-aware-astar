@@ -26,20 +26,17 @@ export interface Scenario {
 export const getTurnCost = (current: Heading, target: Heading, penalty: number): number => {
   if (current === 'NONE' || current === target) return 0
   
-  const opposite: Record<Heading, Heading> = {
-    'UP': 'DOWN',
-    'DOWN': 'UP',
-    'LEFT': 'RIGHT',
-    'RIGHT': 'LEFT',
-    'UP_LEFT': 'DOWN_RIGHT',
-    'UP_RIGHT': 'DOWN_LEFT',
-    'DOWN_LEFT': 'UP_RIGHT',
-    'DOWN_RIGHT': 'UP_LEFT',
-    'NONE': 'NONE'
-  }
+  const headings: Heading[] = ['UP', 'UP_RIGHT', 'RIGHT', 'DOWN_RIGHT', 'DOWN', 'DOWN_LEFT', 'LEFT', 'UP_LEFT']
+  const currentIndex = headings.indexOf(current)
+  const targetIndex = headings.indexOf(target)
   
-  if (target === opposite[current]) return 2 * penalty
-  return penalty
+  if (currentIndex === -1 || targetIndex === -1) return 0
+
+  let diff = Math.abs(currentIndex - targetIndex)
+  if (diff > 4) diff = 8 - diff // Shortest path around the 8-direction circle
+  
+  // diff 1 = 45°, diff 2 = 90°, diff 3 = 135°, diff 4 = 180°
+  return (diff * 0.5) * penalty
 }
 
 export const getEnergyCost = (
@@ -76,6 +73,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     col: startCol,
     heading: 'NONE',
     g: 0,
+    //h: Math.sqrt((startRow * destRow) + (startCol - destCol)),
     h: Math.abs(startRow - destRow) + Math.abs(startCol - destCol),
     f: 0,
     parent: null
@@ -89,6 +87,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     const current = openSet.shift()!
 
     if (current.row === destRow && current.col === destCol) {
+       // Path reconstruction
        const shortestPath: string[] = []
        let temp: EnergyNode | null = current
        while (temp) {
@@ -100,6 +99,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
 
     closedSet.add(current.key)
     
+    // Visualization: only add unique cell keys
     const cellKey = `${current.row}-${current.col}`
     if (cellKey !== scenario.robotNode && cellKey !== scenario.destinationNode) {
        visitedNodesInOrder.push({ key: cellKey, type: 'closed' })
@@ -134,6 +134,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
           col: neighbor.col,
           heading: neighbor.heading,
           g: Infinity,
+          // Math.sqrt((neighbor.row * destRow) + (neighbor.col - destCol)),
           h: Math.abs(neighbor.row - destRow) + Math.abs(neighbor.col - destCol),
           f: Infinity,
           parent: null
