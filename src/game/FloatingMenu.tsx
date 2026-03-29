@@ -6,15 +6,16 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 type FloatingMenuProps = {
   onClearWalls: () => void;
   onVisualizeAStar: () => void;
+  onVisualizeEnergyAwareAStar: () => void;
   onReset:() => void;
   onSelectDirt?: () => void;
   onSelectWater?: () => void;
 };
 
-export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onReset, onSelectDirt, onSelectWater }: FloatingMenuProps) => {
+export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onVisualizeEnergyAwareAStar, onReset, onSelectDirt, onSelectWater }: FloatingMenuProps) => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
-  
+
   //* State for dropdown
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -77,7 +78,7 @@ export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onReset, onSelect
         <Typography variant="subtitle1" fontWeight="bold">
           Controls
         </Typography>
-        
+
         {/* Toggle Button */}
         <IconButton 
           size="small" 
@@ -123,25 +124,43 @@ export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onReset, onSelect
 
           <Button 
             variant="contained" 
-            color="info" 
+            color="primary" 
             fullWidth
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={onSelectDirt}
+            onClick={onVisualizeEnergyAwareAStar}
+            sx={{ mt: 1 }}
           >
-            Dirt
+            Run Energy-Aware A*
           </Button>
 
-          <Button 
-            variant="contained" 
-            color="secondary" 
-            fullWidth
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={onSelectWater}
-          >
-            Water
-          </Button>
-          
-          {/* More Button should be placed here */}
+          <Box sx={{ mt: 1, borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
+            <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
+              Terrain Types
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button 
+                variant="outlined" 
+                color="info" 
+                size="small"
+                fullWidth
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={onSelectDirt}
+              >
+                Dirt
+              </Button>
+
+              <Button 
+                variant="outlined" 
+                color="secondary" 
+                size="small"
+                fullWidth
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={onSelectWater}
+              >
+                Water
+              </Button>
+            </Box>
+          </Box>
 
         </Box>
       </Collapse>
