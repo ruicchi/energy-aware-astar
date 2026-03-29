@@ -63,3 +63,64 @@ body,
     background-color: rgb(255, 254, 106);
   }
 }
+
+/* Energy-Aware Specific Styles */
+.node-energy-open {
+  animation-name: energyOpenAnimation;
+  animation-duration: .2s;
+  animation-timing-function: ease-out;
+  animation-delay: 0;
+  animation-direction: alternate;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  animation-play-state: running;
+}
+
+@keyframes energyOpenAnimation {
+  100% {
+    background-color: rgba(255, 165, 0, 0.75); /* Orange for open */
+  }
+}
+
+.node-energy-visited {
+  animation-name: energyVisitedAnimation;
+  animation-duration: .2s;
+  animation-timing-function: ease-out;
+  animation-delay: 0;
+  animation-direction: alternate;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  animation-play-state: running;
+}
+
+@keyframes energyVisitedAnimation {
+  100% {
+    background-color: rgba(255, 99, 71, 0.75); /* Tomato red for visited */
+  }
+}
+
+.node-energy-shortest-path {
+  animation-name: energyShortestPath;
+  animation-duration: .2s;
+  animation-timing-function: ease-out;
+  animation-delay: 0;
+  animation-direction: alternate;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+  animation-play-state: running;
+}
+
+@keyframes energyShortestPath {
+  0% {
+    transform: scale(0.6);
+    background-color: rgb(138, 43, 226); /* Purple path */
+  }
+  50% {
+    transform: scale(1.2);
+    background-color: rgb(138, 43, 226);
+  }
+  100% {
+    transform: scale(1);
+    background-color: rgb(138, 43, 226);
+  }
+}

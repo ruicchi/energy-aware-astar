@@ -46,15 +46,24 @@ const GameGrid = ({ cellSize = 28 }) => {
     animationTimeouts.current = [];
 
     document
-      .querySelectorAll('.node-visited, .node-open, .node-shortest-path')
+      .querySelectorAll('.node-visited, .node-open, .node-shortest-path, .node-energy-visited, .node-energy-open, .node-energy-shortest-path')
       .forEach((el) => {
-        el.classList.remove('node-visited', 'node-open', 'node-shortest-path');
+        el.classList.remove(
+          'node-visited', 'node-open', 'node-shortest-path',
+          'node-energy-visited', 'node-energy-open', 'node-energy-shortest-path'
+        );
       });
   };
 
   type VisitedNode = { key: string; type: 'open' | 'closed' };
 
-  const animateResult = (visitedNodesInOrder: VisitedNode[], shortestPath: string[]) => {
+  const animateResult = (
+    visitedNodesInOrder: VisitedNode[],
+    shortestPath: string[],
+    visitedClass: string = 'node-visited',
+    openClass: string = 'node-open',
+    pathClass: string = 'node-shortest-path'
+  ) => {
     // 3. Animate Visited/Open Nodes
     for (let i = 0; i < visitedNodesInOrder.length; i++) {
       const timeout = setTimeout(() => {
@@ -62,10 +71,10 @@ const GameGrid = ({ cellSize = 28 }) => {
         const node = document.getElementById(`cell-${key}`);
         if (node) {
           if (type === 'closed') {
-            node.classList.remove('node-open');
-            node.classList.add('node-visited');
+            node.classList.remove(openClass);
+            node.classList.add(visitedClass);
           } else if (type === 'open') {
-            node.classList.add('node-open');
+            node.classList.add(openClass);
           }
         }
       }, 10 * i); // 10ms per node
@@ -83,9 +92,9 @@ const GameGrid = ({ cellSize = 28 }) => {
         () => {
           const node = document.getElementById(`cell-${shortestPath[i]}`);
           if (node) {
-            node.classList.remove('node-visited');
-            node.classList.remove('node-open');
-            node.classList.add('node-shortest-path');
+            node.classList.remove(visitedClass);
+            node.classList.remove(openClass);
+            node.classList.add(pathClass);
           }
         },
         pathDelay + 30 * i,
@@ -103,7 +112,7 @@ const GameGrid = ({ cellSize = 28 }) => {
       destinationNode,
       wallNode,
     );
-    animateResult(visitedNodesInOrder, shortestPath);
+    animateResult(visitedNodesInOrder, shortestPath, 'node-visited', 'node-open', 'node-shortest-path');
   };
 
   const visualizeEnergyAwareAStar = () => {
@@ -123,7 +132,7 @@ const GameGrid = ({ cellSize = 28 }) => {
     };
 
     const { visitedNodesInOrder, shortestPath } = runAStarEnergyAware(scenario);
-    animateResult(visitedNodesInOrder, shortestPath);
+    animateResult(visitedNodesInOrder, shortestPath, 'node-energy-visited', 'node-energy-open', 'node-energy-shortest-path');
   };
 
   const handleReset = () => {
