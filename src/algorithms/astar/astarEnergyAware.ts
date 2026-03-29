@@ -55,3 +55,104 @@ export const getEnergyCost = (
   
   return (1 + terrainFactor) + climbingCost + turnCost
 }
+
+export const runAStarEnergyAware = (scenario: Scenario) => {
+  const [destRow, destCol] = scenario.destinationNode.split('-').map(Number)
+  const [startRow, startCol] = scenario.robotNode.split('-').map(Number)
+
+  const openSet: EnergyNode[] = []
+  const allNodes = new Map<string, EnergyNode>()
+  const closedSet = new Set<string>()
+
+  const visitedNodesInOrder: { key: string; type: 'open' | 'closed' }[] = []
+
+  const startNode: EnergyNode = {
+    key: `${scenario.robotNode}-NONE`,
+    row: startRow,
+    col: startCol,
+    heading: 'NONE',
+    g: 0,
+    h: Math.abs(startRow - destRow) + Math.abs(startCol - destCol),
+    f: 0,
+    parent: null
+  }
+  startNode.f = startNode.h
+  openSet.push(startNode)
+  allNodes.set(startNode.key, startNode)
+
+  while (openSet.length > 0) {
+    openSet.sort((a, b) => a.f - b.f)
+    const current = openSet.shift()!
+
+    if (current.row === destRow && current.col === destCol) {
+       // Path reconstruction
+       const shortestPath: string[] = []
+       let temp: EnergyNode | null = current
+       while (temp) {
+         shortestPath.unshift(`${temp.row}-${temp.col}`)
+         temp = temp.parent
+       }
+       return { visitedNodesInOrder, shortestPath: Array.from(new Set(shortestPath)) }
+    }
+
+    closedSet.add(current.key)
+    
+    // Visualization: only add unique cell keys
+    const cellKey = `${current.row}-${current.col}`
+    if (cellKey !== scenario.robotNode && cellKey !== scenario.destinationNode) {
+       visitedNodesInOrder.push({ key: cellKey, type: 'closed' })
+    }
+
+    const neighbors = [
+      { row: current.row - 1, col: current.col, heading: 'UP' as Heading },
+      { row: current.row + 1, col: current.col, heading: 'DOWN' as Heading },
+      { row: current.row, col: current.col - 1, heading: 'LEFT' as Heading },
+      { row: current.row, col: current.col + 1, heading: 'RIGHT' as Heading },
+    ]
+
+    for (const neighbor of neighbors) {
+      const neighborCellKey = `${neighbor.row}-${neighbor.col}`
+      const neighborStateKey = `${neighborCellKey}-${neighbor.heading}`
+
+      if (
+        neighbor.row < 0 || neighbor.row >= scenario.rows ||
+        neighbor.col < 0 || neighbor.col >= scenario.cols ||
+        scenario.wallNodes.has(neighborCellKey) ||
+        closedSet.has(neighborStateKey)
+      ) continue
+
+      const cost = getEnergyCost(current, neighbor, scenario)
+      const tentativeG = current.g + cost
+      
+      let neighborNode = allNodes.get(neighborStateKey)
+      if (!neighborNode) {
+        neighborNode = {
+          key: neighborStateKey,
+          row: neighbor.row,
+          col: neighbor.col,
+          heading: neighbor.heading,
+          g: Infinity,
+          h: Math.abs(neighbor.row - destRow) + Math.abs(neighbor.col - destCol),
+          f: Infinity,
+          parent: null
+        }
+        allNodes.set(neighborStateKey, neighborNode)
+      }
+
+      if (tentativeG < neighborNode.g) {
+        neighborNode.g = tentativeG
+        neighborNode.f = neighborNode.g + neighborNode.h
+        neighborNode.parent = current
+        
+        if (!openSet.some(n => n.key === neighborStateKey)) {
+          openSet.push(neighborNode)
+          if (neighborCellKey !== scenario.robotNode && neighborCellKey !== scenario.destinationNode) {
+            visitedNodesInOrder.push({ key: neighborCellKey, type: 'open' })
+          }
+        }
+      }
+    }
+  }
+
+  return { visitedNodesInOrder, shortestPath: [] }
+}
