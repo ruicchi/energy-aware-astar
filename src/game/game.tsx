@@ -6,7 +6,7 @@ import {
   useGridMouseClicks,
   MemoizedCell,
   FloatingMenu,
-  runAStar,
+  runAStarManhattan,
 } from '../index';
 
 const GameGrid = ({ cellSize = 28 }) => {
@@ -53,7 +53,7 @@ const GameGrid = ({ cellSize = 28 }) => {
       });
 
     // 2. Run calculation
-    const { visitedNodesInOrder, shortestPath } = runAStar(
+    const { visitedNodesInOrder, shortestPath } = runAStarManhattan(
       rows,
       cols,
       robotNode,
