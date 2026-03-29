@@ -30,3 +30,9 @@ The project uses standard `npm` scripts defined in `package.json`:
 *   **State & Performance:** The grid visualization (`GameGrid`) calculates cell dimensions based on the viewport. To maintain performance during pathfinding animations, the app avoids React state updates for every node step. Instead, it uses direct DOM manipulation (`classList.add`, `classList.remove`) to apply CSS classes (`node-visited`, `node-open`, `node-shortest-path`) with `setTimeout` for staggered animation.
 *   **Interactivity:** Mouse interactions (click and drag to place walls) are managed by custom hooks (`useGridMouseClicks`), separating the interaction logic from the visual rendering.
 *   **Algorithm Implementations:** Algorithms in `src/algorithms` are expected to return an object containing `visitedNodesInOrder` (for animating the search process) and `shortestPath` (for animating the final route).
+
+## Additional Coding Preferences
+
+*   **Do NOT use semicolons for any Javascript/Typescript.**
+*   **Keep project dependencies minimal.**
+*   **Use relative imports and NOT a path alias.**
