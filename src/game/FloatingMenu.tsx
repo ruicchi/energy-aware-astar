@@ -7,9 +7,11 @@ type FloatingMenuProps = {
   onClearWalls: () => void;
   onVisualizeAStar: () => void;
   onReset:() => void;
+  onSelectDirt?: () => void;
+  onSelectWater?: () => void;
 };
 
-export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onReset }: FloatingMenuProps) => {
+export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onReset, onSelectDirt, onSelectWater }: FloatingMenuProps) => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   
@@ -117,6 +119,26 @@ export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onReset }: Floati
             onClick={onVisualizeAStar}
           >
             Run A* Manhattan
+          </Button>
+
+          <Button 
+            variant="contained" 
+            color="info" 
+            fullWidth
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onSelectDirt}
+          >
+            Dirt
+          </Button>
+
+          <Button 
+            variant="contained" 
+            color="secondary" 
+            fullWidth
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onSelectWater}
+          >
+            Water
           </Button>
           
           {/* More Button should be placed here */}
