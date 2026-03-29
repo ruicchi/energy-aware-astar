@@ -7,6 +7,7 @@ import {
   MemoizedCell,
   FloatingMenu,
   runAStarManhattan,
+  runAStarEnergyAware,
 } from '../index';
 
 const GameGrid = ({ cellSize = 28 }) => {
@@ -40,27 +41,20 @@ const GameGrid = ({ cellSize = 28 }) => {
   //* Keep track of timeouts so we can cancel them if needed
   const animationTimeouts = useRef<number[]>([]);
 
-  const visualizeAStar = () => {
-    // 1. Clear any previous animations
+  const clearAnimations = () => {
     animationTimeouts.current.forEach(clearTimeout);
     animationTimeouts.current = [];
 
-    // Clear previous visual classes from the DOM
     document
       .querySelectorAll('.node-visited, .node-open, .node-shortest-path')
       .forEach((el) => {
         el.classList.remove('node-visited', 'node-open', 'node-shortest-path');
       });
+  };
 
-    // 2. Run calculation
-    const { visitedNodesInOrder, shortestPath } = runAStarManhattan(
-      rows,
-      cols,
-      robotNode,
-      destinationNode,
-      wallNode,
-    );
+  type VisitedNode = { key: string; type: 'open' | 'closed' };
 
+  const animateResult = (visitedNodesInOrder: VisitedNode[], shortestPath: string[]) => {
     // 3. Animate Visited/Open Nodes
     for (let i = 0; i < visitedNodesInOrder.length; i++) {
       const timeout = setTimeout(() => {
@@ -100,18 +94,42 @@ const GameGrid = ({ cellSize = 28 }) => {
     }
   };
 
+  const visualizeAStar = () => {
+    clearAnimations();
+    const { visitedNodesInOrder, shortestPath } = runAStarManhattan(
+      rows,
+      cols,
+      robotNode,
+      destinationNode,
+      wallNode,
+    );
+    animateResult(visitedNodesInOrder, shortestPath);
+  };
+
+  const visualizeEnergyAwareAStar = () => {
+    clearAnimations();
+
+    // Create a mock scenario since we don't have full terrain/elevation UI yet
+    const scenario = {
+      rows,
+      cols,
+      robotNode,
+      destinationNode,
+      wallNodes: wallNode,
+      terrainFactors: new Map<string, number>(),
+      elevations: new Map<string, number>(),
+      climbingFactor: 1.5,
+      turnPenalty: 2.0,
+    };
+
+    const { visitedNodesInOrder, shortestPath } = runAStarEnergyAware(scenario);
+    animateResult(visitedNodesInOrder, shortestPath);
+  };
+
   const handleReset = () => {
     // 1. Increment run ID to instantly kill any currently running async animations
     currentRunId.current += 1;
-
-    // 2. Wipe all visual path and visited node classes from the DOM
-    document
-      .querySelectorAll('.node-visited, .node-open, .node-shortest-path')
-      .forEach((el) => {
-        el.classList.remove('node-visited', 'node-open', 'node-shortest-path');
-      });
-
-    // 3. Use your existing hook function to clear the walls state
+    clearAnimations();
     clearWalls();
   };
 
@@ -141,6 +159,7 @@ const GameGrid = ({ cellSize = 28 }) => {
       <FloatingMenu
         onClearWalls={clearWalls}
         onVisualizeAStar={visualizeAStar}
+        onVisualizeEnergyAwareAStar={visualizeEnergyAwareAStar}
         onReset={handleReset}
       />
 
