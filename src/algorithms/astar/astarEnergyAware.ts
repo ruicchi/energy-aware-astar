@@ -77,8 +77,8 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     col: startCol,
     heading: 'NONE',
     g: 0,
-    //h: Math.sqrt((startRow * destRow) + (startCol - destCol)),
-    h: Math.abs(startRow - destRow) + Math.abs(startCol - destCol),
+    // Euclidean heuristic
+    h: Math.sqrt(Math.pow(startRow - destRow, 2) + Math.pow(startCol - destCol, 2)),
     f: 0,
     parent: null
   }
@@ -91,7 +91,6 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     const current = openSet.shift()!
 
     if (current.row === destRow && current.col === destCol) {
-       // Path reconstruction
        const shortestPath: string[] = []
        let temp: EnergyNode | null = current
        while (temp) {
@@ -103,29 +102,44 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
 
     closedSet.add(current.key)
     
-    // Visualization: only add unique cell keys
     const cellKey = `${current.row}-${current.col}`
     if (cellKey !== scenario.robotNode && cellKey !== scenario.destinationNode) {
        visitedNodesInOrder.push({ key: cellKey, type: 'closed' })
     }
 
     const neighbors = [
-      { row: current.row - 1, col: current.col, heading: 'UP' as Heading },
-      { row: current.row + 1, col: current.col, heading: 'DOWN' as Heading },
-      { row: current.row, col: current.col - 1, heading: 'LEFT' as Heading },
-      { row: current.row, col: current.col + 1, heading: 'RIGHT' as Heading },
+      // Cardinal
+      { row: current.row - 1, col: current.col, heading: 'UP' as Heading, dr: -1, dc: 0 },
+      { row: current.row + 1, col: current.col, heading: 'DOWN' as Heading, dr: 1, dc: 0 },
+      { row: current.row, col: current.col - 1, heading: 'LEFT' as Heading, dr: 0, dc: -1 },
+      { row: current.row, col: current.col + 1, heading: 'RIGHT' as Heading, dr: 0, dc: 1 },
+      // Diagonal
+      { row: current.row - 1, col: current.col - 1, heading: 'UP_LEFT' as Heading, dr: -1, dc: -1 },
+      { row: current.row - 1, col: current.col + 1, heading: 'UP_RIGHT' as Heading, dr: -1, dc: 1 },
+      { row: current.row + 1, col: current.col - 1, heading: 'DOWN_LEFT' as Heading, dr: 1, dc: -1 },
+      { row: current.row + 1, col: current.col + 1, heading: 'DOWN_RIGHT' as Heading, dr: 1, dc: 1 },
     ]
 
     for (const neighbor of neighbors) {
       const neighborCellKey = `${neighbor.row}-${neighbor.col}`
       const neighborStateKey = `${neighborCellKey}-${neighbor.heading}`
 
+      // Boundary and wall checks
       if (
         neighbor.row < 0 || neighbor.row >= scenario.rows ||
         neighbor.col < 0 || neighbor.col >= scenario.cols ||
         scenario.wallNodes.has(neighborCellKey) ||
         closedSet.has(neighborStateKey)
       ) continue
+
+      // Strict Corner-Cutting Prevention
+      if (neighbor.heading.includes('_')) {
+        const cardinal1 = `${current.row + neighbor.dr}-${current.col}`
+        const cardinal2 = `${current.row}-${current.col + neighbor.dc}`
+        if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) {
+          continue
+        }
+      }
 
       const cost = getEnergyCost(current, neighbor, scenario)
       const tentativeG = current.g + cost
@@ -138,8 +152,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
           col: neighbor.col,
           heading: neighbor.heading,
           g: Infinity,
-          // Math.sqrt((neighbor.row * destRow) + (neighbor.col - destCol)),
-          h: Math.abs(neighbor.row - destRow) + Math.abs(neighbor.col - destCol),
+          h: Math.sqrt(Math.pow(neighbor.row - destRow, 2) + Math.pow(neighbor.col - destCol, 2)),
           f: Infinity,
           parent: null
         }
