@@ -1,4 +1,4 @@
-export type Heading = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'NONE'
+export type Heading = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'UP_LEFT' | 'UP_RIGHT' | 'DOWN_LEFT' | 'DOWN_RIGHT' | 'NONE'
 
 export type EnergyNode = {
   key: string // "row-col-heading"
@@ -31,6 +31,10 @@ export const getTurnCost = (current: Heading, target: Heading, penalty: number):
     'DOWN': 'UP',
     'LEFT': 'RIGHT',
     'RIGHT': 'LEFT',
+    'UP_LEFT': 'DOWN_RIGHT',
+    'UP_RIGHT': 'DOWN_LEFT',
+    'DOWN_LEFT': 'UP_RIGHT',
+    'DOWN_RIGHT': 'UP_LEFT',
     'NONE': 'NONE'
   }
   
@@ -85,7 +89,6 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     const current = openSet.shift()!
 
     if (current.row === destRow && current.col === destCol) {
-       // Path reconstruction
        const shortestPath: string[] = []
        let temp: EnergyNode | null = current
        while (temp) {
@@ -97,7 +100,6 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
 
     closedSet.add(current.key)
     
-    // Visualization: only add unique cell keys
     const cellKey = `${current.row}-${current.col}`
     if (cellKey !== scenario.robotNode && cellKey !== scenario.destinationNode) {
        visitedNodesInOrder.push({ key: cellKey, type: 'closed' })
