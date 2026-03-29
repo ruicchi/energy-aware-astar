@@ -54,7 +54,11 @@ export const getEnergyCost = (
   
   const turnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty)
   
-  return (1 + terrainFactor) + climbingCost + turnCost
+  // Diagonal distance factor (1.0 cardinal, 1.414 diagonal)
+  const isDiagonal = target.heading.includes('_')
+  const stepDistance = isDiagonal ? 1.414 : 1.0
+  
+  return (stepDistance * (1 + terrainFactor)) + climbingCost + turnCost
 }
 
 export const runAStarEnergyAware = (scenario: Scenario) => {
