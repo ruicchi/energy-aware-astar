@@ -3,16 +3,25 @@ import { Paper, Typography, Button, Box, IconButton, Collapse } from '@mui/mater
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
+import type { BrushMode } from '../hooks/useGridMouseClicks';
+
 type FloatingMenuProps = {
   onClearWalls: () => void;
   onVisualizeAStar: () => void;
   onVisualizeEnergyAwareAStar: () => void;
-  onReset:() => void;
-  onSelectDirt?: () => void;
-  onSelectWater?: () => void;
+  onReset: () => void;
+  activeBrush: BrushMode;
+  onSelectBrush: (brush: BrushMode) => void;
 };
 
-export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onVisualizeEnergyAwareAStar, onReset, onSelectDirt, onSelectWater }: FloatingMenuProps) => {
+export const FloatingMenu = ({
+  onClearWalls,
+  onVisualizeAStar,
+  onVisualizeEnergyAwareAStar,
+  onReset,
+  activeBrush,
+  onSelectBrush,
+}: FloatingMenuProps) => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
 
@@ -135,29 +144,47 @@ export const FloatingMenu = ({ onClearWalls, onVisualizeAStar, onVisualizeEnergy
 
           <Box sx={{ mt: 1, borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
             <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
-              Terrain Types
+              Brushes
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
               <Button 
-                variant="outlined" 
+                variant={activeBrush === 'wall' ? "contained" : "outlined"} 
                 color="info" 
                 size="small"
-                fullWidth
                 onPointerDown={(e) => e.stopPropagation()}
-                onClick={onSelectDirt}
+                onClick={() => onSelectBrush('wall')}
+              >
+                Wall
+              </Button>
+
+              <Button 
+                variant={activeBrush === 'dirt' ? "contained" : "outlined"} 
+                color="warning" 
+                size="small"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => onSelectBrush('dirt')}
               >
                 Dirt
               </Button>
 
               <Button 
-                variant="outlined" 
-                color="secondary" 
+                variant={activeBrush === 'water' ? "contained" : "outlined"} 
+                color="primary" 
                 size="small"
-                fullWidth
                 onPointerDown={(e) => e.stopPropagation()}
-                onClick={onSelectWater}
+                onClick={() => onSelectBrush('water')}
               >
                 Water
+              </Button>
+
+              <Button 
+                variant={activeBrush === 'elevation' ? "contained" : "outlined"} 
+                color="success" 
+                size="small"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => onSelectBrush('elevation')}
+              >
+                Elevation
               </Button>
             </Box>
           </Box>

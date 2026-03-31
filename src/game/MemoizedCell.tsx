@@ -10,6 +10,8 @@ type MemoizedCellProps = {
   isWall: boolean;
   isRobot: boolean;
   isDestination: boolean;
+  terrainFactor: number;
+  elevation: number;
   onMouseDown: (key: string) => void;
   onMouseEnter: (key: string) => void;
 };
@@ -24,6 +26,8 @@ export const MemoizedCell = memo(
     isWall,
     isRobot,
     isDestination,
+    terrainFactor,
+    elevation,
     onMouseDown,
     onMouseEnter,
   }: MemoizedCellProps) => {
@@ -33,7 +37,17 @@ export const MemoizedCell = memo(
       bgColor = '#4caf50'; //* Green for Robot
     else if (isDestination)
       bgColor = '#f44336'; //* Red for Destination
-    else if (isWall) bgColor = '#1a88e2'; //* Blue for walls/active cells
+    else if (isWall) 
+      bgColor = '#1a88e2'; //* Blue for walls/active cells
+    else if (terrainFactor === 0.5) 
+      bgColor = '#d2b48c'; //* Dirt (Tan)
+    else if (terrainFactor === 2.0) 
+      bgColor = '#00ffff'; //* Water (Cyan)
+    else if (elevation > 0) {
+      //* Visual feedback for elevation (darker green for higher)
+      const brightness = Math.max(0, 255 - elevation * 20);
+      bgColor = `rgb(0, ${brightness}, 0)`;
+    }
 
     return (
       <Box
@@ -50,8 +64,15 @@ export const MemoizedCell = memo(
           borderLeft: col === 0 ? '1px solid #b8b8b8' : 'none',
           backgroundColor: bgColor,
           cursor: 'pointer',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          fontSize: '8px',
+          color: 'white',
         }}
-      />
+      >
+        {elevation > 0 && !isRobot && !isDestination && !isWall && terrainFactor === 0 && elevation}
+      </Box>
     );
   },
   (prevProps, nextProps) => {
@@ -60,6 +81,8 @@ export const MemoizedCell = memo(
       prevProps.isWall === nextProps.isWall &&
       prevProps.isRobot === nextProps.isRobot &&
       prevProps.isDestination === nextProps.isDestination &&
+      prevProps.terrainFactor === nextProps.terrainFactor &&
+      prevProps.elevation === nextProps.elevation &&
       prevProps.cellSize === nextProps.cellSize
     );
   },

@@ -27,8 +27,12 @@ const GameGrid = ({ cellSize = 28 }) => {
   //Note: we calculate defaults, and pass them into the hook
   const {
     wallNode,
+    terrainFactors,
+    elevations,
     robotNode,
     destinationNode,
+    activeBrush,
+    setActiveBrush,
     handleMouseDown,
     handleMouseEnter,
     handleMouseUp,
@@ -118,15 +122,14 @@ const GameGrid = ({ cellSize = 28 }) => {
   const visualizeEnergyAwareAStar = () => {
     clearAnimations();
 
-    // Create a mock scenario since we don't have full terrain/elevation UI yet
     const scenario = {
       rows,
       cols,
       robotNode,
       destinationNode,
       wallNodes: wallNode,
-      terrainFactors: new Map<string, number>(),
-      elevations: new Map<string, number>(),
+      terrainFactors: terrainFactors,
+      elevations: elevations,
       climbingFactor: 1.5,
       turnPenalty: 2.0,
     };
@@ -170,6 +173,8 @@ const GameGrid = ({ cellSize = 28 }) => {
         onVisualizeAStar={visualizeAStar}
         onVisualizeEnergyAwareAStar={visualizeEnergyAwareAStar}
         onReset={handleReset}
+        activeBrush={activeBrush}
+        onSelectBrush={setActiveBrush}
       />
 
       {/* //* Render each cell into clickable Box cells */}
@@ -194,6 +199,8 @@ const GameGrid = ({ cellSize = 28 }) => {
               isWall={wallNode.has(cell.key)}
               isRobot={cell.key === robotNode}
               isDestination={cell.key === destinationNode}
+              terrainFactor={terrainFactors.get(cell.key) || 0}
+              elevation={elevations.get(cell.key) || 0}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
             />
