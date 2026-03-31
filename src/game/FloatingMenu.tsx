@@ -14,6 +14,7 @@ type FloatingMenuProps = {
   onSelectBrush: (brush: BrushMode) => void;
   elevationValue: number;
   onElevationChange: (val: number) => void;
+  pathMetrics: { distance: number; energy: number } | null;
 };
 
 export const FloatingMenu = ({
@@ -25,6 +26,7 @@ export const FloatingMenu = ({
   onSelectBrush,
   elevationValue,
   onElevationChange,
+  pathMetrics,
 }: FloatingMenuProps) => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
@@ -145,6 +147,21 @@ export const FloatingMenu = ({
           >
             Run Energy-Aware A*
           </Button>
+
+          {/* Metrics Display */}
+          {pathMetrics && (
+            <Box sx={{ mt: 2, p: 1, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
+              <Typography variant="body2" fontWeight="bold">
+                Results:
+              </Typography>
+              <Typography variant="caption" display="block">
+                Distance: {pathMetrics.distance.toFixed(2)} units
+              </Typography>
+              <Typography variant="caption" display="block">
+                Energy: {pathMetrics.energy.toFixed(2)} units
+              </Typography>
+            </Box>
+          )}
 
           <Box sx={{ mt: 1, borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
             <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>

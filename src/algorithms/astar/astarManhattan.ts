@@ -85,7 +85,12 @@ export const runAStarManhattan = (
 
     if (current.key === destinationNode) {
       const shortestPath = reconstructPath(current);
-      return { visitedNodesInOrder, shortestPath };
+      return { 
+        visitedNodesInOrder, 
+        shortestPath,
+        totalEnergy: current.g, // Energy is 1 per step
+        totalDistance: current.g 
+      };
     }
 
     closedSet.add(current.key);

@@ -13,6 +13,7 @@ import {
 const GameGrid = ({ cellSize = 28 }) => {
   const viewport = useViewport();
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
+  const [pathMetrics, setPathMetrics] = useState<{ distance: number; energy: number } | null>(null);
 
   //* Grid dimensions
   const cols = Math.floor(viewport.width / cellSize);
@@ -111,13 +112,14 @@ const GameGrid = ({ cellSize = 28 }) => {
 
   const visualizeAStar = () => {
     clearAnimations();
-    const { visitedNodesInOrder, shortestPath } = runAStarManhattan(
+    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } = runAStarManhattan(
       rows,
       cols,
       robotNode,
       destinationNode,
       wallNode,
     );
+    setPathMetrics({ distance: totalDistance, energy: totalEnergy });
     animateResult(visitedNodesInOrder, shortestPath, 'node-visited', 'node-open', 'node-shortest-path');
   };
 
@@ -136,7 +138,8 @@ const GameGrid = ({ cellSize = 28 }) => {
       turnPenalty: 2.0,
     };
 
-    const { visitedNodesInOrder, shortestPath } = runAStarEnergyAware(scenario);
+    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } = runAStarEnergyAware(scenario);
+    setPathMetrics({ distance: totalDistance, energy: totalEnergy });
     animateResult(visitedNodesInOrder, shortestPath, 'node-energy-visited', 'node-energy-open', 'node-energy-shortest-path');
   };
 
@@ -145,6 +148,7 @@ const GameGrid = ({ cellSize = 28 }) => {
     currentRunId.current += 1;
     clearAnimations();
     clearWalls();
+    setPathMetrics(null);
   };
 
   //* For caching grid from user inputs
@@ -179,6 +183,7 @@ const GameGrid = ({ cellSize = 28 }) => {
         onSelectBrush={setActiveBrush}
         elevationValue={elevationBrushValue}
         onElevationChange={setElevationBrushValue}
+        pathMetrics={pathMetrics}
       />
 
       {/* //* Render each cell into clickable Box cells */}
