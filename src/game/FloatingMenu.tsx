@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Paper, Typography, Button, Box, IconButton, Collapse } from '@mui/material';
+import { Paper, Typography, Button, Box, IconButton, Collapse, Slider } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
@@ -12,6 +12,8 @@ type FloatingMenuProps = {
   onReset: () => void;
   activeBrush: BrushMode;
   onSelectBrush: (brush: BrushMode) => void;
+  elevationValue: number;
+  onElevationChange: (val: number) => void;
 };
 
 export const FloatingMenu = ({
@@ -21,6 +23,8 @@ export const FloatingMenu = ({
   onReset,
   activeBrush,
   onSelectBrush,
+  elevationValue,
+  onElevationChange,
 }: FloatingMenuProps) => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
@@ -187,6 +191,25 @@ export const FloatingMenu = ({
                 Elevation
               </Button>
             </Box>
+
+            {/* Elevation Slider */}
+            {activeBrush === 'elevation' && (
+              <Box sx={{ px: 1, mt: 1 }}>
+                <Typography variant="caption" color="textSecondary">
+                  Brush Height: {elevationValue}
+                </Typography>
+                <Slider
+                  size="small"
+                  value={elevationValue}
+                  min={1}
+                  max={10}
+                  step={1}
+                  marks
+                  onChange={(_, value) => onElevationChange(value as number)}
+                  onPointerDown={(e) => e.stopPropagation()}
+                />
+              </Box>
+            )}
           </Box>
 
         </Box>

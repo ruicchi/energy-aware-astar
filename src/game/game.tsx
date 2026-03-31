@@ -1,6 +1,6 @@
 //# Builds the grid cell
 import Box from '@mui/material/Box';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   useViewport,
   useGridMouseClicks,
@@ -12,6 +12,7 @@ import {
 
 const GameGrid = ({ cellSize = 28 }) => {
   const viewport = useViewport();
+  const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
 
   //* Grid dimensions
   const cols = Math.floor(viewport.width / cellSize);
@@ -40,6 +41,7 @@ const GameGrid = ({ cellSize = 28 }) => {
   } = useGridMouseClicks(
     `${defaultRow}-${defaultRobotCol}`,
     `${defaultRow}-${defaultDestCol}`,
+    elevationBrushValue
   );
 
   //* Keep track of timeouts so we can cancel them if needed
@@ -175,6 +177,8 @@ const GameGrid = ({ cellSize = 28 }) => {
         onReset={handleReset}
         activeBrush={activeBrush}
         onSelectBrush={setActiveBrush}
+        elevationValue={elevationBrushValue}
+        onElevationChange={setElevationBrushValue}
       />
 
       {/* //* Render each cell into clickable Box cells */}

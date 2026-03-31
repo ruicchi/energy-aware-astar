@@ -7,6 +7,7 @@ export type BrushMode = 'wall' | 'dirt' | 'water' | 'elevation' | 'robot' | 'des
 export const useGridMouseClicks = (
   initialRobot: string,
   initialDest: string,
+  elevationBrushValue: number,
 ) => {
   //* Set is used for faster membership checking
   const [wallNode, setwallNode] = useState<Set<string>>(new Set());
@@ -21,6 +22,7 @@ export const useGridMouseClicks = (
   const drawValue = useRef<number | boolean | null>(null); //* Stores initial value of click to decide if drawing or erasing
   const dragMode = useRef<BrushMode>(null);
   const activeBrushRef = useRef<BrushMode>('wall');
+  const activeElevationValueRef = useRef<number>(elevationBrushValue);
 
   const wallNodeRef = useRef<Set<string>>(new Set());
   const terrainFactorsRef = useRef<Map<string, number>>(new Map());
@@ -31,6 +33,10 @@ export const useGridMouseClicks = (
   useEffect(() => {
     activeBrushRef.current = activeBrush;
   }, [activeBrush]);
+
+  useEffect(() => {
+    activeElevationValueRef.current = elevationBrushValue;
+  }, [elevationBrushValue]);
 
   useEffect(() => {
     wallNodeRef.current = new Set(wallNode);
@@ -104,8 +110,9 @@ export const useGridMouseClicks = (
       } else if (currentBrush === 'water') {
         drawValue.current = terrainFactorsRef.current.get(key) !== 2.0 ? 2.0 : 0;
       } else if (currentBrush === 'elevation') {
-        const current = elevationsRef.current.get(key) || 0;
-        drawValue.current = current + 1; // Always increment for now
+        const current = elevationsRef.current.get(key);
+        // Toggle logic: if cell is at target value, clear it. Else, set to target.
+        drawValue.current = current === activeElevationValueRef.current ? 0 : activeElevationValueRef.current;
       }
 
       updateCell(key, dragMode.current, drawValue.current);

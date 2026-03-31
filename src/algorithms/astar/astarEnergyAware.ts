@@ -121,7 +121,11 @@ export const getEnergyCost = (
   const targetElevation = scenario.elevations.get(targetKey) || 0
   
   const elevationDelta = targetElevation - currentElevation
-  const climbingCost = elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : 0
+  
+  // Uphill costs more (climbingFactor), Downhill saves energy (0.5 recovery factor)
+  const climbingCost = elevationDelta > 0 
+    ? elevationDelta * scenario.climbingFactor 
+    : elevationDelta * 0.5 
   
   const turnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty)
   
@@ -129,6 +133,7 @@ export const getEnergyCost = (
   const isDiagonal = target.heading.includes('_')
   const stepDistance = isDiagonal ? SQRT2 : 1.0
   
+  // Final cost: distance * terrain + climbing/recovery + turn
   return (stepDistance * (1 + terrainFactor)) + climbingCost + turnCost
 }
 
@@ -169,13 +174,24 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     
     if (current.row === destRow && current.col === destCol) {
        const shortestPath: string[] = []
+       let totalDistance = 0
        let temp: EnergyNode | null = current
+       
        while (temp) {
          shortestPath.unshift(`${temp.row}-${temp.col}`)
+         if (temp.parent) {
+           const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col
+           totalDistance += isDiagonal ? SQRT2 : 1.0
+         }
          temp = temp.parent
        }
-       // Unique keys for visualization
-       return { visitedNodesInOrder, shortestPath: Array.from(new Set(shortestPath)) }
+
+       return { 
+         visitedNodesInOrder, 
+         shortestPath: Array.from(new Set(shortestPath)),
+         totalEnergy: current.g,
+         totalDistance: totalDistance
+       }
     }
     
     if (cellKey !== scenario.robotNode && cellKey !== scenario.destinationNode) {
