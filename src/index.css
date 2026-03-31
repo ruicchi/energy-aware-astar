@@ -6,7 +6,6 @@ body,
 
 .node-open {
   animation-name: openAnimation;
-  animation-duration: .2s;
   animation-timing-function: ease-out;
   animation-delay: 0;
   animation-direction: alternate;
@@ -23,7 +22,6 @@ body,
 
 .node-visited {
   animation-name: visitedAnimation;
-  animation-duration: .2s;
   animation-timing-function: ease-out;
   animation-delay: 0;
   animation-direction: alternate;
@@ -67,7 +65,6 @@ body,
 /* Energy-Aware Specific Styles */
 .node-energy-open {
   animation-name: energyOpenAnimation;
-  animation-duration: .2s;
   animation-timing-function: ease-out;
   animation-delay: 0;
   animation-direction: alternate;
@@ -84,7 +81,6 @@ body,
 
 .node-energy-visited {
   animation-name: energyVisitedAnimation;
-  animation-duration: .2s;
   animation-timing-function: ease-out;
   animation-delay: 0;
   animation-direction: alternate;
