@@ -10,8 +10,12 @@ import {
   runAStarEnergyAware,
 } from '../index';
 
-const GameGrid = ({ cellSize = 28 }) => {
+const GameGrid = () => {
   const viewport = useViewport();
+
+  //* Dynamic cell size for mobile
+  const cellSize = viewport.width < 600 ? 20 : 28;
+
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
   const [pathMetrics, setPathMetrics] = useState<{ distance: number; energy: number } | null>(null);
 
@@ -169,6 +173,7 @@ const GameGrid = ({ cellSize = 28 }) => {
         overflow: 'hidden',
         userSelect: 'none',
         position: 'relative',
+        touchAction: 'none',
       }}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}

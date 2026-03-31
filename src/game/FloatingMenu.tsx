@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Paper, Typography, Button, Box, IconButton, Collapse, Slider } from '@mui/material';
+import { Paper, Typography, Button, Box, IconButton, Collapse, Slider, useMediaQuery, useTheme } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
@@ -28,6 +28,10 @@ export const FloatingMenu = ({
   onElevationChange,
   pathMetrics,
 }: FloatingMenuProps) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTiny = useMediaQuery('(max-width:400px)');
+
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
 
@@ -74,7 +78,7 @@ export const FloatingMenu = ({
         zIndex: 1000,
         backgroundColor: 'rgba(255, 255, 255, 0.4)', 
         borderRadius: 2,
-        width: 200,
+        width: isMobile ? (isTiny ? 160 : 180) : 200,
         cursor: isDragging ? 'grabbing' : 'grab',
         userSelect: 'none',
         overflow: 'hidden', 
@@ -167,7 +171,7 @@ export const FloatingMenu = ({
             <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
               Brushes
             </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: isTiny ? '1fr' : '1fr 1fr', gap: 1 }}>
               <Button 
                 variant={activeBrush === 'wall' ? "contained" : "outlined"} 
                 color="info" 
