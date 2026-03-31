@@ -23,6 +23,77 @@ export interface Scenario {
   turnPenalty: number
 }
 
+const SQRT2 = 1.414
+
+const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
+  { dr: -1, dc: 0, heading: 'UP' },
+  { dr: 1, dc: 0, heading: 'DOWN' },
+  { dr: 0, dc: -1, heading: 'LEFT' },
+  { dr: 0, dc: 1, heading: 'RIGHT' },
+  { dr: -1, dc: -1, heading: 'UP_LEFT' },
+  { dr: -1, dc: 1, heading: 'UP_RIGHT' },
+  { dr: 1, dc: -1, heading: 'DOWN_LEFT' },
+  { dr: 1, dc: 1, heading: 'DOWN_RIGHT' },
+]
+
+class MinHeap {
+  private heap: EnergyNode[] = []
+  
+  push(node: EnergyNode) {
+    this.heap.push(node)
+    this.bubbleUp()
+  }
+  
+  pop(): EnergyNode | undefined {
+    if (this.size() === 0) return undefined
+    const top = this.heap[0]
+    const bottom = this.heap.pop()!
+    if (this.size() > 0) {
+      this.heap[0] = bottom
+      this.bubbleDown()
+    }
+    return top
+  }
+  
+  size() {
+    return this.heap.length
+  }
+
+  private shouldSwap(childIndex: number, parentIndex: number): boolean {
+    const child = this.heap[childIndex]
+    const parent = this.heap[parentIndex]
+    if (child.f < parent.f) return true
+    if (child.f === parent.f) return child.h < parent.h
+    return false
+  }
+  
+  private bubbleUp() {
+    let index = this.heap.length - 1
+    while (index > 0) {
+      const parentIndex = Math.floor((index - 1) / 2)
+      if (!this.shouldSwap(index, parentIndex)) break
+      [this.heap[index], this.heap[parentIndex]] = [this.heap[parentIndex], this.heap[index]]
+      index = parentIndex
+    }
+  }
+  
+  private bubbleDown() {
+    let index = 0
+    while (true) {
+      let smallest = index
+      const left = 2 * index + 1
+      const right = 2 * index + 2
+      
+      if (left < this.heap.length && this.shouldSwap(left, smallest)) smallest = left
+      if (right < this.heap.length && this.shouldSwap(right, smallest)) smallest = right
+      
+      if (smallest === index) break
+      [this.heap[index], this.heap[smallest]] = [this.heap[smallest], this.heap[index]]
+      index = smallest
+    }
+  }
+}
+
 export const getTurnCost = (current: Heading, target: Heading, penalty: number): number => {
   if (current === 'NONE' || current === target) return 0
   
@@ -54,9 +125,9 @@ export const getEnergyCost = (
   
   const turnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty)
   
-  // Diagonal distance factor (1.0 cardinal, 1.414 diagonal)
+  // Diagonal distance factor (1.0 cardinal, SQRT2 diagonal)
   const isDiagonal = target.heading.includes('_')
-  const stepDistance = isDiagonal ? 1.414 : 1.0
+  const stepDistance = isDiagonal ? SQRT2 : 1.0
   
   return (stepDistance * (1 + terrainFactor)) + climbingCost + turnCost
 }
@@ -65,11 +136,13 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
   const [destRow, destCol] = scenario.destinationNode.split('-').map(Number)
   const [startRow, startCol] = scenario.robotNode.split('-').map(Number)
 
-  const openSet: EnergyNode[] = []
+  const openSet = new MinHeap()
   const allNodes = new Map<string, EnergyNode>()
   const closedSet = new Set<string>()
 
   const visitedNodesInOrder: { key: string; type: 'open' | 'closed' }[] = []
+  const openedCells = new Set<string>()
+  const closedCells = new Set<string>()
 
   const startNode: EnergyNode = {
     key: `${scenario.robotNode}-NONE`,
@@ -77,8 +150,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     col: startCol,
     heading: 'NONE',
     g: 0,
-    // Euclidean heuristic
-    h: Math.sqrt(Math.pow(startRow - destRow, 2) + Math.pow(startCol - destCol, 2)),
+    h: Math.hypot(startRow - destRow, startCol - destCol),
     f: 0,
     parent: null
   }
@@ -86,10 +158,15 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
   openSet.push(startNode)
   allNodes.set(startNode.key, startNode)
 
-  while (openSet.length > 0) {
-    openSet.sort((a, b) => a.f - b.f)
-    const current = openSet.shift()!
+  while (openSet.size() > 0) {
+    const current = openSet.pop()!
 
+    // If we've already closed this state (row-col-heading), skip it
+    if (closedSet.has(current.key)) continue
+    closedSet.add(current.key)
+
+    const cellKey = `${current.row}-${current.col}`
+    
     if (current.row === destRow && current.col === destCol) {
        const shortestPath: string[] = []
        let temp: EnergyNode | null = current
@@ -97,37 +174,28 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
          shortestPath.unshift(`${temp.row}-${temp.col}`)
          temp = temp.parent
        }
+       // Unique keys for visualization
        return { visitedNodesInOrder, shortestPath: Array.from(new Set(shortestPath)) }
     }
-
-    closedSet.add(current.key)
     
-    const cellKey = `${current.row}-${current.col}`
     if (cellKey !== scenario.robotNode && cellKey !== scenario.destinationNode) {
-       visitedNodesInOrder.push({ key: cellKey, type: 'closed' })
+       // Only record the first time a cell is closed for smoother animation
+       if (!closedCells.has(cellKey)) {
+         visitedNodesInOrder.push({ key: cellKey, type: 'closed' })
+         closedCells.add(cellKey)
+       }
     }
 
-    const neighbors = [
-      // Cardinal
-      { row: current.row - 1, col: current.col, heading: 'UP' as Heading, dr: -1, dc: 0 },
-      { row: current.row + 1, col: current.col, heading: 'DOWN' as Heading, dr: 1, dc: 0 },
-      { row: current.row, col: current.col - 1, heading: 'LEFT' as Heading, dr: 0, dc: -1 },
-      { row: current.row, col: current.col + 1, heading: 'RIGHT' as Heading, dr: 0, dc: 1 },
-      // Diagonal
-      { row: current.row - 1, col: current.col - 1, heading: 'UP_LEFT' as Heading, dr: -1, dc: -1 },
-      { row: current.row - 1, col: current.col + 1, heading: 'UP_RIGHT' as Heading, dr: -1, dc: 1 },
-      { row: current.row + 1, col: current.col - 1, heading: 'DOWN_LEFT' as Heading, dr: 1, dc: -1 },
-      { row: current.row + 1, col: current.col + 1, heading: 'DOWN_RIGHT' as Heading, dr: 1, dc: 1 },
-    ]
-
-    for (const neighbor of neighbors) {
-      const neighborCellKey = `${neighbor.row}-${neighbor.col}`
+    for (const neighbor of NEIGHBORS) {
+      const nr = current.row + neighbor.dr
+      const nc = current.col + neighbor.dc
+      const neighborCellKey = `${nr}-${nc}`
       const neighborStateKey = `${neighborCellKey}-${neighbor.heading}`
 
       // Boundary and wall checks
       if (
-        neighbor.row < 0 || neighbor.row >= scenario.rows ||
-        neighbor.col < 0 || neighbor.col >= scenario.cols ||
+        nr < 0 || nr >= scenario.rows ||
+        nc < 0 || nc >= scenario.cols ||
         scenario.wallNodes.has(neighborCellKey) ||
         closedSet.has(neighborStateKey)
       ) continue
@@ -141,33 +209,36 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
         }
       }
 
-      const cost = getEnergyCost(current, neighbor, scenario)
+      const cost = getEnergyCost(current, { row: nr, col: nc, heading: neighbor.heading }, scenario)
       const tentativeG = current.g + cost
       
       let neighborNode = allNodes.get(neighborStateKey)
-      if (!neighborNode) {
-        neighborNode = {
-          key: neighborStateKey,
-          row: neighbor.row,
-          col: neighbor.col,
-          heading: neighbor.heading,
-          g: Infinity,
-          h: Math.sqrt(Math.pow(neighbor.row - destRow, 2) + Math.pow(neighbor.col - destCol, 2)),
-          f: Infinity,
-          parent: null
+      if (!neighborNode || tentativeG < neighborNode.g) {
+        if (!neighborNode) {
+          neighborNode = {
+            key: neighborStateKey,
+            row: nr,
+            col: nc,
+            heading: neighbor.heading,
+            g: tentativeG,
+            h: Math.hypot(nr - destRow, nc - destCol),
+            f: tentativeG + Math.hypot(nr - destRow, nc - destCol),
+            parent: current
+          }
+        } else {
+          neighborNode.g = tentativeG
+          neighborNode.f = tentativeG + neighborNode.h
+          neighborNode.parent = current
         }
-        allNodes.set(neighborStateKey, neighborNode)
-      }
-
-      if (tentativeG < neighborNode.g) {
-        neighborNode.g = tentativeG
-        neighborNode.f = neighborNode.g + neighborNode.h
-        neighborNode.parent = current
         
-        if (!openSet.some(n => n.key === neighborStateKey)) {
-          openSet.push(neighborNode)
-          if (neighborCellKey !== scenario.robotNode && neighborCellKey !== scenario.destinationNode) {
+        allNodes.set(neighborStateKey, neighborNode)
+        openSet.push({ ...neighborNode })
+        
+        // Only record the first time a cell is opened for smoother animation
+        if (neighborCellKey !== scenario.robotNode && neighborCellKey !== scenario.destinationNode) {
+          if (!openedCells.has(neighborCellKey)) {
             visitedNodesInOrder.push({ key: neighborCellKey, type: 'open' })
+            openedCells.add(neighborCellKey)
           }
         }
       }
