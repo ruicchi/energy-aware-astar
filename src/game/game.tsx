@@ -19,6 +19,11 @@ const GameGrid = () => {
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
   const [pathMetrics, setPathMetrics] = useState<{ distance: number; energy: number } | null>(null);
 
+  const [isManhattanFinished, setIsManhattanFinished] = useState<boolean>(false);
+  const [isEnergyFinished, setIsEnergyFinished] = useState<boolean>(false);
+  const [showManhattanSearch, setShowManhattanSearch] = useState<boolean>(true);
+  const [showEnergySearch, setShowEnergySearch] = useState<boolean>(true);
+
   //* Grid dimensions
   const cols = Math.floor(viewport.width / cellSize);
   const rows = Math.floor(viewport.height / cellSize);
@@ -56,6 +61,11 @@ const GameGrid = () => {
     animationTimeouts.current.forEach(clearTimeout);
     animationTimeouts.current = [];
 
+    setIsManhattanFinished(false);
+    setIsEnergyFinished(false);
+    setShowManhattanSearch(true);
+    setShowEnergySearch(true);
+
     document
       .querySelectorAll('.node-visited, .node-open, .node-shortest-path, .node-energy-visited, .node-energy-open, .node-energy-shortest-path')
       .forEach((el) => {
@@ -74,7 +84,7 @@ const GameGrid = () => {
     visitedClass: string = 'node-visited',
     openClass: string = 'node-open',
     pathClass: string = 'node-shortest-path'
-  ) => {
+  ): number => {
     // 3. Animate Visited/Open Nodes
     for (let i = 0; i < visitedNodesInOrder.length; i++) {
       const timeout = setTimeout(() => {
@@ -89,7 +99,7 @@ const GameGrid = () => {
           }
         }
       }, 10 * i); // 10ms per node
-      animationTimeouts.current.push(timeout);
+      animationTimeouts.current.push(timeout as unknown as number);
     }
 
     // 4. Animate Shortest Path after visited nodes finish
@@ -110,8 +120,10 @@ const GameGrid = () => {
         },
         pathDelay + 30 * i,
       ); // 30ms per path node
-      animationTimeouts.current.push(timeout);
+      animationTimeouts.current.push(timeout as unknown as number);
     }
+
+    return pathDelay + (shortestPath.length * 30);
   };
 
   const visualizeAStar = () => {
@@ -121,10 +133,12 @@ const GameGrid = () => {
       cols,
       robotNode,
       destinationNode,
-      wallNode,
+      wallNode
     );
     setPathMetrics({ distance: totalDistance, energy: totalEnergy });
-    animateResult(visitedNodesInOrder, shortestPath, 'node-visited', 'node-open', 'node-shortest-path');
+    const duration = animateResult(visitedNodesInOrder, shortestPath, 'node-visited', 'node-open', 'node-shortest-path');
+    const t = setTimeout(() => setIsManhattanFinished(true), duration);
+    animationTimeouts.current.push(t as unknown as number);
   };
 
   const visualizeEnergyAwareAStar = () => {
@@ -144,7 +158,9 @@ const GameGrid = () => {
 
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } = runAStarEnergyAware(scenario);
     setPathMetrics({ distance: totalDistance, energy: totalEnergy });
-    animateResult(visitedNodesInOrder, shortestPath, 'node-energy-visited', 'node-energy-open', 'node-energy-shortest-path');
+    const duration = animateResult(visitedNodesInOrder, shortestPath, 'node-energy-visited', 'node-energy-open', 'node-energy-shortest-path');
+    const t = setTimeout(() => setIsEnergyFinished(true), duration);
+    animationTimeouts.current.push(t as unknown as number);
   };
 
   const handleReset = () => {
@@ -167,6 +183,10 @@ const GameGrid = () => {
   return (
     //* Builds the container
     <Box
+      className={`
+        ${!showManhattanSearch ? 'hide-manhattan-search' : ''}
+        ${!showEnergySearch ? 'hide-energy-search' : ''}
+      `}
       sx={{
         width: '100vw',
         height: '100vh',
@@ -189,6 +209,12 @@ const GameGrid = () => {
         elevationValue={elevationBrushValue}
         onElevationChange={setElevationBrushValue}
         pathMetrics={pathMetrics}
+        isManhattanFinished={isManhattanFinished}
+        isEnergyFinished={isEnergyFinished}
+        showManhattanSearch={showManhattanSearch}
+        showEnergySearch={showEnergySearch}
+        onToggleManhattanSearch={() => setShowManhattanSearch(!showManhattanSearch)}
+        onToggleEnergySearch={() => setShowEnergySearch(!showEnergySearch)}
       />
 
       {/* //* Render each cell into clickable Box cells */}

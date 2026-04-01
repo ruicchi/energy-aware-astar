@@ -120,3 +120,16 @@ body,
     background-color: rgb(138, 43, 226);
   }
 }
+
+/* Hide search maps toggles */
+.hide-manhattan-search .node-visited,
+.hide-manhattan-search .node-open {
+  animation: none !important;
+  background-color: unset !important;
+}
+
+.hide-energy-search .node-energy-visited,
+.hide-energy-search .node-energy-open {
+  animation: none !important;
+  background-color: unset !important;
+}

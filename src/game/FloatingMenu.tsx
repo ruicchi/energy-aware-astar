@@ -15,6 +15,12 @@ type FloatingMenuProps = {
   elevationValue: number;
   onElevationChange: (val: number) => void;
   pathMetrics: { distance: number; energy: number } | null;
+  isManhattanFinished: boolean;
+  isEnergyFinished: boolean;
+  showManhattanSearch: boolean;
+  showEnergySearch: boolean;
+  onToggleManhattanSearch: () => void;
+  onToggleEnergySearch: () => void;
 };
 
 export const FloatingMenu = ({
@@ -27,6 +33,12 @@ export const FloatingMenu = ({
   elevationValue,
   onElevationChange,
   pathMetrics,
+  isManhattanFinished,
+  isEnergyFinished,
+  showManhattanSearch,
+  showEnergySearch,
+  onToggleManhattanSearch,
+  onToggleEnergySearch,
 }: FloatingMenuProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -151,6 +163,34 @@ export const FloatingMenu = ({
           >
             Run Energy-Aware A*
           </Button>
+
+          {/* Search Map Toggles */}
+          {(isManhattanFinished || isEnergyFinished) && (
+            <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {isManhattanFinished && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={onToggleManhattanSearch}
+                >
+                  {showManhattanSearch ? 'Hide A* Manhattan Search' : 'Show A* Manhattan Search'}
+                </Button>
+              )}
+              {isEnergyFinished && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={onToggleEnergySearch}
+                >
+                  {showEnergySearch ? 'Hide Energy Search Map' : 'Show Energy Search Map'}
+                </Button>
+              )}
+            </Box>
+          )}
 
           {/* Metrics Display */}
           {pathMetrics && (
