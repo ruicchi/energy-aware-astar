@@ -118,7 +118,7 @@ export const FloatingMenu = ({
             onPointerDown={(e) => e.stopPropagation()} // don't drag when clicking button
             onClick={onClearWalls}
           >
-            Clear Walls
+            Clear Tiles
           </Button>
 
           <Button 

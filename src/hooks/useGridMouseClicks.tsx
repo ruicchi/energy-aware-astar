@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { clearWalls } from '../index';
 
 //* The different dragging actions possible
-export type BrushMode = 'wall' | 'dirt' | 'water' | 'elevation' | 'robot' | 'destination' | null;
+import type { BrushMode } from '.../index'
 
 export const useGridMouseClicks = (
   initialRobot: string,
