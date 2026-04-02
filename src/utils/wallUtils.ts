@@ -32,6 +32,7 @@ export const toggleWallState = (
   }
 };
 
+//* function to clear walls
 export const clearWalls = (wallNodeRef, modifiedCellsRef, setwallNode) => {
   wallNodeRef.current.forEach((key) => {
     const element = document.getElementById(`cell-${key}`);
