@@ -50,7 +50,7 @@ export const useGridMouseClicks = (
 
   const handleClearWalls = useCallback(() => {
     clearWalls(wallNodeRef, modifiedCellsRef, setwallNode);
-    // Also clear terrain and elevation for a full reset
+    //* Also clear terrain and elevation for a full reset
     terrainFactorsRef.current.clear();
     elevationsRef.current.clear();
     setTerrainFactors(new Map());
