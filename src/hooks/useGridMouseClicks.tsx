@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { clearWalls } from '../index';
 
 //* The different dragging actions possible
-import type { BrushMode } from '.../index'
+import type { BrushMode } from '../index'
 
 export const useGridMouseClicks = (
   initialRobot: string,
@@ -49,7 +49,7 @@ export const useGridMouseClicks = (
   useEffect(() => {
     elevationsRef.current = new Map(elevations);
   }, [elevations]);
-  
+
   const handleClearWalls = useCallback(() => {
     clearWalls(wallNodeRef, modifiedCellsRef, setwallNode);
     // Also clear terrain and elevation for a full reset
@@ -72,7 +72,7 @@ export const useGridMouseClicks = (
     } else if (mode === 'dirt' || mode === 'water') {
       if (value === 0) terrainFactorsRef.current.delete(key);
       else terrainFactorsRef.current.set(key, value as number);
-      
+
       // Visual feedback for terrain
       if (value === 0.5) element.style.backgroundColor = '#d2b48c'; // Tan for dirt
       else if (value === 2.0) element.style.backgroundColor = '#00ffff'; // Cyan for water
@@ -101,7 +101,7 @@ export const useGridMouseClicks = (
 
       const currentBrush = activeBrushRef.current;
       dragMode.current = currentBrush;
-      
+
       // Determine if we are adding or removing based on the first click
       if (currentBrush === 'wall') {
         drawValue.current = !wallNodeRef.current.has(key);
