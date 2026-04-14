@@ -3,7 +3,7 @@ import { Paper, Typography, Button, Box, IconButton, Collapse, Slider, useMediaQ
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
-import type { BrushMode } from '../hooks/useGridMouseClicks';
+import type { BrushMode } from '../index.ts';
 
 type FloatingMenuProps = {
   onClearWalls: () => void;
@@ -88,19 +88,19 @@ export const FloatingMenu = ({
         top: position.y,
         left: position.x,
         zIndex: 1000,
-        backgroundColor: 'rgba(255, 255, 255, 0.4)', 
+        backgroundColor: 'rgba(255, 255, 255, 0.4)',
         borderRadius: 2,
         width: isMobile ? (isTiny ? 160 : 180) : 200,
         cursor: isDragging ? 'grabbing' : 'grab',
         userSelect: 'none',
-        overflow: 'hidden', 
+        overflow: 'hidden',
       }}
     >
       {/* Header bar that always shows */}
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           p: 1.5,
           borderBottom: isExpanded ? '1px solid rgba(0, 0, 0, 0.1)' : 'none'
@@ -111,8 +111,8 @@ export const FloatingMenu = ({
         </Typography>
 
         {/* Toggle Button */}
-        <IconButton 
-          size="small" 
+        <IconButton
+          size="small"
           onClick={() => setIsExpanded(!isExpanded)}
           onPointerDown={(e) => e.stopPropagation()} // don't drag when clicking toggle
         >
@@ -123,9 +123,9 @@ export const FloatingMenu = ({
       {/* The drop-down content */}
       <Collapse in={isExpanded}>
         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Button 
-            variant="contained" 
-            color="error" 
+          <Button
+            variant="contained"
+            color="error"
             fullWidth
             onPointerDown={(e) => e.stopPropagation()} // don't drag when clicking button
             onClick={onClearWalls}
@@ -133,19 +133,19 @@ export const FloatingMenu = ({
             Clear Tiles
           </Button>
 
-          <Button 
-            variant="contained" 
-            color="warning" 
+          <Button
+            variant="contained"
+            color="warning"
             fullWidth
-            onPointerDown={(e) => e.stopPropagation()} 
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={onReset}
           >
             Reset Grid
           </Button>
 
-          <Button 
-            variant="contained" 
-            color="success" 
+          <Button
+            variant="contained"
+            color="success"
             fullWidth
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onVisualizeAStar}
@@ -153,9 +153,9 @@ export const FloatingMenu = ({
             Run A* Manhattan
           </Button>
 
-          <Button 
-            variant="contained" 
-            color="primary" 
+          <Button
+            variant="contained"
+            color="primary"
             fullWidth
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onVisualizeEnergyAwareAStar}
@@ -212,9 +212,9 @@ export const FloatingMenu = ({
               Brushes
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: isTiny ? '1fr' : '1fr 1fr', gap: 1 }}>
-              <Button 
-                variant={activeBrush === 'wall' ? "contained" : "outlined"} 
-                color="info" 
+              <Button
+                variant={activeBrush === 'wall' ? "contained" : "outlined"}
+                color="info"
                 size="small"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => onSelectBrush('wall')}
@@ -222,9 +222,9 @@ export const FloatingMenu = ({
                 Wall
               </Button>
 
-              <Button 
-                variant={activeBrush === 'dirt' ? "contained" : "outlined"} 
-                color="warning" 
+              <Button
+                variant={activeBrush === 'dirt' ? "contained" : "outlined"}
+                color="warning"
                 size="small"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => onSelectBrush('dirt')}
@@ -232,9 +232,9 @@ export const FloatingMenu = ({
                 Dirt
               </Button>
 
-              <Button 
-                variant={activeBrush === 'water' ? "contained" : "outlined"} 
-                color="primary" 
+              <Button
+                variant={activeBrush === 'water' ? "contained" : "outlined"}
+                color="primary"
                 size="small"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => onSelectBrush('water')}
@@ -242,9 +242,9 @@ export const FloatingMenu = ({
                 Water
               </Button>
 
-              <Button 
-                variant={activeBrush === 'elevation' ? "contained" : "outlined"} 
-                color="success" 
+              <Button
+                variant={activeBrush === 'elevation' ? "contained" : "outlined"}
+                color="success"
                 size="small"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => onSelectBrush('elevation')}
