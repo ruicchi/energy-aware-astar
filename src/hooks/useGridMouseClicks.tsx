@@ -13,13 +13,13 @@ export const useGridMouseClicks = (
   const [elevations, setElevations] = useState<Map<string, number>>(new Map());
   const [robotNode, setRobotNode] = useState(initialRobot);
   const [destinationNode, setDestinationNode] = useState(initialDest);
-  const [activeBrush, setActiveBrush] = useState<BrushMode>('wall');
+  const [activeBrush, setActiveBrush] = useState<BrushMode>("wall");
 
   //* useRef is used to not trigger re-render on drawing | used for mouse buttons
   const isDrawing = useRef(false);
   const drawValue = useRef<number | boolean | null>(null); //* Stores initial value of click to decide if drawing or erasing
   const dragMode = useRef<BrushMode>(null);
-  const activeBrushRef = useRef<BrushMode>('wall');
+  const activeBrushRef = useRef<BrushMode>("wall");
   const activeElevationValueRef = useRef<number>(elevationBrushValue);
 
   const wallNodeRef = useRef<Set<string>>(new Set());
@@ -63,19 +63,21 @@ export const useGridMouseClicks = (
 
     modifiedCellsRef.current.add(key);
 
-    if (mode === 'wall') {
+    if (mode === "wall") {
       if (value) wallNodeRef.current.add(key);
       else wallNodeRef.current.delete(key);
-      element.style.backgroundColor = value ? '#1a88e2' : '';
-    } else if (mode === 'dirt' || mode === 'water') {
+      element.style.backgroundColor = value ? "#1a88e2" : "";
+    } else if (mode === "dirt" || mode === "water") {
       if (value === 0) terrainFactorsRef.current.delete(key);
       else terrainFactorsRef.current.set(key, value as number);
 
       // Visual feedback for terrain
-      if (value === 0.5) element.style.backgroundColor = '#d2b48c'; // Tan for dirt
-      else if (value === 2.0) element.style.backgroundColor = '#00ffff'; // Cyan for water
-      else element.style.backgroundColor = '';
-    } else if (mode === 'elevation') {
+      if (value === 0.5)
+        element.style.backgroundColor = "#d2b48c"; // Tan for dirt
+      else if (value === 2.0)
+        element.style.backgroundColor = "#00ffff"; // Cyan for water
+      else element.style.backgroundColor = "";
+    } else if (mode === "elevation") {
       const val = value as number;
       elevationsRef.current.set(key, val);
       // Visual feedback for elevation (darker green for higher)
@@ -89,11 +91,11 @@ export const useGridMouseClicks = (
       isDrawing.current = true;
 
       if (key === robotNode) {
-        dragMode.current = 'robot';
+        dragMode.current = "robot";
         return;
       }
       if (key === destinationNode) {
-        dragMode.current = 'destination';
+        dragMode.current = "destination";
         return;
       }
 
@@ -101,16 +103,17 @@ export const useGridMouseClicks = (
       dragMode.current = currentBrush;
 
       // Determine if we are adding or removing based on the first click
-      if (currentBrush === 'wall') {
+      if (currentBrush === "wall") {
         drawValue.current = !wallNodeRef.current.has(key);
-      } else if (currentBrush === 'dirt') {
+      } else if (currentBrush === "dirt") {
         drawValue.current = terrainFactorsRef.current.get(key) !== 0.5 ? 0.5 : 0;
-      } else if (currentBrush === 'water') {
+      } else if (currentBrush === "water") {
         drawValue.current = terrainFactorsRef.current.get(key) !== 2.0 ? 2.0 : 0;
-      } else if (currentBrush === 'elevation') {
+      } else if (currentBrush === "elevation") {
         const current = elevationsRef.current.get(key);
         // Toggle logic: if cell is at target value, clear it. Else, set to target.
-        drawValue.current = current === activeElevationValueRef.current ? 0 : activeElevationValueRef.current;
+        drawValue.current =
+          current === activeElevationValueRef.current ? 0 : activeElevationValueRef.current;
       }
 
       updateCell(key, dragMode.current, drawValue.current);
@@ -123,22 +126,22 @@ export const useGridMouseClicks = (
       if (!isDrawing.current) return;
 
       switch (dragMode.current) {
-        case 'robot':
+        case "robot":
           if (key !== destinationNode && !wallNodeRef.current.has(key)) {
             setRobotNode(key);
           }
           break;
 
-        case 'destination':
+        case "destination":
           if (key !== robotNode && !wallNodeRef.current.has(key)) {
             setDestinationNode(key);
           }
           break;
 
-        case 'wall':
-        case 'dirt':
-        case 'water':
-        case 'elevation':
+        case "wall":
+        case "dirt":
+        case "water":
+        case "elevation":
           if (key === robotNode || key === destinationNode) break;
           updateCell(key, dragMode.current, drawValue.current);
           break;
@@ -149,11 +152,11 @@ export const useGridMouseClicks = (
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing.current) {
-      if (dragMode.current === 'wall') {
+      if (dragMode.current === "wall") {
         setwallNode(new Set(wallNodeRef.current));
-      } else if (dragMode.current === 'dirt' || dragMode.current === 'water') {
+      } else if (dragMode.current === "dirt" || dragMode.current === "water") {
         setTerrainFactors(new Map(terrainFactorsRef.current));
-      } else if (dragMode.current === 'elevation') {
+      } else if (dragMode.current === "elevation") {
         setElevations(new Map(elevationsRef.current));
       }
 
@@ -161,7 +164,7 @@ export const useGridMouseClicks = (
       modifiedCellsRef.current.forEach((key) => {
         const element = document.getElementById(`cell-${key}`);
         if (element) {
-          element.style.backgroundColor = '';
+          element.style.backgroundColor = "";
         }
       });
       modifiedCellsRef.current.clear();
