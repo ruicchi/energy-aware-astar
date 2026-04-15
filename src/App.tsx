@@ -1,10 +1,9 @@
-import React from 'react';
-import GameGrid from './game/game';
-import './App.css';
+import GameGrid from "./game/game";
+import "./App.css";
 
 function App() {
   return (
-    <div className='App'>
+    <div className="App">
       <GameGrid />
     </div>
   );
