@@ -1,8 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { clearWalls } from '../index';
-
-//* The different dragging actions possible
-import type { BrushMode } from '../index'
+import { clearWalls } from '../utils/wallUtils';
+import { type BrushMode } from '../types';
 
 export const useGridMouseClicks = (
   initialRobot: string,

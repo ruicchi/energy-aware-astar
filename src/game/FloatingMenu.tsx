@@ -3,8 +3,7 @@ import { Paper, Typography, Button, Box, IconButton, Collapse, Slider, useMediaQ
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
-import { type Heading } from '../algorithms/astar/astarEnergyAware';
-import type { BrushMode } from '../index.ts';
+import { type Heading, type BrushMode } from '../types';
 
 type FloatingMenuProps = {
   onClearWalls: () => void;

@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import Box from '@mui/material/Box'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
-import { type Heading } from '../algorithms/astar/astarEnergyAware'
+import { type Heading } from '../types'
 
 //study
 type MemoizedCellProps = {

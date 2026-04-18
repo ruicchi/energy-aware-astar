@@ -1,4 +1,5 @@
-import { type Scenario, type Heading, type EnergyNode, getTurnCost } from './astarEnergyAware'
+import { type Scenario, type Heading, type EnergyNode } from '../../types'
+import { getTurnCost } from '../utils'
 
 //* Manhattan distance heuristic (h)
 const getManhattanHeuristic = (
