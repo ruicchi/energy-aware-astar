@@ -301,6 +301,8 @@ const GameGrid = () => {
         onWalkPath={handleWalkPath}
         hasPath={!!currentPath}
         isWalking={isWalking}
+        currentHeading={robotHeading}
+        onHeadingChange={setRobotHeading}
       />
 
       {/* //* Render each cell into clickable Box cells */}

@@ -3,6 +3,7 @@ import { Paper, Typography, Button, Box, IconButton, Collapse, Slider, useMediaQ
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
+import { type Heading } from '../algorithms/astar/astarEnergyAware';
 import type { BrushMode } from '../index.ts';
 
 type FloatingMenuProps = {
@@ -24,6 +25,8 @@ type FloatingMenuProps = {
   onWalkPath: () => void;
   hasPath: boolean;
   isWalking: boolean;
+  currentHeading: Heading;
+  onHeadingChange: (heading: Heading) => void;
 };
 
 export const FloatingMenu = ({
@@ -45,6 +48,8 @@ export const FloatingMenu = ({
   onWalkPath,
   hasPath,
   isWalking,
+  currentHeading,
+  onHeadingChange,
 }: FloatingMenuProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -226,6 +231,28 @@ export const FloatingMenu = ({
               </Typography>
             </Box>
           )}
+
+          {/* Robot Heading Config */}
+          <Box sx={{ mt: 1, borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
+            <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
+              Robot Initial Heading
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+              {(['UP', 'DOWN', 'LEFT', 'RIGHT'] as Heading[]).map((h) => (
+                <Button
+                  key={h}
+                  variant={currentHeading === h ? "contained" : "outlined"}
+                  color="secondary"
+                  size="small"
+                  disabled={isWalking}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onHeadingChange(h)}
+                >
+                  {h}
+                </Button>
+              ))}
+            </Box>
+          </Box>
 
           <Box sx={{ mt: 1, borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
             <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
