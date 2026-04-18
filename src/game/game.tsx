@@ -20,6 +20,9 @@ const GameGrid = () => {
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5)
   const [pathMetrics, setPathMetrics] = useState<{ distance: number; energy: number } | null>(null)
   const [robotHeading, setRobotHeading] = useState<Heading>('RIGHT')
+  const [currentPath, setCurrentPath] = useState<string[] | null>(null)
+  const [walkingStep, setWalkingStep] = useState<number>(-1)
+  const [isWalking, setIsWalking] = useState<boolean>(false)
 
   const [isManhattanFinished, setIsManhattanFinished] = useState<boolean>(false)
   const [isEnergyFinished, setIsEnergyFinished] = useState<boolean>(false)
@@ -67,6 +70,9 @@ const GameGrid = () => {
     setIsEnergyFinished(false)
     setShowManhattanSearch(true)
     setShowEnergySearch(true)
+    setCurrentPath(null)
+    setWalkingStep(-1)
+    setIsWalking(false)
 
     document
       .querySelectorAll('.node-visited, .node-open, .node-shortest-path, .node-energy-visited, .node-energy-open, .node-energy-shortest-path')
@@ -146,6 +152,7 @@ const GameGrid = () => {
 
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } = runAStarManhattan(scenario)
     setPathMetrics({ distance: totalDistance, energy: totalEnergy })
+    setCurrentPath(shortestPath)
     const duration = animateResult(visitedNodesInOrder, shortestPath, 'node-visited', 'node-open', 'node-shortest-path')
     const t = setTimeout(() => setIsManhattanFinished(true), duration)
     animationTimeouts.current.push(t as unknown as number)
@@ -169,9 +176,52 @@ const GameGrid = () => {
 
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } = runAStarEnergyAware(scenario)
     setPathMetrics({ distance: totalDistance, energy: totalEnergy })
+    setCurrentPath(shortestPath)
     const duration = animateResult(visitedNodesInOrder, shortestPath, 'node-energy-visited', 'node-energy-open', 'node-energy-shortest-path')
     const t = setTimeout(() => setIsEnergyFinished(true), duration)
     animationTimeouts.current.push(t as unknown as number)
+  }
+
+  const getHeadingFromNodes = (from: string, to: string): Heading => {
+    const [r1, c1] = from.split('-').map(Number)
+    const [r2, c2] = to.split('-').map(Number)
+    const dr = r2 - r1
+    const dc = c2 - c1
+
+    if (dr === -1 && dc === 0) return 'UP'
+    if (dr === 1 && dc === 0) return 'DOWN'
+    if (dr === 0 && dc === -1) return 'LEFT'
+    if (dr === 0 && dc === 1) return 'RIGHT'
+    if (dr === -1 && dc === -1) return 'UP_LEFT'
+    if (dr === -1 && dc === 1) return 'UP_RIGHT'
+    if (dr === 1 && dc === -1) return 'DOWN_LEFT'
+    if (dr === 1 && dc === 1) return 'DOWN_RIGHT'
+    return 'NONE'
+  }
+
+  const handleWalkPath = () => {
+    if (!currentPath || currentPath.length === 0 || isWalking) return
+
+    setIsWalking(true)
+    setWalkingStep(0)
+
+    for (let i = 0; i < currentPath.length; i++) {
+      const timeout = setTimeout(() => {
+        if (i > 0) {
+          const prevNode = currentPath[i - 1]
+          const nextNode = currentPath[i]
+          const heading = getHeadingFromNodes(prevNode, nextNode)
+          if (heading !== 'NONE') setRobotHeading(heading)
+        }
+
+        setWalkingStep(i)
+
+        if (i === currentPath.length - 1) {
+          setIsWalking(false)
+        }
+      }, i * 200)
+      animationTimeouts.current.push(timeout as unknown as number)
+    }
   }
 
   const handleReset = () => {
@@ -226,6 +276,9 @@ const GameGrid = () => {
         showEnergySearch={showEnergySearch}
         onToggleManhattanSearch={() => setShowManhattanSearch(!showManhattanSearch)}
         onToggleEnergySearch={() => setShowEnergySearch(!showEnergySearch)}
+        onWalkPath={handleWalkPath}
+        hasPath={!!currentPath}
+        isWalking={isWalking}
       />
 
       {/* //* Render each cell into clickable Box cells */}
@@ -237,8 +290,44 @@ const GameGrid = () => {
           gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
           gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
           backgroundColor: '#f2f2f2',
+          position: 'relative',
         }}
       >
+        {/* Walking Robot Overlay */}
+        {isWalking && currentPath && walkingStep !== -1 && (
+          <Box
+            sx={{
+              position: 'absolute',
+              width: cellSize,
+              height: cellSize,
+              zIndex: 10,
+              pointerEvents: 'none',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#4caf50',
+              left: Number(currentPath[walkingStep].split('-')[1]) * cellSize,
+              top: Number(currentPath[walkingStep].split('-')[0]) * cellSize,
+              transition: 'all 0.2s linear',
+            }}
+          >
+            <MemoizedCell
+              cellKey="walking-robot"
+              cellSize={cellSize}
+              row={0}
+              col={0}
+              isWall={false}
+              isRobot={true}
+              isDestination={false}
+              terrainFactor={0}
+              elevation={0}
+              heading={robotHeading}
+              onMouseDown={() => {}}
+              onMouseEnter={() => {}}
+            />
+          </Box>
+        )}
+
         {cells.map((cell) => {
           return (
             <MemoizedCell
@@ -248,7 +337,7 @@ const GameGrid = () => {
               row={cell.row}
               col={cell.col}
               isWall={wallNode.has(cell.key)}
-              isRobot={cell.key === robotNode}
+              isRobot={cell.key === robotNode && !isWalking}
               isDestination={cell.key === destinationNode}
               terrainFactor={terrainFactors.get(cell.key) || 0}
               elevation={elevations.get(cell.key) || 0}

@@ -21,6 +21,9 @@ type FloatingMenuProps = {
   showEnergySearch: boolean;
   onToggleManhattanSearch: () => void;
   onToggleEnergySearch: () => void;
+  onWalkPath: () => void;
+  hasPath: boolean;
+  isWalking: boolean;
 };
 
 export const FloatingMenu = ({
@@ -39,6 +42,9 @@ export const FloatingMenu = ({
   showEnergySearch,
   onToggleManhattanSearch,
   onToggleEnergySearch,
+  onWalkPath,
+  hasPath,
+  isWalking,
 }: FloatingMenuProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -187,6 +193,20 @@ export const FloatingMenu = ({
                   onClick={onToggleEnergySearch}
                 >
                   {showEnergySearch ? 'Hide Energy Search Map' : 'Show Energy Search Map'}
+                </Button>
+              )}
+
+              {hasPath && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  fullWidth
+                  disabled={isWalking}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={onWalkPath}
+                  sx={{ mt: 1 }}
+                >
+                  {isWalking ? 'Walking...' : 'Walk Path'}
                 </Button>
               )}
             </Box>
