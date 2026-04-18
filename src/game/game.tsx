@@ -23,6 +23,7 @@ const GameGrid = () => {
   const [currentPath, setCurrentPath] = useState<string[] | null>(null)
   const [walkingStep, setWalkingStep] = useState<number>(-1)
   const [isWalking, setIsWalking] = useState<boolean>(false)
+  const [hasFinishedWalking, setHasFinishedWalking] = useState<boolean>(false)
 
   const [isManhattanFinished, setIsManhattanFinished] = useState<boolean>(false)
   const [isEnergyFinished, setIsEnergyFinished] = useState<boolean>(false)
@@ -73,6 +74,7 @@ const GameGrid = () => {
     setCurrentPath(null)
     setWalkingStep(-1)
     setIsWalking(false)
+    setHasFinishedWalking(false)
 
     document
       .querySelectorAll('.node-visited, .node-open, .node-shortest-path, .node-energy-visited, .node-energy-open, .node-energy-shortest-path')
@@ -203,6 +205,7 @@ const GameGrid = () => {
     if (!currentPath || currentPath.length === 0 || isWalking) return
 
     setIsWalking(true)
+    setHasFinishedWalking(false)
     setWalkingStep(0)
 
     for (let i = 0; i < currentPath.length; i++) {
@@ -218,6 +221,7 @@ const GameGrid = () => {
 
         if (i === currentPath.length - 1) {
           setIsWalking(false)
+          setHasFinishedWalking(true)
         }
       }, i * 200)
       animationTimeouts.current.push(timeout as unknown as number)
@@ -294,7 +298,7 @@ const GameGrid = () => {
         }}
       >
         {/* Walking Robot Overlay */}
-        {isWalking && currentPath && walkingStep !== -1 && (
+        {(isWalking || hasFinishedWalking) && currentPath && walkingStep !== -1 && (
           <Box
             sx={{
               position: 'absolute',
@@ -308,7 +312,7 @@ const GameGrid = () => {
               backgroundColor: '#4caf50',
               left: Number(currentPath[walkingStep].split('-')[1]) * cellSize,
               top: Number(currentPath[walkingStep].split('-')[0]) * cellSize,
-              transition: 'all 0.2s linear',
+              transition: isWalking ? 'all 0.2s linear' : 'none',
             }}
           >
             <MemoizedCell
@@ -337,7 +341,7 @@ const GameGrid = () => {
               row={cell.row}
               col={cell.col}
               isWall={wallNode.has(cell.key)}
-              isRobot={cell.key === robotNode && !isWalking}
+              isRobot={cell.key === robotNode && !isWalking && !hasFinishedWalking}
               isDestination={cell.key === destinationNode}
               terrainFactor={terrainFactors.get(cell.key) || 0}
               elevation={elevations.get(cell.key) || 0}
