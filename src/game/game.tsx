@@ -208,23 +208,41 @@ const GameGrid = () => {
     setHasFinishedWalking(false)
     setWalkingStep(0)
 
+    let cumulativeDelay = 0
+    let currentRobotHeading: Heading = robotHeading
+
     for (let i = 0; i < currentPath.length; i++) {
-      const timeout = setTimeout(() => {
-        if (i > 0) {
-          const prevNode = currentPath[i - 1]
-          const nextNode = currentPath[i]
-          const heading = getHeadingFromNodes(prevNode, nextNode)
-          if (heading !== 'NONE') setRobotHeading(heading)
+      // 1. Check for rotation if we're past the first node
+      if (i > 0) {
+        const nextHeading = getHeadingFromNodes(currentPath[i - 1], currentPath[i])
+        
+        if (nextHeading !== 'NONE' && nextHeading !== currentRobotHeading) {
+          // Schedule the rotation
+          const rotateTimeout = setTimeout(() => {
+            setRobotHeading(nextHeading)
+          }, cumulativeDelay)
+          animationTimeouts.current.push(rotateTimeout as unknown as number)
+          
+          // Pause forward movement for 300ms to let the rotation happen
+          cumulativeDelay += 300
+          currentRobotHeading = nextHeading
         }
+      }
 
+      // 2. Schedule the forward movement to this node
+      const moveTimeout = setTimeout(() => {
         setWalkingStep(i)
-
+        
         if (i === currentPath.length - 1) {
           setIsWalking(false)
           setHasFinishedWalking(true)
         }
-      }, i * 200)
-      animationTimeouts.current.push(timeout as unknown as number)
+      }, cumulativeDelay)
+      
+      animationTimeouts.current.push(moveTimeout as unknown as number)
+      
+      // Standard movement time
+      cumulativeDelay += 200
     }
   }
 
