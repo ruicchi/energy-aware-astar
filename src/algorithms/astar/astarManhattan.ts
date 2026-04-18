@@ -39,10 +39,10 @@ export const runAStarManhattan = (scenario: Scenario) => {
   const closedCells = new Set<string>()
 
   const startNode: EnergyNode = {
-    key: `${scenario.robotNode}-NONE`,
+    key: `${scenario.robotNode}-${scenario.initialHeading}`,
     row: startRow,
     col: startCol,
-    heading: 'NONE',
+    heading: scenario.initialHeading,
     g: 0,
     h: getManhattanHeuristic(startRow, startCol, destRow, destCol),
     f: 0,

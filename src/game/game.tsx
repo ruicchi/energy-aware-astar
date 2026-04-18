@@ -150,6 +150,7 @@ const GameGrid = () => {
       elevations: elevations,
       climbingFactor: 1.5,
       turnPenalty: 2.0,
+      initialHeading: robotHeading,
     }
 
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } = runAStarManhattan(scenario)
@@ -174,6 +175,7 @@ const GameGrid = () => {
       elevations: elevations,
       climbingFactor: 1.5,
       turnPenalty: 2.0,
+      initialHeading: robotHeading,
     }
 
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } = runAStarEnergyAware(scenario)

@@ -21,6 +21,7 @@ export interface Scenario {
   elevations: Map<string, number>
   climbingFactor: number
   turnPenalty: number
+  initialHeading: Heading
 }
 
 const SQRT2 = 1.414
@@ -150,10 +151,10 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
   const closedCells = new Set<string>()
 
   const startNode: EnergyNode = {
-    key: `${scenario.robotNode}-NONE`,
+    key: `${scenario.robotNode}-${scenario.initialHeading}`,
     row: startRow,
     col: startCol,
-    heading: 'NONE',
+    heading: scenario.initialHeading,
     g: 0,
     h: Math.hypot(startRow - destRow, startCol - destCol),
     f: 0,
