@@ -26,6 +26,7 @@ type FloatingMenuProps = {
   isWalking: boolean;
   currentHeading: Heading;
   onHeadingChange: (heading: Heading) => void;
+  isLocked: boolean;
 };
 
 export const FloatingMenu = ({
@@ -49,6 +50,7 @@ export const FloatingMenu = ({
   isWalking,
   currentHeading,
   onHeadingChange,
+  isLocked,
 }: FloatingMenuProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -133,15 +135,24 @@ export const FloatingMenu = ({
       {/* The drop-down content */}
       <Collapse in={isExpanded}>
         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Button
-            variant="contained"
-            color="error"
-            fullWidth
-            onPointerDown={(e) => e.stopPropagation()} // don't drag when clicking button
-            onClick={onClearWalls}
-          >
-            Clear Tiles
-          </Button>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 1,
+            pointerEvents: isLocked ? 'none' : 'auto',
+            opacity: isLocked ? 0.6 : 1,
+            transition: 'opacity 0.2s'
+          }}>
+            <Button
+              variant="contained"
+              color="error"
+              fullWidth
+              onPointerDown={(e) => e.stopPropagation()} // don't drag when clicking button
+              onClick={onClearWalls}
+            >
+              Clear Tiles
+            </Button>
+          </Box>
 
           <Button
             variant="contained"
@@ -153,172 +164,178 @@ export const FloatingMenu = ({
             Reset Grid
           </Button>
 
-          <Button
-            variant="contained"
-            color="success"
-            fullWidth
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={onVisualizeAStar}
-          >
-            Run A* Manhattan
-          </Button>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 1,
+            pointerEvents: isLocked ? 'none' : 'auto',
+            opacity: isLocked ? 0.6 : 1,
+            transition: 'opacity 0.2s'
+          }}>
+            <Button
+              variant="contained"
+              color="success"
+              fullWidth
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={onVisualizeAStar}
+            >
+              Run A* Manhattan
+            </Button>
 
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={onVisualizeEnergyAwareAStar}
-            sx={{ mt: 1 }}
-          >
-            Run Energy-Aware A*
-          </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={onVisualizeEnergyAwareAStar}
+              sx={{ mt: 1 }}
+            >
+              Run Energy-Aware A*
+            </Button>
 
-          {/* Search Map Toggles */}
-          {(isManhattanFinished || isEnergyFinished) && (
-            <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {isManhattanFinished && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={onToggleManhattanSearch}
-                >
-                  {showManhattanSearch ? 'Hide A* Manhattan Search' : 'Show A* Manhattan Search'}
-                </Button>
-              )}
-              {isEnergyFinished && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={onToggleEnergySearch}
-                >
-                  {showEnergySearch ? 'Hide Energy Search Map' : 'Show Energy Search Map'}
-                </Button>
-              )}
+            {/* Search Map Toggles */}
+            {(isManhattanFinished || isEnergyFinished) && (
+              <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {isManhattanFinished && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={onToggleManhattanSearch}
+                  >
+                    {showManhattanSearch ? 'Hide A* Manhattan Search' : 'Show A* Manhattan Search'}
+                  </Button>
+                )}
+                {isEnergyFinished && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={onToggleEnergySearch}
+                  >
+                    {showEnergySearch ? 'Hide Energy Search Map' : 'Show Energy Search Map'}
+                  </Button>
+                )}
 
-              {hasPath && (
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  fullWidth
-                  disabled={isWalking}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={onWalkPath}
-                  sx={{ mt: 1 }}
-                >
-                  {isWalking ? 'Walking...' : 'Walk Path'}
-                </Button>
-              )}
-            </Box>
-          )}
-
-          {/* Metrics Display */}
-          {pathMetrics && (
-            <Box sx={{ mt: 2, p: 1, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
-              <Typography variant="body2" fontWeight="bold">
-                Results:
-              </Typography>
-              <Typography variant="caption" display="block">
-                Distance: {pathMetrics.distance.toFixed(2)} units
-              </Typography>
-              <Typography variant="caption" display="block">
-                Energy: {pathMetrics.energy.toFixed(2)} units
-              </Typography>
-            </Box>
-          )}
-
-          {/* Robot Heading Config */}
-          <Box sx={{ mt: 1, borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
-            <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
-              Robot Initial Heading
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-              {(['UP', 'DOWN', 'LEFT', 'RIGHT', 'UP_LEFT', 'UP_RIGHT', 'DOWN_LEFT', 'DOWN_RIGHT'] as Heading[]).map((h) => (
-                <Button
-                  key={h}
-                  variant={currentHeading === h ? "contained" : "outlined"}
-                  color="secondary"
-                  size="small"
-                  disabled={isWalking}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => onHeadingChange(h)}
-                >
-                  {h.replace('_', ' ')}
-                </Button>
-              ))}
-            </Box>
-          </Box>
-
-          <Box sx={{ mt: 1, borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
-            <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
-              Brushes
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: isTiny ? '1fr' : '1fr 1fr', gap: 1 }}>
-              <Button
-                variant={activeBrush === 'wall' ? "contained" : "outlined"}
-                color="info"
-                size="small"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => onSelectBrush('wall')}
-              >
-                Wall
-              </Button>
-
-              <Button
-                variant={activeBrush === 'dirt' ? "contained" : "outlined"}
-                color="warning"
-                size="small"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => onSelectBrush('dirt')}
-              >
-                Dirt
-              </Button>
-
-              <Button
-                variant={activeBrush === 'water' ? "contained" : "outlined"}
-                color="primary"
-                size="small"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => onSelectBrush('water')}
-              >
-                Water
-              </Button>
-
-              <Button
-                variant={activeBrush === 'elevation' ? "contained" : "outlined"}
-                color="success"
-                size="small"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => onSelectBrush('elevation')}
-              >
-                Elevation
-              </Button>
-            </Box>
-
-            {/* Elevation Slider */}
-            {activeBrush === 'elevation' && (
-              <Box sx={{ px: 1, mt: 1 }}>
-                <Typography variant="caption" color="textSecondary">
-                  Brush Height: {elevationValue}
-                </Typography>
-                <Slider
-                  size="small"
-                  value={elevationValue}
-                  min={1}
-                  max={10}
-                  step={1}
-                  marks
-                  onChange={(_, value) => onElevationChange(value as number)}
-                  onPointerDown={(e) => e.stopPropagation()}
-                />
+                {hasPath && (
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    fullWidth
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={onWalkPath}
+                    sx={{ mt: 1 }}
+                  >
+                    {isWalking ? 'Walking...' : 'Walk Path'}
+                  </Button>
+                )}
               </Box>
             )}
-          </Box>
 
+            {/* Metrics Display */}
+            {pathMetrics && (
+              <Box sx={{ mt: 2, p: 1, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
+                <Typography variant="body2" fontWeight="bold">
+                  Results:
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Distance: {pathMetrics.distance.toFixed(2)} units
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Energy: {pathMetrics.energy.toFixed(2)} units
+                </Typography>
+              </Box>
+            )}
+
+            {/* Robot Heading Config */}
+            <Box sx={{ mt: 1, borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
+              <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
+                Robot Initial Heading
+              </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                {(['UP', 'DOWN', 'LEFT', 'RIGHT', 'UP_LEFT', 'UP_RIGHT', 'DOWN_LEFT', 'DOWN_RIGHT'] as Heading[]).map((h) => (
+                  <Button
+                    key={h}
+                    variant={currentHeading === h ? "contained" : "outlined"}
+                    color="secondary"
+                    size="small"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => onHeadingChange(h)}
+                  >
+                    {h.replace('_', ' ')}
+                  </Button>
+                ))}
+              </Box>
+            </Box>
+
+            <Box sx={{ mt: 1, borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
+              <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: 'block' }}>
+                Brushes
+              </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: isTiny ? '1fr' : '1fr 1fr', gap: 1 }}>
+                <Button
+                  variant={activeBrush === 'wall' ? "contained" : "outlined"}
+                  color="info"
+                  size="small"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSelectBrush('wall')}
+                >
+                  Wall
+                </Button>
+
+                <Button
+                  variant={activeBrush === 'dirt' ? "contained" : "outlined"}
+                  color="warning"
+                  size="small"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSelectBrush('dirt')}
+                >
+                  Dirt
+                </Button>
+
+                <Button
+                  variant={activeBrush === 'water' ? "contained" : "outlined"}
+                  color="primary"
+                  size="small"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSelectBrush('water')}
+                >
+                  Water
+                </Button>
+
+                <Button
+                  variant={activeBrush === 'elevation' ? "contained" : "outlined"}
+                  color="success"
+                  size="small"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => onSelectBrush('elevation')}
+                >
+                  Elevation
+                </Button>
+              </Box>
+
+              {/* Elevation Slider */}
+              {activeBrush === 'elevation' && (
+                <Box sx={{ px: 1, mt: 1 }}>
+                  <Typography variant="caption" color="textSecondary">
+                    Brush Height: {elevationValue}
+                  </Typography>
+                  <Slider
+                    size="small"
+                    value={elevationValue}
+                    min={1}
+                    max={10}
+                    step={1}
+                    marks
+                    onChange={(_, value) => onElevationChange(value as number)}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  />
+                </Box>
+              )}
+            </Box>
+          </Box>
         </Box>
       </Collapse>
     </Paper>

@@ -5,6 +5,7 @@ export type VisitedNode = { key: string; type: "open" | "closed" };
 export const usePathAnimation = (robotNode: string, destinationNode: string) => {
   const [isManhattanFinished, setIsManhattanFinished] = useState<boolean>(false);
   const [isEnergyFinished, setIsEnergyFinished] = useState<boolean>(false);
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [showManhattanSearch, setShowManhattanSearch] = useState<boolean>(true);
   const [showEnergySearch, setShowEnergySearch] = useState<boolean>(true);
 
@@ -16,6 +17,7 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
 
     setIsManhattanFinished(false);
     setIsEnergyFinished(false);
+    setIsAnimating(false);
     setShowManhattanSearch(true);
     setShowEnergySearch(true);
     
@@ -37,6 +39,7 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
     mode: "manhattan" | "energy" = "manhattan",
   ): number => {
     const searchAttr = mode === "manhattan" ? "manhattan" : "energy";
+    setIsAnimating(true);
 
     // 3. Animate Visited/Open Nodes
     for (let i = 0; i < visitedNodesInOrder.length; i++) {
@@ -69,7 +72,14 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
       animationTimeouts.current.push(timeout as unknown as number);
     }
 
-    return pathDelay + shortestPath.length * 30;
+    const duration = pathDelay + shortestPath.length * 30;
+    
+    const finishTimeout = setTimeout(() => {
+      setIsAnimating(false);
+    }, duration);
+    animationTimeouts.current.push(finishTimeout as unknown as number);
+
+    return duration;
   }, [robotNode, destinationNode]);
 
   const addTimeout = useCallback((t: number) => {
@@ -81,6 +91,7 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
     setIsManhattanFinished,
     isEnergyFinished,
     setIsEnergyFinished,
+    isAnimating,
     showManhattanSearch,
     setShowManhattanSearch,
     showEnergySearch,
@@ -88,5 +99,18 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
     clearAnimations,
     animateResult,
     addTimeout
+  } as {
+    isManhattanFinished: boolean;
+    setIsManhattanFinished: (val: boolean) => void;
+    isEnergyFinished: boolean;
+    setIsEnergyFinished: (val: boolean) => void;
+    isAnimating: boolean;
+    showManhattanSearch: boolean;
+    setShowManhattanSearch: (val: boolean) => void;
+    showEnergySearch: boolean;
+    setShowEnergySearch: (val: boolean) => void;
+    clearAnimations: (onClear?: () => void) => void;
+    animateResult: (visitedNodesInOrder: VisitedNode[], shortestPath: string[], mode?: "manhattan" | "energy") => number;
+    addTimeout: (t: number) => void;
   }
 }

@@ -56,6 +56,7 @@ const GameGrid = () => {
     setIsManhattanFinished,
     isEnergyFinished,
     setIsEnergyFinished,
+    isAnimating,
     showManhattanSearch,
     setShowManhattanSearch,
     showEnergySearch,
@@ -74,6 +75,8 @@ const GameGrid = () => {
     handleWalkPath,
     clearWalkState,
   } = useRobotWalk(robotHeading, setRobotHeading, addTimeout);
+
+  const isLocked = isAnimating || isWalking;
 
   const handleClearAnimations = () => {
     clearAnimations(clearWalkState);
@@ -99,11 +102,7 @@ const GameGrid = () => {
       runAStarManhattan(scenario);
     setPathMetrics({ distance: totalDistance, energy: totalEnergy });
     setCurrentPath(shortestPath);
-    const duration = animateResult(
-      visitedNodesInOrder,
-      shortestPath,
-      "manhattan",
-    );
+    const duration = animateResult(visitedNodesInOrder, shortestPath, "manhattan");
     const t = setTimeout(() => setIsManhattanFinished(true), duration);
     addTimeout(t as unknown as number);
   };
@@ -128,11 +127,7 @@ const GameGrid = () => {
       runAStarEnergyAware(scenario);
     setPathMetrics({ distance: totalDistance, energy: totalEnergy });
     setCurrentPath(shortestPath);
-    const duration = animateResult(
-      visitedNodesInOrder,
-      shortestPath,
-      "energy",
-    );
+    const duration = animateResult(visitedNodesInOrder, shortestPath, "energy");
     const t = setTimeout(() => setIsEnergyFinished(true), duration);
     addTimeout(t as unknown as number);
   };
@@ -194,6 +189,7 @@ const GameGrid = () => {
         isWalking={isWalking}
         currentHeading={robotHeading}
         onHeadingChange={setRobotHeading}
+        isLocked={isLocked}
       />
 
       {/* //* Render each cell into clickable Box cells */}
@@ -206,6 +202,7 @@ const GameGrid = () => {
           gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
           backgroundColor: "#f2f2f2",
           position: "relative",
+          pointerEvents: isLocked ? "none" : "auto",
         }}
       >
         {/* Walking Robot Overlay */}
