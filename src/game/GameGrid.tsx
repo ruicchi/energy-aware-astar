@@ -102,9 +102,7 @@ const GameGrid = () => {
     const duration = animateResult(
       visitedNodesInOrder,
       shortestPath,
-      "node-visited",
-      "node-open",
-      "node-shortest-path",
+      "manhattan",
     );
     const t = setTimeout(() => setIsManhattanFinished(true), duration);
     addTimeout(t as unknown as number);
@@ -133,9 +131,7 @@ const GameGrid = () => {
     const duration = animateResult(
       visitedNodesInOrder,
       shortestPath,
-      "node-energy-visited",
-      "node-energy-open",
-      "node-energy-shortest-path",
+      "energy",
     );
     const t = setTimeout(() => setIsEnergyFinished(true), duration);
     addTimeout(t as unknown as number);

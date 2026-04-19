@@ -4,132 +4,61 @@ body,
   padding: 0;
 }
 
-.node-open {
-  animation-name: openAnimation;
-  animation-timing-function: ease-out;
-  animation-delay: 0;
-  animation-direction: alternate;
-  animation-iteration-count: 1;
-  animation-fill-mode: forwards;
-  animation-play-state: running;
+/* Base style for the overlays */
+[data-manhattan]::after,
+[data-energy]::after,
+[data-path]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
 }
 
-@keyframes openAnimation {
-  100% {
-    background-color: rgba(0, 217, 159, 0.75);
-  }
+/* Manhattan Search Styles (Flat) */
+[data-manhattan="open"]::after {
+  background-color: rgba(0, 217, 159, 0.75);
 }
 
-.node-visited {
-  animation-name: visitedAnimation;
-  animation-timing-function: ease-out;
-  animation-delay: 0;
-  animation-direction: alternate;
-  animation-iteration-count: 1;
-  animation-fill-mode: forwards;
-  animation-play-state: running;
+[data-manhattan="closed"]::after {
+  background-color: rgba(119, 181, 192, 0.75);
 }
 
-@keyframes visitedAnimation {
-  100% {
-    background-color: rgba(119, 181, 192, 0.75);
-  }
+[data-path="manhattan"]::after {
+  background-color: rgba(255, 254, 106, 0.75);
+  z-index: 2;
 }
 
-.node-shortest-path {
-  animation-name: shortestPath;
-  animation-duration: .2s;
-  animation-timing-function: ease-out;
-  animation-delay: 0;
-  animation-direction: alternate;
-  animation-iteration-count: 1;
-  animation-fill-mode: forwards;
-  animation-play-state: running;
+/* Energy-Aware Specific Styles (Flat) */
+[data-energy="open"]::after {
+  background-color: rgba(255, 165, 0, 0.75);
 }
 
-@keyframes shortestPath {
-  0% {
-    transform: scale(0.6);
-    background-color: rgb(255, 254, 106);
-  }
-  50% {
-    transform: scale(1.2);
-    background-color: rgb(255, 254, 106);
-  }
-  100% {
-    transform: scale(1);
-    background-color: rgb(255, 254, 106);
-  }
+[data-energy="closed"]::after {
+  background-color: rgba(255, 99, 71, 0.75);
 }
 
-/* Energy-Aware Specific Styles */
-.node-energy-open {
-  animation-name: energyOpenAnimation;
-  animation-timing-function: ease-out;
-  animation-delay: 0;
-  animation-direction: alternate;
-  animation-iteration-count: 1;
-  animation-fill-mode: forwards;
-  animation-play-state: running;
+[data-path="energy"]::after {
+  background-color: rgba(138, 43, 226, 0.75);
+  z-index: 2;
 }
 
-@keyframes energyOpenAnimation {
-  100% {
-    background-color: rgba(255, 165, 0, 0.75); /* Orange for open */
-  }
-}
-
-.node-energy-visited {
-  animation-name: energyVisitedAnimation;
-  animation-timing-function: ease-out;
-  animation-delay: 0;
-  animation-direction: alternate;
-  animation-iteration-count: 1;
-  animation-fill-mode: forwards;
-  animation-play-state: running;
-}
-
-@keyframes energyVisitedAnimation {
-  100% {
-    background-color: rgba(255, 99, 71, 0.75); /* Tomato red for visited */
-  }
-}
-
-.node-energy-shortest-path {
-  animation-name: energyShortestPath;
-  animation-duration: .2s;
-  animation-timing-function: ease-out;
-  animation-delay: 0;
-  animation-direction: alternate;
-  animation-iteration-count: 1;
-  animation-fill-mode: forwards;
-  animation-play-state: running;
-}
-
-@keyframes energyShortestPath {
-  0% {
-    transform: scale(0.6);
-    background-color: rgb(138, 43, 226); /* Purple path */
-  }
-  50% {
-    transform: scale(1.2);
-    background-color: rgb(138, 43, 226);
-  }
-  100% {
-    transform: scale(1);
-    background-color: rgb(138, 43, 226);
-  }
+/* Hide overlays on robot and destination cells */
+.is-robot::after,
+.is-destination::after {
+  display: none !important;
 }
 
 /* Hide search maps toggles */
-.hide-manhattan-search .node-visited,
-.hide-manhattan-search .node-open {
-  animation: none !important;
-  background-color: unset !important;
+.hide-manhattan-search [data-manhattan]::after,
+.hide-manhattan-search [data-path="manhattan"]::after {
+  display: none !important;
 }
 
-.hide-energy-search .node-energy-visited,
-.hide-energy-search .node-energy-open {
-  animation: none !important;
-  background-color: unset !important;
+.hide-energy-search [data-energy]::after,
+.hide-energy-search [data-path="energy"]::after {
+  display: none !important;
 }

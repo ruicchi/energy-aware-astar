@@ -22,28 +22,22 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
     if (onClear) onClear()
 
     document
-      .querySelectorAll(
-        ".node-visited, .node-open, .node-shortest-path, .node-energy-visited, .node-energy-open, .node-energy-shortest-path",
-      )
+      .querySelectorAll('[data-manhattan], [data-energy], [data-path]')
       .forEach((el) => {
-        el.classList.remove(
-          "node-visited",
-          "node-open",
-          "node-shortest-path",
-          "node-energy-visited",
-          "node-energy-open",
-          "node-energy-shortest-path",
-        );
+        const node = el as HTMLElement;
+        delete node.dataset.manhattan;
+        delete node.dataset.energy;
+        delete node.dataset.path;
       });
   }, []);
 
   const animateResult = useCallback((
     visitedNodesInOrder: VisitedNode[],
     shortestPath: string[],
-    visitedClass: string = "node-visited",
-    openClass: string = "node-open",
-    pathClass: string = "node-shortest-path",
+    mode: "manhattan" | "energy" = "manhattan",
   ): number => {
+    const searchAttr = mode === "manhattan" ? "manhattan" : "energy";
+
     // 3. Animate Visited/Open Nodes
     for (let i = 0; i < visitedNodesInOrder.length; i++) {
       const timeout = setTimeout(() => {
@@ -52,12 +46,7 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
 
         const node = document.getElementById(`cell-${key}`);
         if (node) {
-          if (type === "closed") {
-            node.classList.remove(openClass);
-            node.classList.add(visitedClass);
-          } else if (type === "open") {
-            node.classList.add(openClass);
-          }
+          node.dataset[searchAttr] = type; // "open" or "closed"
         }
       }, 10 * i); // 10ms per node
       animationTimeouts.current.push(timeout as unknown as number);
@@ -66,16 +55,13 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
     // 4. Animate Shortest Path after visited nodes finish
     const pathDelay = visitedNodesInOrder.length * 10;
     for (let i = 0; i < shortestPath.length; i++) {
-      // Don't overwrite the start and destination node colors
       if (shortestPath[i] === robotNode || shortestPath[i] === destinationNode) continue;
 
       const timeout = setTimeout(
         () => {
           const node = document.getElementById(`cell-${shortestPath[i]}`);
           if (node) {
-            node.classList.remove(visitedClass);
-            node.classList.remove(openClass);
-            node.classList.add(pathClass);
+            node.dataset.path = mode; // "manhattan" or "energy"
           }
         },
         pathDelay + 30 * i,
