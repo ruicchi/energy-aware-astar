@@ -1,5 +1,5 @@
-import { type Heading, type EnergyNode, type Scenario } from '../../types'
-import { getEnergyCost, SQRT2 } from '../utils'
+import { type Scenario, type Heading, type EnergyNode } from "../../types";
+import { getEnergyCost, SQRT2 } from "../utils";
 
 const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
   { dr: -1, dc: 0, heading: "UP" },
