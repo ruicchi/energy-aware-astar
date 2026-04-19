@@ -81,7 +81,6 @@ const GameGrid = () => {
 
   const visualizeAStar = () => {
     handleClearAnimations();
-    setRobotHeading("RIGHT");
 
     const scenario = {
       rows,
@@ -113,7 +112,6 @@ const GameGrid = () => {
 
   const visualizeEnergyAwareAStar = () => {
     handleClearAnimations();
-    setRobotHeading("RIGHT");
 
     const scenario = {
       rows,

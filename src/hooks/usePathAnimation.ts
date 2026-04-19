@@ -48,6 +48,8 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
     for (let i = 0; i < visitedNodesInOrder.length; i++) {
       const timeout = setTimeout(() => {
         const { key, type } = visitedNodesInOrder[i];
+        if (key === robotNode || key === destinationNode) return;
+
         const node = document.getElementById(`cell-${key}`);
         if (node) {
           if (type === "closed") {

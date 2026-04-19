@@ -92,9 +92,13 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     f: 0,
     parent: null,
   };
-  startNode.f = startNode.h;
-  openSet.push(startNode);
-  allNodes.set(startNode.key, startNode);
+  startNode.f = startNode.h
+  openSet.push(startNode)
+  allNodes.set(startNode.key, startNode)
+
+  // Add the start node to visited nodes so the animation starts from the robot's cell
+  visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" })
+  openedCells.add(scenario.robotNode)
 
   while (openSet.size() > 0) {
     const current = openSet.pop()!;
