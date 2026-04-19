@@ -237,7 +237,7 @@ export const FloatingMenu = ({
               Robot Initial Heading
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-              {(['UP', 'DOWN', 'LEFT', 'RIGHT'] as Heading[]).map((h) => (
+              {(['UP', 'DOWN', 'LEFT', 'RIGHT', 'UP_LEFT', 'UP_RIGHT', 'DOWN_LEFT', 'DOWN_RIGHT'] as Heading[]).map((h) => (
                 <Button
                   key={h}
                   variant={currentHeading === h ? "contained" : "outlined"}
@@ -247,7 +247,7 @@ export const FloatingMenu = ({
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => onHeadingChange(h)}
                 >
-                  {h}
+                  {h.replace('_', ' ')}
                 </Button>
               ))}
             </Box>
