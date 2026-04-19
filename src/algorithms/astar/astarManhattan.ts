@@ -66,10 +66,6 @@ class MinHeap {
   }
 }
 
-const getManhattanHeuristic = (r1: number, c1: number, r2: number, c2: number) => {
-  return Math.abs(r1 - r2) + Math.abs(c1 - c2)
-}
-
 export const runAStarManhattan = (scenario: Scenario) => {
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number)
   const [destRow, destCol] = scenario.destinationNode.split("-").map(Number)
@@ -88,7 +84,7 @@ export const runAStarManhattan = (scenario: Scenario) => {
     col: startCol,
     heading: scenario.initialHeading,
     g: 0,
-    h: getManhattanHeuristic(startRow, startCol, destRow, destCol),
+    h: Math.abs(startRow - destRow) + Math.abs(startCol - destCol),
     f: 0,
     parent: null,
   }
@@ -164,14 +160,15 @@ export const runAStarManhattan = (scenario: Scenario) => {
       let neighborNode = allNodes.get(neighborStateKey)
       if (!neighborNode || tentativeG < neighborNode.g) {
         if (!neighborNode) {
+          const h = Math.abs(nr - destRow) + Math.abs(nc - destCol)
           neighborNode = {
             key: neighborStateKey,
             row: nr,
             col: nc,
             heading: neighbor.heading,
             g: tentativeG,
-            h: getManhattanHeuristic(nr, nc, destRow, destCol),
-            f: tentativeG + getManhattanHeuristic(nr, nc, destRow, destCol),
+            h: h,
+            f: tentativeG + h,
             parent: current,
           }
         } else {
