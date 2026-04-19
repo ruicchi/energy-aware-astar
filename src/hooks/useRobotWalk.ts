@@ -58,13 +58,17 @@ export const useRobotWalk = (
 
       // 2. Schedule the forward movement to this node
       const moveTimeout = setTimeout(() => {
-        setWalkingStep(i);
+        setWalkingStep(i)
 
         if (i === currentPath.length - 1) {
-          setIsWalking(false);
-          setHasFinishedWalking(true);
+          // Delay finishing the walking state so the last transition can complete
+          const finishTimeout = setTimeout(() => {
+            setIsWalking(false)
+            setHasFinishedWalking(true)
+          }, 200)
+          addTimeout(finishTimeout as unknown as number)
         }
-      }, cumulativeDelay);
+      }, cumulativeDelay)
 
       addTimeout(moveTimeout as unknown as number);
 
