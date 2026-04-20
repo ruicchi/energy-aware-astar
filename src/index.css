@@ -46,9 +46,10 @@ body,
   z-index: 2;
 }
 
-/* Hide overlays on robot and destination cells */
+/* Hide overlays on robot, destination, and wall cells */
 .is-robot::after,
-.is-destination::after {
+.is-destination::after,
+.is-wall::after {
   display: none !important;
 }
 

@@ -64,7 +64,7 @@ const GameGrid = () => {
     clearAnimations,
     animateResult,
     addTimeout,
-  } = usePathAnimation(robotNode, destinationNode);
+  } = usePathAnimation();
 
   const {
     currentPath,
@@ -249,11 +249,11 @@ const GameGrid = () => {
               row={cell.row}
               col={cell.col}
               isWall={wallNode.has(cell.key)}
-              isRobot={cell.key === robotNode && !isWalking && !hasFinishedWalking}
+              isRobot={cell.key === robotNode}
               isDestination={cell.key === destinationNode}
               terrainFactor={terrainFactors.get(cell.key) || 0}
               elevation={elevations.get(cell.key) || 0}
-              heading={cell.key === robotNode ? robotHeading : undefined}
+              heading={cell.key === robotNode && !isWalking && !hasFinishedWalking ? robotHeading : undefined}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
             />

@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react'
 
 export type VisitedNode = { key: string; type: "open" | "closed" };
 
-export const usePathAnimation = (robotNode: string, destinationNode: string) => {
+export const usePathAnimation = () => {
   const [isManhattanFinished, setIsManhattanFinished] = useState<boolean>(false);
   const [isEnergyFinished, setIsEnergyFinished] = useState<boolean>(false);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
@@ -45,7 +45,6 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
     for (let i = 0; i < visitedNodesInOrder.length; i++) {
       const timeout = setTimeout(() => {
         const { key, type } = visitedNodesInOrder[i];
-        if (key === robotNode || key === destinationNode) return;
 
         const node = document.getElementById(`cell-${key}`);
         if (node) {
@@ -58,8 +57,6 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
     // 4. Animate Shortest Path after visited nodes finish
     const pathDelay = visitedNodesInOrder.length * 10;
     for (let i = 0; i < shortestPath.length; i++) {
-      if (shortestPath[i] === robotNode || shortestPath[i] === destinationNode) continue;
-
       const timeout = setTimeout(
         () => {
           const node = document.getElementById(`cell-${shortestPath[i]}`);
@@ -80,7 +77,7 @@ export const usePathAnimation = (robotNode: string, destinationNode: string) => 
     animationTimeouts.current.push(finishTimeout as unknown as number);
 
     return duration;
-  }, [robotNode, destinationNode]);
+  }, []);
 
   const addTimeout = useCallback((t: number) => {
     animationTimeouts.current.push(t)
