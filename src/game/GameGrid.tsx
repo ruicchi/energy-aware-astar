@@ -18,7 +18,7 @@ const GameGrid = () => {
   const cellSize = viewport.width < 600 ? 20 : 28;
 
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
-  const [pathMetrics, setPathMetrics] = useState<{ distance: number; energy: number } | null>(null);
+  const [pathMetrics, setPathMetrics] = useState<{ algorithm: string; distance: number; energy: number } | null>(null);
   const [robotHeading, setRobotHeading] = useState<Heading>("RIGHT");
 
   //* Grid dimensions
@@ -100,7 +100,7 @@ const GameGrid = () => {
 
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } =
       runAStarManhattan(scenario);
-    setPathMetrics({ distance: totalDistance, energy: totalEnergy });
+    setPathMetrics({ algorithm: "A* Manhattan", distance: totalDistance, energy: totalEnergy });
     setCurrentPath(shortestPath);
     const duration = animateResult(visitedNodesInOrder, shortestPath, "manhattan");
     const t = setTimeout(() => setIsManhattanFinished(true), duration);
@@ -125,7 +125,7 @@ const GameGrid = () => {
 
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } =
       runAStarEnergyAware(scenario);
-    setPathMetrics({ distance: totalDistance, energy: totalEnergy });
+    setPathMetrics({ algorithm: "Energy-Aware A*", distance: totalDistance, energy: totalEnergy });
     setCurrentPath(shortestPath);
     const duration = animateResult(visitedNodesInOrder, shortestPath, "energy");
     const t = setTimeout(() => setIsEnergyFinished(true), duration);

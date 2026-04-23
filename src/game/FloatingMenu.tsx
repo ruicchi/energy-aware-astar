@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
-import { Paper, Typography, Button, Box, IconButton, Collapse, Slider, useMediaQuery, useTheme } from '@mui/material';
+import { Paper, Typography, Button, Box, IconButton, Collapse, Slider, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CloseIcon from '@mui/icons-material/Close';
 
 import { type Heading, type BrushMode } from '../types';
 
@@ -14,7 +16,7 @@ type FloatingMenuProps = {
   onSelectBrush: (brush: BrushMode) => void;
   elevationValue: number;
   onElevationChange: (val: number) => void;
-  pathMetrics: { distance: number; energy: number } | null;
+  pathMetrics: { algorithm: string; distance: number; energy: number } | null;
   isManhattanFinished: boolean;
   isEnergyFinished: boolean;
   showManhattanSearch: boolean;
@@ -58,11 +60,15 @@ export const FloatingMenu = ({
 
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
+  const [resultsPosition, setResultsPosition] = useState({ x: isMobile ? 20 : 240, y: 20 });
+  const [isResultsDragging, setIsResultsDragging] = useState(false);
+  const [isResultsOpen, setIsResultsOpen] = useState(false);
 
   //* State for dropdown
   const [isExpanded, setIsExpanded] = useState(true);
 
   const dragStart = useRef({ x: 0, y: 0 });
+  const resultsDragStart = useRef({ x: 0, y: 0 });
 
   const handlePointerDown = (e: React.PointerEvent) => {
     //* Only start dragging if we didn't click a button inside the menu
@@ -89,25 +95,54 @@ export const FloatingMenu = ({
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
+  const handleResultsPointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+
+    setIsResultsDragging(true);
+    resultsDragStart.current = {
+      x: e.clientX - resultsPosition.x,
+      y: e.clientY - resultsPosition.y,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleResultsPointerMove = (e: React.PointerEvent) => {
+    if (!isResultsDragging) return;
+    setResultsPosition({
+      x: e.clientX - resultsDragStart.current.x,
+      y: e.clientY - resultsDragStart.current.y,
+    });
+  };
+
+  const handleResultsPointerUp = (e: React.PointerEvent) => {
+    setIsResultsDragging(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  const energyPerUnit = pathMetrics && pathMetrics.distance > 0
+    ? pathMetrics.energy / pathMetrics.distance
+    : 0;
+
   return (
-    <Paper
-      elevation={4}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      sx={{
-        position: 'absolute',
-        top: position.y,
-        left: position.x,
-        zIndex: 1000,
-        backgroundColor: 'rgba(255, 255, 255, 0.4)',
-        borderRadius: 2,
-        width: isMobile ? (isTiny ? 160 : 180) : 200,
-        cursor: isDragging ? 'grabbing' : 'grab',
-        userSelect: 'none',
-        overflow: 'hidden',
-      }}
-    >
+    <>
+      <Paper
+        elevation={4}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        sx={{
+          position: 'absolute',
+          top: position.y,
+          left: position.x,
+          zIndex: 1000,
+          backgroundColor: 'rgba(255, 255, 255, 0.4)',
+          borderRadius: 2,
+          width: isMobile ? (isTiny ? 160 : 180) : 200,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          userSelect: 'none',
+          overflow: 'hidden',
+        }}
+      >
       {/* Header bar that always shows */}
       <Box
         sx={{
@@ -237,8 +272,22 @@ export const FloatingMenu = ({
             {/* Metrics Display */}
             {pathMetrics && (
               <Box sx={{ mt: 2, p: 1, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
-                <Typography variant="body2" fontWeight="bold">
-                  Results:
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.5 }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Results:
+                  </Typography>
+                  <Tooltip title="Pop out results">
+                    <IconButton
+                      size="small"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => setIsResultsOpen(true)}
+                    >
+                      <OpenInNewIcon fontSize="inherit" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                <Typography variant="caption" display="block">
+                  Algorithm: {pathMetrics.algorithm}
                 </Typography>
                 <Typography variant="caption" display="block">
                   Distance: {pathMetrics.distance.toFixed(2)} units
@@ -338,6 +387,90 @@ export const FloatingMenu = ({
           </Box>
         </Box>
       </Collapse>
-    </Paper>
+      </Paper>
+
+      {pathMetrics && isResultsOpen && (
+        <Paper
+          elevation={6}
+          onPointerDown={handleResultsPointerDown}
+          onPointerMove={handleResultsPointerMove}
+          onPointerUp={handleResultsPointerUp}
+          sx={{
+            position: 'absolute',
+            top: resultsPosition.y,
+            left: resultsPosition.x,
+            zIndex: 1100,
+            width: isMobile ? 220 : 280,
+            maxWidth: 'calc(100vw - 24px)',
+            backgroundColor: 'rgba(255, 255, 255, 0.92)',
+            borderRadius: 2,
+            overflow: 'hidden',
+            cursor: isResultsDragging ? 'grabbing' : 'grab',
+            userSelect: 'none',
+          }}
+        >
+          <Box
+            sx={{
+              p: 1.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '1px solid rgba(0,0,0,0.1)',
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight="bold">
+              Result Calculation
+            </Typography>
+            <Tooltip title="Close">
+              <IconButton
+                size="small"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => setIsResultsOpen(false)}
+              >
+                <CloseIcon fontSize="inherit" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+
+          <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box>
+              <Typography variant="caption" color="textSecondary" display="block">
+                Algorithm
+              </Typography>
+              <Typography variant="body2" fontWeight="bold">
+                {pathMetrics.algorithm}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="textSecondary" display="block">
+                Distance
+              </Typography>
+              <Typography variant="body2">
+                {pathMetrics.distance.toFixed(2)} units
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="textSecondary" display="block">
+                Energy Consumed
+              </Typography>
+              <Typography variant="body2">
+                {pathMetrics.energy.toFixed(2)} units
+              </Typography>
+            </Box>
+
+            <Box sx={{ borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
+              <Typography variant="caption" color="textSecondary" display="block">
+                Energy per Distance
+              </Typography>
+              <Typography variant="body2" fontWeight="bold">
+                {energyPerUnit.toFixed(2)} energy / unit
+              </Typography>
+            </Box>
+          </Box>
+        </Paper>
+      )}
+    </>
   );
 };
