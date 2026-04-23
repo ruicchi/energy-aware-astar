@@ -44,5 +44,6 @@ export interface Scenario {
   elevations: Map<string, number>;
   climbingFactor: number;
   turnPenalty: number;
+  maxTraversableSlope?: number;
   initialHeading: Heading;
 }

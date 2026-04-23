@@ -100,6 +100,7 @@ const GameGrid = () => {
       elevations: elevations,
       climbingFactor: 1.5,
       turnPenalty: 2.0,
+      maxTraversableSlope: 45,
       initialHeading: robotHeading,
     };
 
@@ -130,6 +131,7 @@ const GameGrid = () => {
       elevations: elevations,
       climbingFactor: 1.5,
       turnPenalty: 2.0,
+      maxTraversableSlope: 45,
       initialHeading: robotHeading,
     };
 

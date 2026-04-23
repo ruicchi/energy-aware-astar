@@ -1,6 +1,7 @@
 import { type Heading, type EnergyNode, type Scenario, type EnergyBreakdown } from '../types'
 
 export const SQRT2 = 1.414
+export const DEFAULT_MAX_TRAVERSABLE_SLOPE = 45
 
 export const getTurnCost = (current: Heading, target: Heading, penalty: number): number => {
   if (current === "NONE" || current === target) return 0;
@@ -65,6 +66,33 @@ const addTerrainPenaltyBreakdown = (
   total: current.total + next.total,
 });
 
+const getStepDistance = (heading: Heading): number => {
+  return heading.includes("_") ? SQRT2 : 1.0;
+};
+
+export const getSlopeDegrees = (
+  current: Pick<EnergyNode, "row" | "col">,
+  target: { row: number; col: number; heading: Heading },
+  scenario: Scenario,
+): number => {
+  const currentElevation = scenario.elevations.get(`${current.row}-${current.col}`) || 0;
+  const targetElevation = scenario.elevations.get(`${target.row}-${target.col}`) || 0;
+  const elevationDelta = targetElevation - currentElevation;
+
+  return Math.atan(Math.abs(elevationDelta) / getStepDistance(target.heading)) * (180 / Math.PI);
+};
+
+export const isTraversableSlope = (
+  current: Pick<EnergyNode, "row" | "col">,
+  target: { row: number; col: number; heading: Heading },
+  scenario: Scenario,
+): boolean => {
+  const maxTraversableSlope =
+    scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE;
+
+  return getSlopeDegrees(current, target, scenario) <= maxTraversableSlope;
+};
+
 export const getEnergyCostBreakdown = (
   current: EnergyNode,
   target: { row: number; col: number; heading: Heading },
@@ -77,18 +105,16 @@ export const getEnergyCostBreakdown = (
   const targetElevation = scenario.elevations.get(targetKey) || 0;
 
   const elevationDelta = targetElevation - currentElevation;
+  const stepDistance = getStepDistance(target.heading);
+  const isDiagonal = stepDistance === SQRT2;
+  const straightMovement = isDiagonal ? 0 : stepDistance;
+  const diagonalMovement = isDiagonal ? stepDistance : 0;
 
   // Uphill costs more (climbingFactor), Downhill saves energy (0.5 recovery factor)
   const climbingCost =
     elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : elevationDelta * 0.5;
 
   const turnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty);
-
-  // Diagonal distance factor (1.0 cardinal, SQRT2 diagonal)
-  const isDiagonal = target.heading.includes("_");
-  const stepDistance = isDiagonal ? SQRT2 : 1.0;
-  const straightMovement = isDiagonal ? 0 : stepDistance;
-  const diagonalMovement = isDiagonal ? stepDistance : 0;
   const targetTerrainBreakdown = getTerrainPenaltyBreakdown(terrainFactor, stepDistance);
   const isFirstMoveFromRobot = current.parent === null && currentKey === scenario.robotNode;
   const startingTerrainBreakdown = isFirstMoveFromRobot
