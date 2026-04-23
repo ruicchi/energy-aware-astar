@@ -22,6 +22,18 @@ export type EnergyNode = {
   parent: EnergyNode | null;
 };
 
+export type EnergyBreakdown = {
+  baseMovement: number;
+  straightMovement: number;
+  diagonalMovement: number;
+  dirtPenalty: number;
+  waterPenalty: number;
+  otherTerrainPenalty: number;
+  elevationCost: number;
+  turnCost: number;
+  total: number;
+};
+
 export interface Scenario {
   rows: number;
   cols: number;

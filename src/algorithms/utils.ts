@@ -1,4 +1,4 @@
-import { type Heading, type EnergyNode, type Scenario } from '../types'
+import { type Heading, type EnergyNode, type Scenario, type EnergyBreakdown } from '../types'
 
 export const SQRT2 = 1.414
 
@@ -32,6 +32,14 @@ export const getEnergyCost = (
   target: { row: number; col: number; heading: Heading },
   scenario: Scenario,
 ): number => {
+  return getEnergyCostBreakdown(current, target, scenario).total;
+};
+
+export const getEnergyCostBreakdown = (
+  current: EnergyNode,
+  target: { row: number; col: number; heading: Heading },
+  scenario: Scenario,
+): EnergyBreakdown => {
   const targetKey = `${target.row}-${target.col}`;
   const terrainFactor = scenario.terrainFactors.get(targetKey) || 0;
   const currentElevation = scenario.elevations.get(`${current.row}-${current.col}`) || 0;
@@ -48,7 +56,103 @@ export const getEnergyCost = (
   // Diagonal distance factor (1.0 cardinal, SQRT2 diagonal)
   const isDiagonal = target.heading.includes("_");
   const stepDistance = isDiagonal ? SQRT2 : 1.0;
+  const straightMovement = isDiagonal ? 0 : stepDistance;
+  const diagonalMovement = isDiagonal ? stepDistance : 0;
+  const terrainPenalty = stepDistance * terrainFactor;
+  const dirtPenalty = terrainFactor === 0.5 ? terrainPenalty : 0;
+  const waterPenalty = terrainFactor === 2.0 ? terrainPenalty : 0;
+  const otherTerrainPenalty =
+    terrainFactor !== 0 && terrainFactor !== 0.5 && terrainFactor !== 2.0
+      ? terrainPenalty
+      : 0;
+  const total =
+    stepDistance +
+    dirtPenalty +
+    waterPenalty +
+    otherTerrainPenalty +
+    climbingCost +
+    turnCost;
 
   // Final cost: distance * terrain + climbing/recovery + turn
-  return stepDistance * (1 + terrainFactor) + climbingCost + turnCost;
+  return {
+    baseMovement: stepDistance,
+    straightMovement,
+    diagonalMovement,
+    dirtPenalty,
+    waterPenalty,
+    otherTerrainPenalty,
+    elevationCost: climbingCost,
+    turnCost,
+    total,
+  };
+};
+
+export const createEmptyEnergyBreakdown = (): EnergyBreakdown => ({
+  baseMovement: 0,
+  straightMovement: 0,
+  diagonalMovement: 0,
+  dirtPenalty: 0,
+  waterPenalty: 0,
+  otherTerrainPenalty: 0,
+  elevationCost: 0,
+  turnCost: 0,
+  total: 0,
+});
+
+export const addEnergyBreakdown = (
+  total: EnergyBreakdown,
+  step: EnergyBreakdown,
+): EnergyBreakdown => ({
+  baseMovement: total.baseMovement + step.baseMovement,
+  straightMovement: total.straightMovement + step.straightMovement,
+  diagonalMovement: total.diagonalMovement + step.diagonalMovement,
+  dirtPenalty: total.dirtPenalty + step.dirtPenalty,
+  waterPenalty: total.waterPenalty + step.waterPenalty,
+  otherTerrainPenalty: total.otherTerrainPenalty + step.otherTerrainPenalty,
+  elevationCost: total.elevationCost + step.elevationCost,
+  turnCost: total.turnCost + step.turnCost,
+  total: total.total + step.total,
+});
+
+export const getHeadingBetweenNodes = (
+  from: Pick<EnergyNode, "row" | "col">,
+  to: Pick<EnergyNode, "row" | "col">,
+): Heading => {
+  const dr = to.row - from.row;
+  const dc = to.col - from.col;
+
+  if (dr === -1 && dc === 0) return "UP";
+  if (dr === 1 && dc === 0) return "DOWN";
+  if (dr === 0 && dc === -1) return "LEFT";
+  if (dr === 0 && dc === 1) return "RIGHT";
+  if (dr === -1 && dc === -1) return "UP_LEFT";
+  if (dr === -1 && dc === 1) return "UP_RIGHT";
+  if (dr === 1 && dc === -1) return "DOWN_LEFT";
+  if (dr === 1 && dc === 1) return "DOWN_RIGHT";
+  return "NONE";
+};
+
+export const getPathEnergyBreakdown = (
+  endNode: EnergyNode,
+  scenario: Scenario,
+): EnergyBreakdown => {
+  const steps: EnergyNode[] = [];
+  let temp: EnergyNode | null = endNode;
+
+  while (temp) {
+    steps.unshift(temp);
+    temp = temp.parent;
+  }
+
+  return steps.slice(1).reduce((total, node, index) => {
+    const parent = steps[index];
+    const stepHeading = getHeadingBetweenNodes(parent, node);
+    const stepBreakdown = getEnergyCostBreakdown(
+      parent,
+      { row: node.row, col: node.col, heading: stepHeading },
+      scenario,
+    );
+
+    return addEnergyBreakdown(total, stepBreakdown);
+  }, createEmptyEnergyBreakdown());
 };

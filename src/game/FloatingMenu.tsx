@@ -5,7 +5,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CloseIcon from '@mui/icons-material/Close';
 
-import { type Heading, type BrushMode } from '../types';
+import { type EnergyBreakdown, type Heading, type BrushMode } from '../types';
 
 type FloatingMenuProps = {
   onClearWalls: () => void;
@@ -16,7 +16,12 @@ type FloatingMenuProps = {
   onSelectBrush: (brush: BrushMode) => void;
   elevationValue: number;
   onElevationChange: (val: number) => void;
-  pathMetrics: { algorithm: string; distance: number; energy: number } | null;
+  pathMetrics: {
+    algorithm: string;
+    distance: number;
+    energy: number;
+    energyBreakdown: EnergyBreakdown;
+  } | null;
   isManhattanFinished: boolean;
   isEnergyFinished: boolean;
   showManhattanSearch: boolean;
@@ -122,6 +127,7 @@ export const FloatingMenu = ({
   const energyPerUnit = pathMetrics && pathMetrics.distance > 0
     ? pathMetrics.energy / pathMetrics.distance
     : 0;
+  const energyBreakdown = pathMetrics?.energyBreakdown;
 
   return (
     <>
@@ -468,6 +474,72 @@ export const FloatingMenu = ({
                 {energyPerUnit.toFixed(2)} energy / unit
               </Typography>
             </Box>
+
+            {energyBreakdown && (
+              <Box sx={{ borderTop: '1px solid rgba(0,0,0,0.1)', pt: 1 }}>
+                <Typography variant="caption" color="textSecondary" display="block">
+                  Energy Breakdown
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="caption">Straight movement</Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      {energyBreakdown.straightMovement.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="caption">Diagonal movement</Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      {energyBreakdown.diagonalMovement.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="caption">Movement total</Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      {energyBreakdown.baseMovement.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="caption">Dirt penalty</Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      {energyBreakdown.dirtPenalty.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="caption">Water penalty</Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      {energyBreakdown.waterPenalty.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  {energyBreakdown.otherTerrainPenalty !== 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                      <Typography variant="caption">Other terrain</Typography>
+                      <Typography variant="caption" fontWeight="bold">
+                        {energyBreakdown.otherTerrainPenalty.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  )}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="caption">Elevation cost</Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      {energyBreakdown.elevationCost.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="caption">Turn cost</Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      {energyBreakdown.turnCost.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+                    <Typography variant="caption">Breakdown total</Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      {energyBreakdown.total.toFixed(2)}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            )}
           </Box>
         </Paper>
       )}

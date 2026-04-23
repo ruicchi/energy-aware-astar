@@ -1,5 +1,9 @@
 import { type Scenario, type Heading, type EnergyNode } from "../../types"
-import { getTurnCost } from "../utils"
+import {
+  createEmptyEnergyBreakdown,
+  getEnergyCostBreakdown,
+  getPathEnergyBreakdown,
+} from "../utils"
 
 const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
   { dr: -1, dc: 0, heading: "UP" },
@@ -116,12 +120,14 @@ export const runAStarManhattan = (scenario: Scenario) => {
         }
         temp = temp.parent
       }
+      const energyBreakdown = getPathEnergyBreakdown(current, scenario)
 
       return {
         visitedNodesInOrder,
         shortestPath,
         totalEnergy: current.g,
         totalDistance: shortestPath.length - 1,
+        energyBreakdown,
       }
     }
 
@@ -150,18 +156,12 @@ export const runAStarManhattan = (scenario: Scenario) => {
         continue
       }
 
-      // Cost Calculation
-      const terrainFactor = scenario.terrainFactors.get(neighborCellKey) || 0
-      const baseStepCost = 1.0 * (1 + terrainFactor)
-
-      const currentElevation = scenario.elevations.get(cellKey) || 0
-      const targetElevation = scenario.elevations.get(neighborCellKey) || 0
-      const elevationDelta = targetElevation - currentElevation
-      const climbingCost =
-        elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : elevationDelta * 0.5
-
-      const turnCost = getTurnCost(current.heading, neighbor.heading, scenario.turnPenalty)
-      const tentativeG = current.g + baseStepCost + climbingCost + turnCost
+      const cost = getEnergyCostBreakdown(
+        current,
+        { row: nr, col: nc, heading: neighbor.heading },
+        scenario,
+      )
+      const tentativeG = current.g + cost.total
 
       let neighborNode = allNodes.get(neighborStateKey)
       if (!neighborNode || tentativeG < neighborNode.g) {
@@ -199,5 +199,11 @@ export const runAStarManhattan = (scenario: Scenario) => {
     }
   }
 
-  return { visitedNodesInOrder, shortestPath: [], totalEnergy: 0, totalDistance: 0 }
+  return {
+    visitedNodesInOrder,
+    shortestPath: [],
+    totalEnergy: 0,
+    totalDistance: 0,
+    energyBreakdown: createEmptyEnergyBreakdown(),
+  }
 }

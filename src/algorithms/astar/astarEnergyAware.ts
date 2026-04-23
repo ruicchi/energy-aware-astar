@@ -1,5 +1,5 @@
 import { type Scenario, type Heading, type EnergyNode } from "../../types";
-import { getEnergyCost, SQRT2 } from "../utils";
+import { createEmptyEnergyBreakdown, getEnergyCost, getPathEnergyBreakdown, SQRT2 } from "../utils";
 
 const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
   { dr: -1, dc: 0, heading: "UP" },
@@ -123,12 +123,14 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
         }
         temp = temp.parent;
       }
+      const energyBreakdown = getPathEnergyBreakdown(current, scenario);
 
       return {
         visitedNodesInOrder,
         shortestPath: Array.from(new Set(shortestPath)),
         totalEnergy: current.g,
         totalDistance: totalDistance,
+        energyBreakdown,
       };
     }
 
@@ -210,5 +212,11 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     }
   }
 
-  return { visitedNodesInOrder, shortestPath: [], totalEnergy: 0, totalDistance: 0 };
+  return {
+    visitedNodesInOrder,
+    shortestPath: [],
+    totalEnergy: 0,
+    totalDistance: 0,
+    energyBreakdown: createEmptyEnergyBreakdown(),
+  };
 };

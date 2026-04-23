@@ -9,7 +9,7 @@ import { MemoizedCell } from "./MemoizedCell";
 import { FloatingMenu } from "./FloatingMenu";
 import { runAStarManhattan } from "../algorithms/astar/astarManhattan";
 import { runAStarEnergyAware } from "../algorithms/astar/astarEnergyAware";
-import { type Heading } from "../types";
+import { type EnergyBreakdown, type Heading } from "../types";
 
 const GameGrid = () => {
   const viewport = useViewport();
@@ -18,7 +18,12 @@ const GameGrid = () => {
   const cellSize = viewport.width < 600 ? 20 : 28;
 
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
-  const [pathMetrics, setPathMetrics] = useState<{ algorithm: string; distance: number; energy: number } | null>(null);
+  const [pathMetrics, setPathMetrics] = useState<{
+    algorithm: string;
+    distance: number;
+    energy: number;
+    energyBreakdown: EnergyBreakdown;
+  } | null>(null);
   const [robotHeading, setRobotHeading] = useState<Heading>("RIGHT");
 
   //* Grid dimensions
@@ -98,9 +103,14 @@ const GameGrid = () => {
       initialHeading: robotHeading,
     };
 
-    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } =
+    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
       runAStarManhattan(scenario);
-    setPathMetrics({ algorithm: "A* Manhattan", distance: totalDistance, energy: totalEnergy });
+    setPathMetrics({
+      algorithm: "A* Manhattan",
+      distance: totalDistance,
+      energy: totalEnergy,
+      energyBreakdown,
+    });
     setCurrentPath(shortestPath);
     const duration = animateResult(visitedNodesInOrder, shortestPath, "manhattan");
     const t = setTimeout(() => setIsManhattanFinished(true), duration);
@@ -123,9 +133,14 @@ const GameGrid = () => {
       initialHeading: robotHeading,
     };
 
-    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } =
+    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
       runAStarEnergyAware(scenario);
-    setPathMetrics({ algorithm: "Energy-Aware A*", distance: totalDistance, energy: totalEnergy });
+    setPathMetrics({
+      algorithm: "Energy-Aware A*",
+      distance: totalDistance,
+      energy: totalEnergy,
+      energyBreakdown,
+    });
     setCurrentPath(shortestPath);
     const duration = animateResult(visitedNodesInOrder, shortestPath, "energy");
     const t = setTimeout(() => setIsEnergyFinished(true), duration);
