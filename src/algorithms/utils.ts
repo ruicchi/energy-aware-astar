@@ -35,14 +35,45 @@ export const getEnergyCost = (
   return getEnergyCostBreakdown(current, target, scenario).total;
 };
 
+const getTerrainPenaltyBreakdown = (
+  terrainFactor: number,
+  distanceBasis: number,
+): Pick<EnergyBreakdown, "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total"> => {
+  const terrainPenalty = distanceBasis * terrainFactor;
+  const dirtPenalty = terrainFactor === 0.5 ? terrainPenalty : 0;
+  const waterPenalty = terrainFactor === 2.0 ? terrainPenalty : 0;
+  const otherTerrainPenalty =
+    terrainFactor !== 0 && terrainFactor !== 0.5 && terrainFactor !== 2.0
+      ? terrainPenalty
+      : 0;
+
+  return {
+    dirtPenalty,
+    waterPenalty,
+    otherTerrainPenalty,
+    total: dirtPenalty + waterPenalty + otherTerrainPenalty,
+  };
+};
+
+const addTerrainPenaltyBreakdown = (
+  current: Pick<EnergyBreakdown, "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total">,
+  next: Pick<EnergyBreakdown, "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total">,
+): Pick<EnergyBreakdown, "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total"> => ({
+  dirtPenalty: current.dirtPenalty + next.dirtPenalty,
+  waterPenalty: current.waterPenalty + next.waterPenalty,
+  otherTerrainPenalty: current.otherTerrainPenalty + next.otherTerrainPenalty,
+  total: current.total + next.total,
+});
+
 export const getEnergyCostBreakdown = (
   current: EnergyNode,
   target: { row: number; col: number; heading: Heading },
   scenario: Scenario,
 ): EnergyBreakdown => {
   const targetKey = `${target.row}-${target.col}`;
+  const currentKey = `${current.row}-${current.col}`;
   const terrainFactor = scenario.terrainFactors.get(targetKey) || 0;
-  const currentElevation = scenario.elevations.get(`${current.row}-${current.col}`) || 0;
+  const currentElevation = scenario.elevations.get(currentKey) || 0;
   const targetElevation = scenario.elevations.get(targetKey) || 0;
 
   const elevationDelta = targetElevation - currentElevation;
@@ -58,18 +89,18 @@ export const getEnergyCostBreakdown = (
   const stepDistance = isDiagonal ? SQRT2 : 1.0;
   const straightMovement = isDiagonal ? 0 : stepDistance;
   const diagonalMovement = isDiagonal ? stepDistance : 0;
-  const terrainPenalty = stepDistance * terrainFactor;
-  const dirtPenalty = terrainFactor === 0.5 ? terrainPenalty : 0;
-  const waterPenalty = terrainFactor === 2.0 ? terrainPenalty : 0;
-  const otherTerrainPenalty =
-    terrainFactor !== 0 && terrainFactor !== 0.5 && terrainFactor !== 2.0
-      ? terrainPenalty
-      : 0;
+  const targetTerrainBreakdown = getTerrainPenaltyBreakdown(terrainFactor, stepDistance);
+  const isFirstMoveFromRobot = current.parent === null && currentKey === scenario.robotNode;
+  const startingTerrainBreakdown = isFirstMoveFromRobot
+    ? getTerrainPenaltyBreakdown(scenario.terrainFactors.get(scenario.robotNode) || 0, stepDistance)
+    : getTerrainPenaltyBreakdown(0, 0);
+  const terrainBreakdown = addTerrainPenaltyBreakdown(
+    targetTerrainBreakdown,
+    startingTerrainBreakdown,
+  );
   const total =
     stepDistance +
-    dirtPenalty +
-    waterPenalty +
-    otherTerrainPenalty +
+    terrainBreakdown.total +
     climbingCost +
     turnCost;
 
@@ -78,9 +109,9 @@ export const getEnergyCostBreakdown = (
     baseMovement: stepDistance,
     straightMovement,
     diagonalMovement,
-    dirtPenalty,
-    waterPenalty,
-    otherTerrainPenalty,
+    dirtPenalty: terrainBreakdown.dirtPenalty,
+    waterPenalty: terrainBreakdown.waterPenalty,
+    otherTerrainPenalty: terrainBreakdown.otherTerrainPenalty,
     elevationCost: climbingCost,
     turnCost,
     total,
