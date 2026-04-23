@@ -43,7 +43,7 @@ export const useRobotWalk = (
       if (i > 0) {
         const nextHeading = getHeadingFromNodes(currentPath[i - 1], currentPath[i]);
 
-        if (nextHeading !== "NONE" && nextHeading !== currentRobotHeading) {
+        if (currentRobotHeading !== "NONE" && nextHeading !== "NONE" && nextHeading !== currentRobotHeading) {
           // Schedule the rotation
           const rotateTimeout = setTimeout(() => {
             setRobotHeading(nextHeading);

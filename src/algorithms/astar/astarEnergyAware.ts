@@ -73,6 +73,7 @@ class MinHeap {
 export const runAStarEnergyAware = (scenario: Scenario) => {
   const [destRow, destCol] = scenario.destinationNode.split("-").map(Number);
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number);
+  const tracksHeading = scenario.initialHeading !== "NONE";
 
   const openSet = new MinHeap();
   const allNodes = new Map<string, EnergyNode>();
@@ -143,7 +144,8 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
       const nr = current.row + neighbor.dr;
       const nc = current.col + neighbor.dc;
       const neighborCellKey = `${nr}-${nc}`;
-      const neighborStateKey = `${neighborCellKey}-${neighbor.heading}`;
+      const nodeHeading = tracksHeading ? neighbor.heading : "NONE";
+      const neighborStateKey = `${neighborCellKey}-${nodeHeading}`;
 
       // Boundary and wall checks
       if (
@@ -179,7 +181,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
             key: neighborStateKey,
             row: nr,
             col: nc,
-            heading: neighbor.heading,
+            heading: nodeHeading,
             g: tentativeG,
             h: Math.hypot(nr - destRow, nc - destCol),
             f: tentativeG + Math.hypot(nr - destRow, nc - destCol),

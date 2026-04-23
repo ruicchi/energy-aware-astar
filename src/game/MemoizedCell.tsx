@@ -100,7 +100,7 @@ export const MemoizedCell = memo(
           position: "relative",
         }}
       >
-        {isRobot && heading && (
+        {isRobot && heading && heading !== "NONE" && (
           <ArrowForwardIcon
             sx={{
               fontSize: cellSize * 0.8,
