@@ -12,6 +12,6 @@ This repository contains the simulation code and dataset for our enhanced A* pat
   npm install
   ```
 3. **Start project in dev mode:**
-   ```bash
-   npm run dev
-   ```
+  ```bash
+  npm run dev
+  ```
