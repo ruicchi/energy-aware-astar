@@ -7,3 +7,11 @@ This repository contains the simulation code and dataset for our enhanced A* pat
    git clone https://github.com/ruicchi/energy-aware-astar.git
    cd energy-aware-astar
   ```
+2. **Install dependencies:**
+  ```bash
+  npm install
+  ```
+3. **Start project in dev mode:**
+   ```bash
+   npm run dev
+   ```
