@@ -1,7 +1,7 @@
-import { type Heading, type EnergyNode, type Scenario, type EnergyBreakdown } from '../types'
+import { type Heading, type EnergyNode, type Scenario, type EnergyBreakdown } from "../types";
 
-export const SQRT2 = 1.414
-export const DEFAULT_MAX_TRAVERSABLE_SLOPE = 45
+export const SQRT2 = 1.414;
+export const DEFAULT_MAX_TRAVERSABLE_SLOPE = 45;
 
 export const getTurnCost = (current: Heading, target: Heading, penalty: number): number => {
   if (current === "NONE" || current === target) return 0;
@@ -42,11 +42,9 @@ const getTerrainPenaltyBreakdown = (
 ): Pick<EnergyBreakdown, "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total"> => {
   const terrainPenalty = distanceBasis * terrainFactor;
   const dirtPenalty = terrainFactor === 0.5 ? terrainPenalty : 0;
-  const waterPenalty = terrainFactor === 2.0 ? terrainPenalty : 0;
+  const waterPenalty = terrainFactor === 0.1 ? terrainPenalty : 0;
   const otherTerrainPenalty =
-    terrainFactor !== 0 && terrainFactor !== 0.5 && terrainFactor !== 2.0
-      ? terrainPenalty
-      : 0;
+    terrainFactor !== 0 && terrainFactor !== 0.5 && terrainFactor !== 0.1 ? terrainPenalty : 0;
 
   return {
     dirtPenalty,
@@ -87,8 +85,7 @@ export const isTraversableSlope = (
   target: { row: number; col: number; heading: Heading },
   scenario: Scenario,
 ): boolean => {
-  const maxTraversableSlope =
-    scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE;
+  const maxTraversableSlope = scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE;
 
   return getSlopeDegrees(current, target, scenario) <= maxTraversableSlope;
 };
@@ -124,11 +121,7 @@ export const getEnergyCostBreakdown = (
     targetTerrainBreakdown,
     startingTerrainBreakdown,
   );
-  const total =
-    stepDistance +
-    terrainBreakdown.total +
-    climbingCost +
-    turnCost;
+  const total = stepDistance + terrainBreakdown.total + climbingCost + turnCost;
 
   // Final cost: distance * terrain + climbing/recovery + turn
   return {

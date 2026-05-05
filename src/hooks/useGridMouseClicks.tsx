@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { clearWalls } from '../utils/wallUtils';
-import { type BrushMode } from '../types';
+import { useState, useCallback, useRef, useEffect } from "react";
+import { clearWalls } from "../utils/wallUtils";
+import { type BrushMode } from "../types";
 
 export const useGridMouseClicks = (
   initialRobot: string,
@@ -74,7 +74,7 @@ export const useGridMouseClicks = (
       // Visual feedback for terrain
       if (value === 0.5)
         element.style.backgroundColor = "#d2b48c"; // Tan for dirt
-      else if (value === 2.0)
+      else if (value === 0.1)
         element.style.backgroundColor = "#00ffff"; // Cyan for water
       else element.style.backgroundColor = "";
     } else if (mode === "elevation") {
@@ -108,7 +108,7 @@ export const useGridMouseClicks = (
       } else if (currentBrush === "dirt") {
         drawValue.current = terrainFactorsRef.current.get(key) !== 0.5 ? 0.5 : 0;
       } else if (currentBrush === "water") {
-        drawValue.current = terrainFactorsRef.current.get(key) !== 2.0 ? 2.0 : 0;
+        drawValue.current = terrainFactorsRef.current.get(key) !== 0.1 ? 0.1 : 0;
       } else if (currentBrush === "elevation") {
         const current = elevationsRef.current.get(key);
         // Toggle logic: if cell is at target value, clear it. Else, set to target.

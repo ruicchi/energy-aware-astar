@@ -68,7 +68,7 @@ export const MemoizedCell = memo(
       bgColor = "#1a88e2"; //* Blue for walls/active cells
     else if (terrainFactor === 0.5)
       bgColor = "#d2b48c"; //* Dirt (Tan)
-    else if (terrainFactor === 2.0)
+    else if (terrainFactor === 0.1)
       bgColor = "#00ffff"; //* Water (Cyan)
     else if (elevation > 0) {
       //* Visual feedback for elevation (darker green for higher)
