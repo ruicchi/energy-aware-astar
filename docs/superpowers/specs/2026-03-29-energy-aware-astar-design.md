@@ -21,7 +21,10 @@ The cost to move from a `current` node to an `adjacent` cell is:
 `StepEnergy = (1 + TerrainFactor) + ClimbingCost + TurnCost`
 
 - **Distance Base:** 1.0 (constant for adjacent cells).
-- **TerrainFactor:** Multiplier based on cell difficulty (e.g., sand, gravel). Default 0.
+- **TerrainFactor:** Multiplier based on cell difficulty.
+    - `0.5` for Dirt.
+    - `0.1` for Water.
+    - Default `0` for normal terrain.
 - **ClimbingCost:** If `elevation(target) > elevation(current)`, cost is `(elevationDelta) * climbingFactor`.
 - **TurnCost:**
     - `0` if `current.heading === neighborDirection`.

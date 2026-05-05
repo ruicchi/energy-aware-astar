@@ -1,4 +1,4 @@
-export type BrushMode = 'wall' | 'dirt' | 'water' | 'elevation' | 'robot' | 'destination' | null;
+export type BrushMode = "wall" | "dirt" | "water" | "elevation" | "robot" | "destination" | null;
 
 export type Heading =
   | "UP"

@@ -340,25 +340,29 @@ export const FloatingMenu = ({
                   Wall
                 </Button>
 
-                <Button
-                  variant={activeBrush === 'dirt' ? "contained" : "outlined"}
-                  color="warning"
-                  size="small"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => onSelectBrush('dirt')}
-                >
-                  Dirt
-                </Button>
+                <Tooltip title="Penalty factor: 0.5" arrow>
+                  <Button
+                    variant={activeBrush === 'dirt' ? "contained" : "outlined"}
+                    color="warning"
+                    size="small"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => onSelectBrush('dirt')}
+                  >
+                    Dirt
+                  </Button>
+                </Tooltip>
 
-                <Button
-                  variant={activeBrush === 'water' ? "contained" : "outlined"}
-                  color="primary"
-                  size="small"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => onSelectBrush('water')}
-                >
-                  Water
-                </Button>
+                <Tooltip title="Penalty factor: 0.1" arrow>
+                  <Button
+                    variant={activeBrush === 'water' ? "contained" : "outlined"}
+                    color="primary"
+                    size="small"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => onSelectBrush('water')}
+                  >
+                    Water
+                  </Button>
+                </Tooltip>
 
                 <Button
                   variant={activeBrush === 'elevation' ? "contained" : "outlined"}
