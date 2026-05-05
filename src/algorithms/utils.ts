@@ -24,8 +24,39 @@ export const getTurnCost = (current: Heading, target: Heading, penalty: number):
   let diff = Math.abs(currentIndex - targetIndex);
   if (diff > 4) diff = 8 - diff; // Shortest path around the 8-direction circle
 
-  // diff 1 = 45°, diff 2 = 90°, diff 3 = 135°, diff 4 = 180°
-  return diff * 0.5 * penalty;
+  const radians = diff * (Math.PI / 4);
+  return radians * penalty;
+};
+
+export const getMinAngleToDestination = (
+  currentHeading: Heading,
+  currentRow: number,
+  currentCol: number,
+  destRow: number,
+  destCol: number,
+): number => {
+  if (currentHeading === "NONE") return 0;
+
+  const headingAngles: Record<Exclude<Heading, "NONE">, number> = {
+    UP: -Math.PI / 2,
+    DOWN: Math.PI / 2,
+    LEFT: Math.PI,
+    RIGHT: 0,
+    UP_RIGHT: -Math.PI / 4,
+    UP_LEFT: (-3 * Math.PI) / 4,
+    DOWN_RIGHT: Math.PI / 4,
+    DOWN_LEFT: (3 * Math.PI) / 4,
+  };
+  const currentAngle = headingAngles[currentHeading as Exclude<Heading, "NONE">];
+
+  const dy = destRow - currentRow;
+  const dx = destCol - currentCol;
+  if (dx === 0 && dy === 0) return 0;
+  const destAngle = Math.atan2(dy, dx);
+
+  let diff = Math.abs(currentAngle - destAngle);
+  if (diff > Math.PI) diff = 2 * Math.PI - diff;
+  return diff;
 };
 
 export const getEnergyCost = (

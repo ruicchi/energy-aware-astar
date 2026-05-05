@@ -2,10 +2,13 @@ import { type Scenario, type Heading, type EnergyNode } from "../../types";
 import {
   createEmptyEnergyBreakdown,
   getEnergyCost,
+  getMinAngleToDestination,
   getPathEnergyBreakdown,
   isTraversableSlope,
   SQRT2,
 } from "../utils";
+
+const S_MAX = 2; // Maximum translation speed
 
 const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
   { dr: -1, dc: 0, heading: "UP" },
@@ -81,6 +84,14 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number);
   const tracksHeading = scenario.initialHeading !== "NONE";
 
+  const calculateHeuristic = (row: number, col: number, heading: Heading): number => {
+    const distance = Math.hypot(row - destRow, col - destCol);
+    const hTrans = distance / S_MAX;
+    const minAngle = getMinAngleToDestination(heading, row, col, destRow, destCol);
+    const hRot = scenario.turnPenalty * minAngle;
+    return hTrans + hRot;
+  };
+
   const openSet = new MinHeap();
   const allNodes = new Map<string, EnergyNode>();
   const closedSet = new Set<string>();
@@ -95,7 +106,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     col: startCol,
     heading: scenario.initialHeading,
     g: 0,
-    h: Math.hypot(startRow - destRow, startCol - destCol),
+    h: calculateHeuristic(startRow, startCol, scenario.initialHeading),
     f: 0,
     parent: null,
   };
@@ -190,14 +201,15 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
       let neighborNode = allNodes.get(neighborStateKey);
       if (!neighborNode || tentativeG < neighborNode.g) {
         if (!neighborNode) {
+          const h = calculateHeuristic(nr, nc, nodeHeading);
           neighborNode = {
             key: neighborStateKey,
             row: nr,
             col: nc,
             heading: nodeHeading,
             g: tentativeG,
-            h: Math.hypot(nr - destRow, nc - destCol),
-            f: tentativeG + Math.hypot(nr - destRow, nc - destCol),
+            h: h,
+            f: tentativeG + h,
             parent: current,
           };
         } else {
