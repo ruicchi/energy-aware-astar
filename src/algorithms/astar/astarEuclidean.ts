@@ -79,7 +79,6 @@ class MinHeap {
 export const runAStarEuclidean = (scenario: Scenario) => {
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number)
   const [destRow, destCol] = scenario.destinationNode.split("-").map(Number)
-  const tracksHeading = scenario.initialHeading !== "NONE"
 
   const openSet = new MinHeap()
   const allNodes = new Map<string, EnergyNode>()
@@ -90,7 +89,7 @@ export const runAStarEuclidean = (scenario: Scenario) => {
   const closedCells = new Set<string>()
 
   const startNode: EnergyNode = {
-    key: `${scenario.robotNode}-${scenario.initialHeading}`,
+    key: scenario.robotNode,
     row: startRow,
     col: startCol,
     heading: scenario.initialHeading,
@@ -112,7 +111,7 @@ export const runAStarEuclidean = (scenario: Scenario) => {
     if (closedSet.has(current.key)) continue
     closedSet.add(current.key)
 
-    const cellKey = `${current.row}-${current.col}`
+    const cellKey = current.key
 
     if (current.row === destRow && current.col === destCol) {
       const shortestPath: string[] = []
@@ -149,8 +148,7 @@ export const runAStarEuclidean = (scenario: Scenario) => {
       const nr = current.row + neighbor.dr
       const nc = current.col + neighbor.dc
       const neighborCellKey = `${nr}-${nc}`
-      const nodeHeading = tracksHeading ? neighbor.heading : "NONE"
-      const neighborStateKey = `${neighborCellKey}-${nodeHeading}`
+      const neighborStateKey = neighborCellKey
 
       if (
         nr < 0 ||
@@ -188,7 +186,7 @@ export const runAStarEuclidean = (scenario: Scenario) => {
             key: neighborStateKey,
             row: nr,
             col: nc,
-            heading: nodeHeading,
+            heading: neighbor.heading,
             g: tentativeG,
             h: h,
             f: tentativeG + h,
@@ -198,6 +196,7 @@ export const runAStarEuclidean = (scenario: Scenario) => {
           neighborNode.g = tentativeG
           neighborNode.f = tentativeG + neighborNode.h
           neighborNode.parent = current
+          neighborNode.heading = neighbor.heading
         }
 
         allNodes.set(neighborStateKey, neighborNode)

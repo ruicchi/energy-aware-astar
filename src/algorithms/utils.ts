@@ -234,15 +234,27 @@ export const getPathEnergyBreakdown = (
     temp = temp.parent;
   }
 
+  let currentSimulatedHeading = scenario.initialHeading;
+
   return steps.slice(1).reduce((total, node, index) => {
     const parent = steps[index];
     const stepHeading = getHeadingBetweenNodes(parent, node);
+
+    // Create a virtual parent node that has the simulated heading
+    // This ensures getEnergyCostBreakdown calculates turn costs correctly
+    // by comparing currentSimulatedHeading with stepHeading
+    const virtualParent: EnergyNode = {
+      ...parent,
+      heading: currentSimulatedHeading,
+    };
+
     const stepBreakdown = getEnergyCostBreakdown(
-      parent,
+      virtualParent,
       { row: node.row, col: node.col, heading: stepHeading },
       scenario,
     );
 
+    currentSimulatedHeading = stepHeading;
     return addEnergyBreakdown(total, stepBreakdown);
   }, createEmptyEnergyBreakdown());
 };

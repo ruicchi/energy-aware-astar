@@ -229,7 +229,11 @@ export const FloatingMenu = ({
                 transition: "opacity 0.2s",
               }}
             >
-              <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: "block" }}>
+              <Typography
+                variant="caption"
+                color="textSecondary"
+                sx={{ mb: 0.5, display: "block" }}
+              >
                 Select Algorithm
               </Typography>
 
@@ -241,7 +245,7 @@ export const FloatingMenu = ({
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => onSelectAlgo("energyAware")}
               >
-                Energy-Aware A*
+                Energy-Aware
               </Button>
 
               <Button
@@ -252,7 +256,7 @@ export const FloatingMenu = ({
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => onSelectAlgo("manhattan")}
               >
-                A* Manhattan
+                Manhattan
               </Button>
 
               <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
