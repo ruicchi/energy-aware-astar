@@ -187,6 +187,7 @@ export const createEmptyEnergyBreakdown = (): EnergyBreakdown => ({
   elevationCost: 0,
   turnCost: 0,
   total: 0,
+  nodesEvaluated: 0,
 });
 
 export const addEnergyBreakdown = (
@@ -254,7 +255,7 @@ export const getPathEnergyBreakdown = (
       scenario,
     );
 
-    currentSimulatedHeading = stepHeading;
+    currentSimulatedHeading = scenario.initialHeading === "NONE" ? "NONE" : stepHeading;
     return addEnergyBreakdown(total, stepBreakdown);
   }, createEmptyEnergyBreakdown());
 };

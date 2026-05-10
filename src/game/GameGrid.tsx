@@ -39,8 +39,6 @@ const GameGrid = () => {
     setSelectedAlgo(algo);
     if (algo !== "energyAware") {
       setRobotHeading("NONE");
-    } else if (robotHeading === "NONE") {
-      setRobotHeading("RIGHT");
     }
   };
 

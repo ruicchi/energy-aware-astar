@@ -378,6 +378,9 @@ export const FloatingMenu = ({
                   <Typography variant="caption" display="block">
                     Energy: {pathMetrics.energy.toFixed(2)} units
                   </Typography>
+                  <Typography variant="caption" display="block">
+                    Nodes Evaluated: {pathMetrics.energyBreakdown.nodesEvaluated}
+                  </Typography>
                 </Box>
               )}
 
@@ -642,6 +645,12 @@ export const FloatingMenu = ({
                     <Typography variant="caption">Breakdown total</Typography>
                     <Typography variant="caption" fontWeight="bold">
                       {energyBreakdown.total.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, borderTop: "1px dashed rgba(0,0,0,0.1)", mt: 0.5, pt: 0.5 }}>
+                    <Typography variant="caption">Evaluated nodes</Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      {energyBreakdown.nodesEvaluated}
                     </Typography>
                   </Box>
                 </Box>

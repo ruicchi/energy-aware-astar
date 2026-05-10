@@ -32,6 +32,7 @@ export type EnergyBreakdown = {
   elevationCost: number;
   turnCost: number;
   total: number;
+  nodesEvaluated: number;
 };
 
 export interface Scenario {

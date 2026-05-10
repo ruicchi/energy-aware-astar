@@ -118,12 +118,15 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
   visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" })
   openedCells.add(scenario.robotNode)
 
+  let nodesEvaluated = 0;
+
   while (openSet.size() > 0) {
     const current = openSet.pop()!;
 
     // If we've already closed this state (row-col-heading), skip it
     if (closedSet.has(current.key)) continue;
     closedSet.add(current.key);
+    nodesEvaluated++;
 
     const cellKey = `${current.row}-${current.col}`;
 
@@ -141,6 +144,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
         temp = temp.parent;
       }
       const energyBreakdown = getPathEnergyBreakdown(current, scenario);
+      energyBreakdown.nodesEvaluated = nodesEvaluated;
 
       return {
         visitedNodesInOrder,
