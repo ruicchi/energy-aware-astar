@@ -59,6 +59,12 @@ export const getMinAngleToDestination = (
   return diff;
 };
 
+export const getSpatialCost = (
+  target: { heading: Heading },
+): number => {
+  return getStepDistance(target.heading);
+};
+
 export const getEnergyCost = (
   current: EnergyNode,
   target: { row: number; col: number; heading: Heading },
@@ -128,7 +134,10 @@ export const getEnergyCostBreakdown = (
 ): EnergyBreakdown => {
   const targetKey = `${target.row}-${target.col}`;
   const currentKey = `${current.row}-${current.col}`;
-  const terrainFactor = scenario.terrainFactors.get(targetKey) || 0;
+  
+  const startTerrainFactor = scenario.terrainFactors.get(currentKey) || 0;
+  const targetTerrainFactor = scenario.terrainFactors.get(targetKey) || 0;
+  
   const currentElevation = scenario.elevations.get(currentKey) || 0;
   const targetElevation = scenario.elevations.get(targetKey) || 0;
 
@@ -143,18 +152,18 @@ export const getEnergyCostBreakdown = (
     elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : elevationDelta * 0.5;
 
   const turnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty);
-  const targetTerrainBreakdown = getTerrainPenaltyBreakdown(terrainFactor, stepDistance);
-  const isFirstMoveFromRobot = current.parent === null && currentKey === scenario.robotNode;
-  const startingTerrainBreakdown = isFirstMoveFromRobot
-    ? getTerrainPenaltyBreakdown(scenario.terrainFactors.get(scenario.robotNode) || 0, stepDistance)
-    : getTerrainPenaltyBreakdown(0, 0);
+  
+  // Use average terrain factor for the move (0.5 distance in start cell, 0.5 in target cell)
+  const startTerrainBreakdown = getTerrainPenaltyBreakdown(startTerrainFactor, stepDistance / 2);
+  const targetTerrainBreakdown = getTerrainPenaltyBreakdown(targetTerrainFactor, stepDistance / 2);
+  
   const terrainBreakdown = addTerrainPenaltyBreakdown(
+    startTerrainBreakdown,
     targetTerrainBreakdown,
-    startingTerrainBreakdown,
   );
+  
   const total = stepDistance + terrainBreakdown.total + climbingCost + turnCost;
 
-  // Final cost: distance * terrain + climbing/recovery + turn
   return {
     baseMovement: stepDistance,
     straightMovement,

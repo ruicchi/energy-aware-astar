@@ -7,9 +7,16 @@ import { usePathAnimation } from "../hooks/usePathAnimation";
 import { useRobotWalk } from "../hooks/useRobotWalk";
 import { MemoizedCell } from "./MemoizedCell";
 import { FloatingMenu } from "./FloatingMenu";
-import { runAStarManhattan } from "../algorithms/astar/astarManhattan";
-import { runAStarEnergyAware } from "../algorithms/astar/astarEnergyAware";
-import { type EnergyBreakdown, type Heading } from "../types";
+import { 
+  runAStarManhattan, 
+  runAStarEnergyAware,
+  runAStarEuclidean,
+  runAStarOctile,
+  runAStarChebyshev
+} from "../algorithms/astar";
+import { type EnergyBreakdown, type Heading, type Scenario } from "../types";
+
+type AlgorithmType = "manhattan" | "energyAware" | "euclidean" | "octile" | "chebyshev";
 
 const GameGrid = () => {
   const viewport = useViewport();
@@ -18,13 +25,24 @@ const GameGrid = () => {
   const cellSize = viewport.width < 600 ? 20 : 28;
 
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
+  const [selectedAlgo, setSelectedAlgo] = useState<AlgorithmType>("energyAware");
+  const [robotHeading, setRobotHeading] = useState<Heading>("RIGHT");
   const [pathMetrics, setPathMetrics] = useState<{
     algorithm: string;
     distance: number;
     energy: number;
     energyBreakdown: EnergyBreakdown;
   } | null>(null);
-  const [robotHeading, setRobotHeading] = useState<Heading>("RIGHT");
+
+  // Force heading to NONE if a standard algo is selected
+  const handleSelectAlgo = (algo: AlgorithmType) => {
+    setSelectedAlgo(algo);
+    if (algo !== "energyAware") {
+      setRobotHeading("NONE");
+    } else if (robotHeading === "NONE") {
+      setRobotHeading("RIGHT");
+    }
+  };
 
   //* Grid dimensions
   const cols = Math.floor(viewport.width / cellSize);
@@ -87,10 +105,10 @@ const GameGrid = () => {
     clearAnimations(clearWalkState);
   };
 
-  const visualizeAStar = () => {
+  const visualize = (algo: AlgorithmType) => {
     handleClearAnimations();
 
-    const scenario = {
+    const scenario: Scenario = {
       rows,
       cols,
       robotNode,
@@ -104,48 +122,52 @@ const GameGrid = () => {
       initialHeading: robotHeading,
     };
 
-    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
-      runAStarManhattan(scenario);
+    let result;
+    let algoName = "";
+    let theme: "manhattan" | "energy" = "energy";
+
+    switch (algo) {
+      case "manhattan":
+        result = runAStarManhattan(scenario);
+        algoName = "A* Manhattan";
+        theme = "manhattan";
+        break;
+      case "energyAware":
+        result = runAStarEnergyAware(scenario);
+        algoName = "Energy-Aware A*";
+        theme = "energy";
+        break;
+      case "euclidean":
+        result = runAStarEuclidean(scenario);
+        algoName = "A* Euclidean";
+        theme = "energy";
+        break;
+      case "octile":
+        result = runAStarOctile(scenario);
+        algoName = "A* Octile";
+        theme = "energy";
+        break;
+      case "chebyshev":
+        result = runAStarChebyshev(scenario);
+        algoName = "A* Chebyshev";
+        theme = "energy";
+        break;
+    }
+
+    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } = result;
+    
     setPathMetrics({
-      algorithm: "A* Manhattan",
+      algorithm: algoName,
       distance: totalDistance,
       energy: totalEnergy,
       energyBreakdown,
     });
+    
     setCurrentPath(shortestPath);
-    const duration = animateResult(visitedNodesInOrder, shortestPath, "manhattan");
-    const t = setTimeout(() => setIsManhattanFinished(true), duration);
-    addTimeout(t as unknown as number);
-  };
-
-  const visualizeEnergyAwareAStar = () => {
-    handleClearAnimations();
-
-    const scenario = {
-      rows,
-      cols,
-      robotNode,
-      destinationNode,
-      wallNodes: wallNode,
-      terrainFactors: terrainFactors,
-      elevations: elevations,
-      climbingFactor: 1.5,
-      turnPenalty: 2.0,
-      maxTraversableSlope: 45,
-      initialHeading: robotHeading,
-    };
-
-    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
-      runAStarEnergyAware(scenario);
-    setPathMetrics({
-      algorithm: "Energy-Aware A*",
-      distance: totalDistance,
-      energy: totalEnergy,
-      energyBreakdown,
-    });
-    setCurrentPath(shortestPath);
-    const duration = animateResult(visitedNodesInOrder, shortestPath, "energy");
-    const t = setTimeout(() => setIsEnergyFinished(true), duration);
+    const duration = animateResult(visitedNodesInOrder, shortestPath, theme);
+    
+    const finishAction = theme === "manhattan" ? setIsManhattanFinished : setIsEnergyFinished;
+    const t = setTimeout(() => finishAction(true), duration);
     addTimeout(t as unknown as number);
   };
 
@@ -187,9 +209,10 @@ const GameGrid = () => {
       {/* //* ADD FLOATING MENU */}
       <FloatingMenu
         onClearWalls={clearWalls}
-        onVisualizeAStar={visualizeAStar}
-        onVisualizeEnergyAwareAStar={visualizeEnergyAwareAStar}
+        onVisualize={() => visualize(selectedAlgo)}
         onReset={handleReset}
+        selectedAlgo={selectedAlgo}
+        onSelectAlgo={(algo) => handleSelectAlgo(algo as AlgorithmType)}
         activeBrush={activeBrush}
         onSelectBrush={setActiveBrush}
         elevationValue={elevationBrushValue}

@@ -1,8 +1,10 @@
 import { type Scenario, type Heading, type EnergyNode } from "../../types"
 import {
   createEmptyEnergyBreakdown,
+  getSpatialCost,
   getPathEnergyBreakdown,
   isTraversableSlope,
+  SQRT2,
 } from "../utils"
 
 const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
@@ -10,6 +12,10 @@ const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
   { dr: 1, dc: 0, heading: "DOWN" },
   { dr: 0, dc: -1, heading: "LEFT" },
   { dr: 0, dc: 1, heading: "RIGHT" },
+  { dr: -1, dc: -1, heading: "UP_LEFT" },
+  { dr: -1, dc: 1, heading: "UP_RIGHT" },
+  { dr: 1, dc: -1, heading: "DOWN_LEFT" },
+  { dr: 1, dc: 1, heading: "DOWN_RIGHT" },
 ]
 
 class MinHeap {
@@ -70,7 +76,7 @@ class MinHeap {
   }
 }
 
-export const runAStarManhattan = (scenario: Scenario) => {
+export const runAStarEuclidean = (scenario: Scenario) => {
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number)
   const [destRow, destCol] = scenario.destinationNode.split("-").map(Number)
   const tracksHeading = scenario.initialHeading !== "NONE"
@@ -89,7 +95,7 @@ export const runAStarManhattan = (scenario: Scenario) => {
     col: startCol,
     heading: scenario.initialHeading,
     g: 0,
-    h: Math.abs(startRow - destRow) + Math.abs(startCol - destCol),
+    h: Math.hypot(startRow - destRow, startCol - destCol),
     f: 0,
     parent: null,
   }
@@ -97,7 +103,6 @@ export const runAStarManhattan = (scenario: Scenario) => {
   openSet.push(startNode)
   allNodes.set(startNode.key, startNode)
 
-  // Add the start node to visited nodes so the animation starts from the robot's cell
   visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" })
   openedCells.add(scenario.robotNode)
 
@@ -111,12 +116,14 @@ export const runAStarManhattan = (scenario: Scenario) => {
 
     if (current.row === destRow && current.col === destCol) {
       const shortestPath: string[] = []
+      let totalDistance = 0
       let temp: EnergyNode | null = current
 
       while (temp) {
-        const pathKey = `${temp.row}-${temp.col}`
-        if (shortestPath[0] !== pathKey) {
-          shortestPath.unshift(pathKey)
+        shortestPath.unshift(`${temp.row}-${temp.col}`)
+        if (temp.parent) {
+          const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col
+          totalDistance += isDiagonal ? SQRT2 : 1.0
         }
         temp = temp.parent
       }
@@ -124,9 +131,9 @@ export const runAStarManhattan = (scenario: Scenario) => {
 
       return {
         visitedNodesInOrder,
-        shortestPath,
+        shortestPath: Array.from(new Set(shortestPath)),
         totalEnergy: energyBreakdown.total,
-        totalDistance: shortestPath.length - 1,
+        totalDistance: totalDistance,
         energyBreakdown,
       }
     }
@@ -161,13 +168,22 @@ export const runAStarManhattan = (scenario: Scenario) => {
         continue
       }
 
-      const stepCost = 1.0 // Manhattan is 4-way, so always 1.0
+      // Corner-cutting prevention
+      if (neighbor.heading.includes("_")) {
+        const cardinal1 = `${current.row + neighbor.dr}-${current.col}`
+        const cardinal2 = `${current.row}-${current.col + neighbor.dc}`
+        if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) {
+          continue
+        }
+      }
+
+      const stepCost = getSpatialCost({ heading: neighbor.heading })
       const tentativeG = current.g + stepCost
 
       let neighborNode = allNodes.get(neighborStateKey)
       if (!neighborNode || tentativeG < neighborNode.g) {
         if (!neighborNode) {
-          const h = Math.abs(nr - destRow) + Math.abs(nc - destCol)
+          const h = Math.hypot(nr - destRow, nc - destCol)
           neighborNode = {
             key: neighborStateKey,
             row: nr,

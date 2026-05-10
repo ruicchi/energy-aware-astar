@@ -145,7 +145,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
       return {
         visitedNodesInOrder,
         shortestPath: Array.from(new Set(shortestPath)),
-        totalEnergy: current.g,
+        totalEnergy: energyBreakdown.total,
         totalDistance: totalDistance,
         energyBreakdown,
       };
