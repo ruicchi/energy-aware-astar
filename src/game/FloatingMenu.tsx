@@ -15,6 +15,15 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import CloseIcon from "@mui/icons-material/Close";
+import NorthIcon from "@mui/icons-material/North";
+import SouthIcon from "@mui/icons-material/South";
+import EastIcon from "@mui/icons-material/East";
+import WestIcon from "@mui/icons-material/West";
+import NorthEastIcon from "@mui/icons-material/NorthEast";
+import NorthWestIcon from "@mui/icons-material/NorthWest";
+import SouthEastIcon from "@mui/icons-material/SouthEast";
+import SouthWestIcon from "@mui/icons-material/SouthWest";
+import BlockIcon from "@mui/icons-material/Block";
 
 import { type EnergyBreakdown, type Heading, type BrushMode } from "../types";
 
@@ -379,7 +388,7 @@ export const FloatingMenu = ({
                     Energy: {pathMetrics.energy.toFixed(2)} units
                   </Typography>
                   <Typography variant="caption" display="block">
-                    Nodes Evaluated: {pathMetrics.energyBreakdown.nodesEvaluated}
+                    Evaluated Nodes: {pathMetrics.energyBreakdown.nodesEvaluated}
                   </Typography>
                 </Box>
               )}
@@ -401,31 +410,50 @@ export const FloatingMenu = ({
                 >
                   Robot Initial Heading
                 </Typography>
-                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1 }}>
                   {(
                     [
-                      "NONE",
-                      "UP",
-                      "DOWN",
-                      "LEFT",
-                      "RIGHT",
                       "UP_LEFT",
+                      "UP",
                       "UP_RIGHT",
+                      "LEFT",
+                      "NONE",
+                      "RIGHT",
                       "DOWN_LEFT",
+                      "DOWN",
                       "DOWN_RIGHT",
                     ] as Heading[]
-                  ).map((h) => (
-                    <Button
-                      key={h}
-                      variant={currentHeading === h ? "contained" : "outlined"}
-                      color="secondary"
-                      size="small"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={() => onHeadingChange(h)}
-                    >
-                      {h === "NONE" ? "No Heading" : h.replace("_", " ")}
-                    </Button>
-                  ))}
+                  ).map((h) => {
+                    const iconMap: Record<Heading, React.ReactNode> = {
+                      UP: <NorthIcon fontSize="small" />,
+                      DOWN: <SouthIcon fontSize="small" />,
+                      LEFT: <WestIcon fontSize="small" />,
+                      RIGHT: <EastIcon fontSize="small" />,
+                      UP_LEFT: <NorthWestIcon fontSize="small" />,
+                      UP_RIGHT: <NorthEastIcon fontSize="small" />,
+                      DOWN_LEFT: <SouthWestIcon fontSize="small" />,
+                      DOWN_RIGHT: <SouthEastIcon fontSize="small" />,
+                      NONE: <BlockIcon fontSize="small" />,
+                    };
+
+                    return (
+                      <Button
+                        key={h}
+                        variant={currentHeading === h ? "contained" : "outlined"}
+                        color={h === "NONE" ? "error" : "secondary"}
+                        size="small"
+                        sx={{ 
+                          minWidth: 0, 
+                          p: 0.5,
+                          aspectRatio: "1/1" 
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => onHeadingChange(h)}
+                      >
+                        {iconMap[h]}
+                      </Button>
+                    );
+                  })}
                 </Box>
               </Box>
 
@@ -647,7 +675,16 @@ export const FloatingMenu = ({
                       {energyBreakdown.total.toFixed(2)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, borderTop: "1px dashed rgba(0,0,0,0.1)", mt: 0.5, pt: 0.5 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 1,
+                      borderTop: "1px dashed rgba(0,0,0,0.1)",
+                      mt: 0.5,
+                      pt: 0.5,
+                    }}
+                  >
                     <Typography variant="caption">Evaluated nodes</Typography>
                     <Typography variant="caption" fontWeight="bold">
                       {energyBreakdown.nodesEvaluated}
