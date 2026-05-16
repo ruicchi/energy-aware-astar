@@ -197,6 +197,32 @@ export const isTraversableSlope = (
   const slopeTraversable = getSlopeDegrees(current, target, scenario) <= maxTraversableSlope
 
   if (ignoreStability) return slopeTraversable
+
+  // Hard gradient limit matching visual "red arrow" threshold (2.0)
+  // Ensures robot never enters cells marked as unstable in UI
+  const { elevations } = scenario
+  const getElevation = (r: number, c: number) => elevations.get(`${r}-${c}`) || 0
+  const row = target.row
+  const col = target.col
+  
+  const invSqrt2 = 1 / Math.sqrt(2)
+  const weight = 1 + 2 * invSqrt2
+  
+  const zTL = getElevation(row - 1, col - 1)
+  const zT = getElevation(row - 1, col)
+  const zTR = getElevation(row - 1, col + 1)
+  const zL = getElevation(row, col - 1)
+  const zR = getElevation(row, col + 1)
+  const zBL = getElevation(row + 1, col - 1)
+  const zB = getElevation(row + 1, col)
+  const zBR = getElevation(row + 1, col + 1)
+
+  const zx = ((zR + invSqrt2 * (zTR + zBR)) - (zL + invSqrt2 * (zTL + zBL))) / weight
+  const zy = ((zB + invSqrt2 * (zBL + zBR)) - (zT + invSqrt2 * (zTL + zTR))) / weight
+  const gradientMagnitude = Math.sqrt(zx * zx + zy * zy)
+
+  if (gradientMagnitude > 2.0) return false
+
   return slopeTraversable && isStablePosture(target.row, target.col, target.heading, scenario)
 }
 

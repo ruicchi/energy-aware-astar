@@ -70,7 +70,7 @@ export const MemoizedCell = memo(
 
     if (showGradients && elevations) {
       const getElevation = (r: number, c: number) => elevations.get(`${r}-${c}`) || 0;
-      
+
       const zTL = getElevation(row - 1, col - 1);
       const zT = getElevation(row - 1, col);
       const zTR = getElevation(row - 1, col + 1);
@@ -83,9 +83,9 @@ export const MemoizedCell = memo(
       // Distance-weighted gradient: Cardinal = 1, Diagonal = 1/sqrt(2)
       const invSqrt2 = 1 / Math.sqrt(2);
       const weight = 1 + 2 * invSqrt2;
-      
-      const zx = ((zR + invSqrt2 * (zTR + zBR)) - (zL + invSqrt2 * (zTL + zBL))) / weight;
-      const zy = ((zB + invSqrt2 * (zBL + zBR)) - (zT + invSqrt2 * (zTL + zTR))) / weight;
+
+      const zx = (zR + invSqrt2 * (zTR + zBR) - (zL + invSqrt2 * (zTL + zBL))) / weight;
+      const zy = (zB + invSqrt2 * (zBL + zBR) - (zT + invSqrt2 * (zTL + zTR))) / weight;
 
       gradientMagnitude = Math.sqrt(zx * zx + zy * zy);
       if (gradientMagnitude > 0.05) {
@@ -151,7 +151,7 @@ export const MemoizedCell = memo(
             }}
           />
         )}
-        
+
         {showGradients && gradientMagnitude > 0.1 && !isRobot && !isDestination && !isWall && (
           <NorthIcon
             sx={{
@@ -166,7 +166,7 @@ export const MemoizedCell = memo(
           />
         )}
 
-        {elevation > 0 && !isRobot && !isDestination && !isWall && terrainFactor === 0 && !showGradients && elevation}
+        {elevation > 0 && !isRobot && !isDestination && !isWall && terrainFactor === 0 && elevation}
       </Box>
     );
   },
