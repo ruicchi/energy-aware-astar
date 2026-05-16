@@ -1,4 +1,4 @@
-import { type Scenario } from "../../types"
+import { type Scenario } from "../../types";
 
 export const elevatedTerrain: Scenario = {
   rows: 20,
@@ -9,17 +9,23 @@ export const elevatedTerrain: Scenario = {
   wallNodes: new Set(),
   terrainFactors: new Map(),
   elevations: new Map([
-    ["5-5", 1], ["5-6", 1], ["5-7", 1],
-    ["6-5", 2], ["6-6", 2], ["6-7", 2],
-    ["7-5", 3], ["7-6", 3], ["7-7", 3],
+    ["5-5", 1],
+    ["5-6", 1],
+    ["5-7", 1],
+    ["6-5", 2],
+    ["6-6", 2],
+    ["6-7", 2],
+    ["7-5", 3],
+    ["7-6", 3],
+    ["7-7", 3],
   ]),
   climbingFactor: 10,
-  turnPenalty: 2,
+  turnPenalty: 1,
   maxTraversableSlope: 15,
   robotPhysics: {
     trackWidth: 0.6,
     wheelBase: 0.8,
     comHeight: 0.4,
-    stabilityMargin: 0.05
-  }
-}
+    stabilityMargin: 0.05,
+  },
+};
