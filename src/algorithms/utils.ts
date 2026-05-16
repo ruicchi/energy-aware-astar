@@ -224,7 +224,14 @@ export const getEnergyCostBreakdown = (
     targetTerrainBreakdown,
   )
   
-  const total = stepDistance + terrainBreakdown.total + climbingCost + turnCost
+  const subtotal = stepDistance + terrainBreakdown.total + climbingCost + turnCost
+
+  const { roll, pitch } = getPosture(target.row, target.col, target.heading, scenario)
+  const riskFactor = Math.sqrt(roll * roll + pitch * pitch)
+  const riskWeight = 2.0
+  const stabilityPenalty = subtotal * riskWeight * riskFactor
+  
+  const total = subtotal + stabilityPenalty
 
   return {
     baseMovement: stepDistance,
@@ -235,6 +242,7 @@ export const getEnergyCostBreakdown = (
     otherTerrainPenalty: terrainBreakdown.otherTerrainPenalty,
     elevationCost: climbingCost,
     turnCost,
+    stabilityPenalty,
     total,
   }
 }
@@ -248,6 +256,7 @@ export const createEmptyEnergyBreakdown = (): EnergyBreakdown => ({
   otherTerrainPenalty: 0,
   elevationCost: 0,
   turnCost: 0,
+  stabilityPenalty: 0,
   total: 0,
   nodesEvaluated: 0,
 })
@@ -264,6 +273,7 @@ export const addEnergyBreakdown = (
   otherTerrainPenalty: total.otherTerrainPenalty + step.otherTerrainPenalty,
   elevationCost: total.elevationCost + step.elevationCost,
   turnCost: total.turnCost + step.turnCost,
+  stabilityPenalty: total.stabilityPenalty + step.stabilityPenalty,
   total: total.total + step.total,
 })
 

@@ -31,6 +31,7 @@ export type EnergyBreakdown = {
   otherTerrainPenalty: number
   elevationCost: number
   turnCost: number
+  stabilityPenalty: number
   total: number
   nodesEvaluated: number
 }
