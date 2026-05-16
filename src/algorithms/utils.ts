@@ -222,11 +222,11 @@ export const isTraversableSlope = (
 
   if (ignoreStability) return slopeTraversable
 
-  // Hard gradient limit matching visual "red arrow" threshold (2.0)
+  // Hard gradient limit matching visual "red arrow" threshold (1.0)
   // Ensures robot never enters cells marked as unstable in UI
   const gradientMagnitude = getGradientMagnitude(target.row, target.col, scenario.elevations)
 
-  if (gradientMagnitude > 2.0) return false
+  if (gradientMagnitude > 1.0) return false
 
   return slopeTraversable && isStablePosture(target.row, target.col, target.heading, scenario)
 }

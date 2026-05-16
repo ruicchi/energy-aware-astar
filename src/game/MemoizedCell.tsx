@@ -92,8 +92,8 @@ export const MemoizedCell = memo(
         gradientAngle = Math.atan2(zy, zx);
       }
 
-      // Consistent instability threshold (approx 63 deg or slope > 2)
-      if (gradientMagnitude > 2.0) {
+      // Consistent instability threshold (slope > 45 deg or gradient > 1.0)
+      if (gradientMagnitude > 1.0) {
         isUnstable = true;
       }
     }
