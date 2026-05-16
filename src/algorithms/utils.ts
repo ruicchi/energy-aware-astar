@@ -187,23 +187,12 @@ export const isStablePosture = (
   )
 }
 
-export const isTraversableSlope = (
-  current: Pick<EnergyNode, "row" | "col">,
-  target: { row: number, col: number, heading: Heading },
-  scenario: Scenario,
-  ignoreStability = false
-): boolean => {
-  const maxTraversableSlope = scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE
-  const slopeTraversable = getSlopeDegrees(current, target, scenario) <= maxTraversableSlope
-
-  if (ignoreStability) return slopeTraversable
-
-  // Hard gradient limit matching visual "red arrow" threshold (2.0)
-  // Ensures robot never enters cells marked as unstable in UI
-  const { elevations } = scenario
+export const getGradientMagnitude = (
+  row: number,
+  col: number,
+  elevations: Map<string, number>,
+): number => {
   const getElevation = (r: number, c: number) => elevations.get(`${r}-${c}`) || 0
-  const row = target.row
-  const col = target.col
   
   const invSqrt2 = 1 / Math.sqrt(2)
   const weight = 1 + 2 * invSqrt2
@@ -219,7 +208,23 @@ export const isTraversableSlope = (
 
   const zx = ((zR + invSqrt2 * (zTR + zBR)) - (zL + invSqrt2 * (zTL + zBL))) / weight
   const zy = ((zB + invSqrt2 * (zBL + zBR)) - (zT + invSqrt2 * (zTL + zTR))) / weight
-  const gradientMagnitude = Math.sqrt(zx * zx + zy * zy)
+  return Math.sqrt(zx * zx + zy * zy)
+}
+
+export const isTraversableSlope = (
+  current: Pick<EnergyNode, "row" | "col">,
+  target: { row: number, col: number, heading: Heading },
+  scenario: Scenario,
+  ignoreStability = false
+): boolean => {
+  const maxTraversableSlope = scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE
+  const slopeTraversable = getSlopeDegrees(current, target, scenario) <= maxTraversableSlope
+
+  if (ignoreStability) return slopeTraversable
+
+  // Hard gradient limit matching visual "red arrow" threshold (2.0)
+  // Ensures robot never enters cells marked as unstable in UI
+  const gradientMagnitude = getGradientMagnitude(target.row, target.col, scenario.elevations)
 
   if (gradientMagnitude > 2.0) return false
 

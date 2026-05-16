@@ -7,12 +7,12 @@ import { usePathAnimation } from "../hooks/usePathAnimation";
 import { useRobotWalk } from "../hooks/useRobotWalk";
 import { MemoizedCell } from "./MemoizedCell";
 import { FloatingMenu } from "./FloatingMenu";
-import { 
-  runAStarManhattan, 
+import {
+  runAStarManhattan,
   runAStarEnergyAware,
   runAStarEuclidean,
   runAStarOctile,
-  runAStarChebyshev
+  runAStarChebyshev,
 } from "../algorithms/astar";
 import { type EnergyBreakdown, type Heading, type Scenario } from "../types";
 
@@ -94,6 +94,7 @@ const GameGrid = () => {
     walkingStep,
     isWalking,
     hasFinishedWalking,
+    walkFailure,
     handleWalkPath,
     clearWalkState,
   } = useRobotWalk(robotHeading, setRobotHeading, addTimeout);
@@ -120,6 +121,12 @@ const GameGrid = () => {
       maxTraversableSlope: 45,
       initialHeading: robotHeading,
       showGradients: showGradients,
+      robotPhysics: {
+        trackWidth: 0.6,
+        wheelBase: 0.8,
+        comHeight: 0.4,
+        stabilityMargin: 0.05,
+      },
     };
 
     let result;
@@ -154,18 +161,19 @@ const GameGrid = () => {
         break;
     }
 
-    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } = result;
-    
+    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
+      result;
+
     setPathMetrics({
       algorithm: algoName,
       distance: totalDistance,
       energy: totalEnergy,
       energyBreakdown,
     });
-    
+
     setCurrentPath(shortestPath);
     const duration = animateResult(visitedNodesInOrder, shortestPath, theme);
-    
+
     const finishAction = theme === "manhattan" ? setIsManhattanFinished : setIsEnergyFinished;
     const t = setTimeout(() => finishAction(true), duration);
     addTimeout(t as unknown as number);
@@ -226,9 +234,32 @@ const GameGrid = () => {
         onToggleEnergySearch={() => setShowEnergySearch(!showEnergySearch)}
         showGradients={showGradients}
         onToggleGradients={() => setShowGradients(!showGradients)}
-        onWalkPath={handleWalkPath}
+        onWalkPath={() =>
+          handleWalkPath({
+            rows,
+            cols,
+            robotNode,
+            destinationNode,
+            wallNodes: wallNode,
+            terrainFactors: terrainFactors,
+            elevations: elevations,
+            climbingFactor: 1.5,
+            turnPenalty: 2.0,
+            maxTraversableSlope: 45,
+            initialHeading: robotHeading,
+            showGradients: showGradients,
+            // Pass robot physics for stability checks
+            robotPhysics: {
+              trackWidth: 0.6,
+              wheelBase: 0.8,
+              comHeight: 0.4,
+              stabilityMargin: 0.05,
+            },
+          })
+        }
         hasPath={!!currentPath}
         isWalking={isWalking}
+        walkFailure={walkFailure}
         currentHeading={robotHeading}
         onHeadingChange={setRobotHeading}
         isLocked={isLocked}
@@ -299,7 +330,11 @@ const GameGrid = () => {
               elevation={elevations.get(cell.key) || 0}
               showGradients={showGradients}
               elevations={elevations}
-              heading={cell.key === robotNode && !isWalking && !hasFinishedWalking ? robotHeading : undefined}
+              heading={
+                cell.key === robotNode && !isWalking && !hasFinishedWalking
+                  ? robotHeading
+                  : undefined
+              }
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
             />

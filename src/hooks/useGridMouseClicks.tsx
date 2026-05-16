@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { clearWalls } from "../utils/wallUtils";
 import { type BrushMode } from "../types";
+import { getGradientMagnitude } from "../algorithms/utils";
 
 export const useGridMouseClicks = (
   initialRobot: string,
@@ -102,6 +103,8 @@ export const useGridMouseClicks = (
       const currentBrush = activeBrushRef.current;
       dragMode.current = currentBrush;
 
+      const [r, c] = key.split("-").map(Number);
+
       // Determine if we are adding or removing based on the first click
       if (currentBrush === "wall") {
         drawValue.current = !wallNodeRef.current.has(key);
@@ -112,8 +115,20 @@ export const useGridMouseClicks = (
       } else if (currentBrush === "elevation") {
         const current = elevationsRef.current.get(key);
         // Toggle logic: if cell is at target value, clear it. Else, set to target.
-        drawValue.current =
+        const targetValue =
           current === activeElevationValueRef.current ? 0 : activeElevationValueRef.current;
+        
+        // Stability check if painting on robot or destination
+        if (key === robotNode || key === destinationNode) {
+          const currentElevations = new Map(elevationsRef.current);
+          currentElevations.set(key, targetValue);
+          if (getGradientMagnitude(r, c, currentElevations) > 2.0) {
+            isDrawing.current = false;
+            dragMode.current = null;
+            return;
+          }
+        }
+        drawValue.current = targetValue;
       }
 
       updateCell(key, dragMode.current, drawValue.current);
@@ -125,15 +140,18 @@ export const useGridMouseClicks = (
     (key: string) => {
       if (!isDrawing.current) return;
 
+      const [r, c] = key.split("-").map(Number);
+      const isUnstable = getGradientMagnitude(r, c, elevationsRef.current) > 2.0;
+
       switch (dragMode.current) {
         case "robot":
-          if (key !== destinationNode && !wallNodeRef.current.has(key)) {
+          if (key !== destinationNode && !wallNodeRef.current.has(key) && !isUnstable) {
             setRobotNode(key);
           }
           break;
 
         case "destination":
-          if (key !== robotNode && !wallNodeRef.current.has(key)) {
+          if (key !== robotNode && !wallNodeRef.current.has(key) && !isUnstable) {
             setDestinationNode(key);
           }
           break;
@@ -142,7 +160,16 @@ export const useGridMouseClicks = (
         case "dirt":
         case "water":
         case "elevation":
-          if (key === robotNode || key === destinationNode) break;
+          if (key === robotNode || key === destinationNode) {
+            if (dragMode.current === "elevation") {
+              const currentElevations = new Map(elevationsRef.current);
+              currentElevations.set(key, drawValue.current as number);
+              const nextUnstable = getGradientMagnitude(r, c, currentElevations) > 2.0;
+              if (nextUnstable) break;
+            } else {
+              break;
+            }
+          }
           updateCell(key, dragMode.current, drawValue.current);
           break;
       }

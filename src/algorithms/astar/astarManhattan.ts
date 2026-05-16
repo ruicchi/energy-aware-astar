@@ -2,7 +2,6 @@ import { type Scenario, type Heading, type EnergyNode } from "../../types"
 import {
   createEmptyEnergyBreakdown,
   getPathEnergyBreakdown,
-  isTraversableSlope,
 } from "../utils"
 
 const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
@@ -153,13 +152,7 @@ export const runAStarManhattan = (scenario: Scenario) => {
         nc < 0 ||
         nc >= scenario.cols ||
         scenario.wallNodes.has(neighborCellKey) ||
-        closedSet.has(neighborStateKey) ||
-        !isTraversableSlope(
-          current,
-          { row: nr, col: nc, heading: neighbor.heading },
-          scenario,
-          true
-        )
+        closedSet.has(neighborStateKey)
       ) {
         continue
       }

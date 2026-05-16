@@ -54,6 +54,7 @@ type FloatingMenuProps = {
   onWalkPath: () => void;
   hasPath: boolean;
   isWalking: boolean;
+  walkFailure: { row: number; col: number; reason: string } | null;
   currentHeading: Heading;
   onHeadingChange: (heading: Heading) => void;
   isLocked: boolean;
@@ -81,6 +82,7 @@ export const FloatingMenu = ({
   onWalkPath,
   hasPath,
   isWalking,
+  walkFailure,
   currentHeading,
   onHeadingChange,
   isLocked,
@@ -396,6 +398,39 @@ export const FloatingMenu = ({
                   <Typography variant="caption" display="block">
                     Evaluated Nodes: {pathMetrics.energyBreakdown.nodesEvaluated}
                   </Typography>
+
+                  {walkFailure && (
+                    <Box
+                      sx={{
+                        mt: 1.5,
+                        p: 1,
+                        backgroundColor: "rgba(244, 67, 54, 0.15)",
+                        border: "1px solid #f44336",
+                        borderRadius: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 0.5,
+                        animation: "pulse 2s infinite"
+                      }}
+                    >
+                      <Typography variant="caption" color="error" fontWeight="bold">
+                         ⚠️ PATH EXECUTION FAILED
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontSize: "9px" }}>
+                        Reason: {walkFailure.reason}
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontSize: "9px" }}>
+                        Location: [{walkFailure.row}, {walkFailure.col}]
+                      </Typography>
+                      <style>{`
+                        @keyframes pulse {
+                          0% { opacity: 1; }
+                          50% { opacity: 0.6; }
+                          100% { opacity: 1; }
+                        }
+                      `}</style>
+                    </Box>
+                  )}
                 </Box>
               )}
 

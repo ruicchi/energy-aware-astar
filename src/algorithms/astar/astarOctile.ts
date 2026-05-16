@@ -3,7 +3,6 @@ import {
   createEmptyEnergyBreakdown,
   getSpatialCost,
   getPathEnergyBreakdown,
-  isTraversableSlope,
   SQRT2,
 } from "../utils"
 
@@ -166,13 +165,7 @@ export const runAStarOctile = (scenario: Scenario) => {
         nc < 0 ||
         nc >= scenario.cols ||
         scenario.wallNodes.has(neighborCellKey) ||
-        closedSet.has(neighborStateKey) ||
-        !isTraversableSlope(
-          current,
-          { row: nr, col: nc, heading: neighbor.heading },
-          scenario,
-          true
-        )
+        closedSet.has(neighborStateKey)
       ) {
         continue
       }

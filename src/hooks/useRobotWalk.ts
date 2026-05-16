@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
-import { type Heading } from '../types'
+import { type Heading, type Scenario } from '../types'
+import { isTraversableSlope } from '../algorithms/utils'
 
 export const useRobotWalk = (
   initialHeading: Heading,
@@ -10,6 +11,7 @@ export const useRobotWalk = (
   const [walkingStep, setWalkingStep] = useState<number>(-1);
   const [isWalking, setIsWalking] = useState<boolean>(false);
   const [hasFinishedWalking, setHasFinishedWalking] = useState<boolean>(false);
+  const [walkFailure, setWalkFailure] = useState<{ row: number; col: number; reason: string } | null>(null);
 
   const getHeadingFromNodes = (from: string, to: string): Heading => {
     const [r1, c1] = from.split("-").map(Number);
@@ -28,20 +30,45 @@ export const useRobotWalk = (
     return "NONE";
   };
 
-  const handleWalkPath = useCallback(() => {
+  const handleWalkPath = useCallback((scenario: Scenario) => {
     if (!currentPath || currentPath.length === 0 || isWalking) return;
 
     setIsWalking(true);
     setHasFinishedWalking(false);
+    setWalkFailure(null);
     setWalkingStep(0);
 
     let cumulativeDelay = 0;
     let currentRobotHeading: Heading = initialHeading;
 
     for (let i = 0; i < currentPath.length; i++) {
-      // 1. Check for rotation if we're past the first node
+      // 1. Check for stability/traversability if moving to next node
       if (i > 0) {
+        const [prevR, prevC] = currentPath[i - 1].split("-").map(Number);
+        const [currR, currC] = currentPath[i].split("-").map(Number);
         const nextHeading = getHeadingFromNodes(currentPath[i - 1], currentPath[i]);
+        
+        // Safety Check: Use the full energy-aware traversability logic
+        const isSafe = isTraversableSlope(
+          { row: prevR, col: prevC },
+          { row: currR, col: currC, heading: nextHeading },
+          scenario
+        );
+
+        if (!isSafe) {
+          // Failure State: Stop at the last safe cell and end walking
+          const failTimeout = setTimeout(() => {
+            setIsWalking(false);
+            setHasFinishedWalking(true);
+            setWalkFailure({
+              row: currR,
+              col: currC,
+              reason: "ROBOT TIPPED OVER / STEEP SLOPE"
+            });
+          }, cumulativeDelay);
+          addTimeout(failTimeout as unknown as number);
+          break; // Stop scheduling further steps
+        }
 
         if (currentRobotHeading !== "NONE" && nextHeading !== "NONE" && nextHeading !== currentRobotHeading) {
           // Schedule the rotation
@@ -82,6 +109,7 @@ export const useRobotWalk = (
     setWalkingStep(-1);
     setIsWalking(false);
     setHasFinishedWalking(false);
+    setWalkFailure(null);
   }, []);
 
   return {
@@ -90,6 +118,7 @@ export const useRobotWalk = (
     walkingStep,
     isWalking,
     hasFinishedWalking,
+    walkFailure,
     handleWalkPath,
     clearWalkState
   }
