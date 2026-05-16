@@ -122,7 +122,7 @@ export const useGridMouseClicks = (
         if (key === robotNode || key === destinationNode) {
           const currentElevations = new Map(elevationsRef.current);
           currentElevations.set(key, targetValue);
-          if (getGradientMagnitude(r, c, currentElevations) > 2.0) {
+          if (getGradientMagnitude(r, c, currentElevations) > 1.0) {
             isDrawing.current = false;
             dragMode.current = null;
             return;
@@ -141,7 +141,7 @@ export const useGridMouseClicks = (
       if (!isDrawing.current) return;
 
       const [r, c] = key.split("-").map(Number);
-      const isUnstable = getGradientMagnitude(r, c, elevationsRef.current) > 2.0;
+      const isUnstable = getGradientMagnitude(r, c, elevationsRef.current) > 1.0;
 
       switch (dragMode.current) {
         case "robot":
@@ -164,7 +164,7 @@ export const useGridMouseClicks = (
             if (dragMode.current === "elevation") {
               const currentElevations = new Map(elevationsRef.current);
               currentElevations.set(key, drawValue.current as number);
-              const nextUnstable = getGradientMagnitude(r, c, currentElevations) > 2.0;
+              const nextUnstable = getGradientMagnitude(r, c, currentElevations) > 1.0;
               if (nextUnstable) break;
             } else {
               break;
