@@ -171,6 +171,7 @@ export const runAStarOctile = (scenario: Scenario) => {
           current,
           { row: nr, col: nc, heading: neighbor.heading },
           scenario,
+          true
         )
       ) {
         continue

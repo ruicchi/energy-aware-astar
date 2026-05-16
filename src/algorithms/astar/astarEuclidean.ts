@@ -165,6 +165,7 @@ export const runAStarEuclidean = (scenario: Scenario) => {
           current,
           { row: nr, col: nc, heading: neighbor.heading },
           scenario,
+          true
         )
       ) {
         continue

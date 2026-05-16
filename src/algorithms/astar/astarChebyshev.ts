@@ -170,6 +170,7 @@ export const runAStarChebyshev = (scenario: Scenario) => {
           current,
           { row: nr, col: nc, heading: neighbor.heading },
           scenario,
+          true
         )
       ) {
         continue
