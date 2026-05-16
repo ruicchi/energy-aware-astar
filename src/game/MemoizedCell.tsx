@@ -160,7 +160,7 @@ export const MemoizedCell = memo(
               // NorthIcon starts pointing Up (-90deg relative to Right)
               // So we add 90deg to rotate it correctly
               transform: `rotate(${gradientAngle * (180 / Math.PI) + 90}deg)`,
-              color: isUnstable ? "#ff5252" : "rgba(255, 255, 255, 0.6)",
+              color: isUnstable ? "#ff5252" : "rgba(0, 0, 0, 0.4)",
               opacity: Math.min(1, gradientMagnitude / 2),
             }}
           />
