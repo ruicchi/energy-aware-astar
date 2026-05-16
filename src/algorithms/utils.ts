@@ -182,10 +182,12 @@ export const isTraversableSlope = (
   current: Pick<EnergyNode, "row" | "col">,
   target: { row: number, col: number, heading: Heading },
   scenario: Scenario,
+  ignoreStability = false
 ): boolean => {
   const maxTraversableSlope = scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE
   const slopeTraversable = getSlopeDegrees(current, target, scenario) <= maxTraversableSlope
 
+  if (ignoreStability) return slopeTraversable
   return slopeTraversable && isStablePosture(target.row, target.col, target.heading, scenario)
 }
 
