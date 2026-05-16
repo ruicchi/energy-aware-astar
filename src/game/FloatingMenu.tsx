@@ -204,7 +204,6 @@ export const FloatingMenu = ({
             <Box
               sx={{
                 display: "flex",
-                flexDirection: "column",
                 gap: 1,
                 pointerEvents: isLocked ? "none" : "auto",
                 opacity: isLocked ? 0.6 : 1,
@@ -212,25 +211,26 @@ export const FloatingMenu = ({
               }}
             >
               <Button
-                variant="contained"
+                variant="outlined"
                 color="error"
                 fullWidth
+                size="small"
                 onPointerDown={(e) => e.stopPropagation()} // don't drag when clicking button
                 onClick={onClearWalls}
               >
                 Clear Tiles
               </Button>
+              <Button
+                variant="outlined"
+                color="warning"
+                fullWidth
+                size="small"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={onReset}
+              >
+                Reset Grid
+              </Button>
             </Box>
-
-            <Button
-              variant="contained"
-              color="warning"
-              fullWidth
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={onReset}
-            >
-              Reset Grid
-            </Button>
 
             <Box
               sx={{
@@ -263,7 +263,7 @@ export const FloatingMenu = ({
 
               <Button
                 variant={selectedAlgo === "manhattan" ? "contained" : "outlined"}
-                color="success"
+                color="primary"
                 fullWidth
                 size="small"
                 onPointerDown={(e) => e.stopPropagation()}
@@ -275,7 +275,7 @@ export const FloatingMenu = ({
               <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
                 <Button
                   variant={selectedAlgo === "euclidean" ? "contained" : "outlined"}
-                  color="info"
+                  color="primary"
                   size="small"
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => onSelectAlgo("euclidean")}
@@ -284,7 +284,7 @@ export const FloatingMenu = ({
                 </Button>
                 <Button
                   variant={selectedAlgo === "octile" ? "contained" : "outlined"}
-                  color="info"
+                  color="primary"
                   size="small"
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => onSelectAlgo("octile")}
@@ -295,7 +295,7 @@ export const FloatingMenu = ({
 
               <Button
                 variant={selectedAlgo === "chebyshev" ? "contained" : "outlined"}
-                color="info"
+                color="primary"
                 size="small"
                 fullWidth
                 onPointerDown={(e) => e.stopPropagation()}
@@ -306,9 +306,9 @@ export const FloatingMenu = ({
 
               <Button
                 variant="contained"
-                color="warning"
+                color="success"
                 fullWidth
-                sx={{ mt: 1 }}
+                sx={{ mt: 1, py: 1, fontWeight: "bold" }}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onVisualize}
               >
@@ -320,9 +320,10 @@ export const FloatingMenu = ({
                 <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
                   {isManhattanFinished && (
                     <Button
-                      variant="outlined"
+                      variant={showManhattanSearch ? "contained" : "outlined"}
                       size="small"
                       fullWidth
+                      color="secondary"
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={onToggleManhattanSearch}
                     >
@@ -333,26 +334,16 @@ export const FloatingMenu = ({
                   )}
                   {isEnergyFinished && (
                     <Button
-                      variant="outlined"
+                      variant={showEnergySearch ? "contained" : "outlined"}
                       size="small"
                       fullWidth
+                      color="secondary"
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={onToggleEnergySearch}
                     >
                       {showEnergySearch ? "Hide Energy Search Map" : "Show Energy Search Map"}
                     </Button>
                   )}
-
-                  <Button
-                    variant={showGradients ? "contained" : "outlined"}
-                    size="small"
-                    fullWidth
-                    color="secondary"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={onToggleGradients}
-                  >
-                    {showGradients ? "Hide Gradients" : "Show Gradients"}
-                  </Button>
 
                   {hasPath && (
                     <Button
@@ -485,7 +476,7 @@ export const FloatingMenu = ({
                 >
                   <Button
                     variant={activeBrush === "wall" ? "contained" : "outlined"}
-                    color="info"
+                    color="primary"
                     size="small"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => onSelectBrush("wall")}
@@ -496,7 +487,7 @@ export const FloatingMenu = ({
                   <Tooltip title="Penalty factor: 0.5" arrow>
                     <Button
                       variant={activeBrush === "dirt" ? "contained" : "outlined"}
-                      color="warning"
+                      color="primary"
                       size="small"
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={() => onSelectBrush("dirt")}
@@ -519,7 +510,7 @@ export const FloatingMenu = ({
 
                   <Button
                     variant={activeBrush === "elevation" ? "contained" : "outlined"}
-                    color="success"
+                    color="primary"
                     size="small"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => onSelectBrush("elevation")}
@@ -530,20 +521,32 @@ export const FloatingMenu = ({
 
                 {/* Elevation Slider */}
                 {activeBrush === "elevation" && (
-                  <Box sx={{ px: 1, mt: 1 }}>
-                    <Typography variant="caption" color="textSecondary">
-                      Brush Height: {elevationValue}
-                    </Typography>
-                    <Slider
+                  <Box sx={{ px: 1, mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box>
+                      <Typography variant="caption" color="textSecondary">
+                        Brush Height: {elevationValue}
+                      </Typography>
+                      <Slider
+                        size="small"
+                        value={elevationValue}
+                        min={1}
+                        max={10}
+                        step={1}
+                        marks
+                        onChange={(_, value) => onElevationChange(value as number)}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      />
+                    </Box>
+                    <Button
+                      variant={showGradients ? "contained" : "outlined"}
                       size="small"
-                      value={elevationValue}
-                      min={1}
-                      max={10}
-                      step={1}
-                      marks
-                      onChange={(_, value) => onElevationChange(value as number)}
+                      fullWidth
+                      color="secondary"
                       onPointerDown={(e) => e.stopPropagation()}
-                    />
+                      onClick={onToggleGradients}
+                    >
+                      {showGradients ? "Hide Gradients" : "Show Gradients"}
+                    </Button>
                   </Box>
                 )}
               </Box>
