@@ -410,11 +410,11 @@ export const FloatingMenu = ({
                         display: "flex",
                         flexDirection: "column",
                         gap: 0.5,
-                        animation: "pulse 2s infinite"
+                        animation: "pulse 2s infinite",
                       }}
                     >
                       <Typography variant="caption" color="error" fontWeight="bold">
-                         ⚠️ PATH EXECUTION FAILED
+                        ⚠️ PATH EXECUTION FAILED
                       </Typography>
                       <Typography variant="caption" sx={{ fontSize: "9px" }}>
                         Reason: {walkFailure.reason}
@@ -483,10 +483,10 @@ export const FloatingMenu = ({
                         variant={currentHeading === h ? "contained" : "outlined"}
                         color={h === "NONE" ? "error" : "secondary"}
                         size="small"
-                        sx={{ 
-                          minWidth: 0, 
+                        sx={{
+                          minWidth: 0,
                           p: 0.5,
-                          aspectRatio: "1/1" 
+                          aspectRatio: "1/1",
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
                         onClick={() => onHeadingChange(h)}
@@ -645,7 +645,7 @@ export const FloatingMenu = ({
 
             <Box>
               <Typography variant="caption" color="textSecondary" display="block">
-                Distance
+                Distance / Movement total
               </Typography>
               <Typography variant="body2">{pathMetrics.distance.toFixed(2)} units</Typography>
             </Box>
@@ -685,6 +685,12 @@ export const FloatingMenu = ({
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                    <Typography variant="caption">Turn cost</Typography>
+                    <Typography variant="caption" fontWeight="bold">
+                      {energyBreakdown.turnCost.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
                     <Typography variant="caption">Dirt penalty</Typography>
                     <Typography variant="caption" fontWeight="bold">
                       {energyBreakdown.dirtPenalty.toFixed(2)}
@@ -711,29 +717,9 @@ export const FloatingMenu = ({
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
-                    <Typography variant="caption">Turn cost</Typography>
+                    <Typography variant="caption">Stability penalty</Typography>
                     <Typography variant="caption" fontWeight="bold">
-                      {energyBreakdown.turnCost.toFixed(2)}
-                    </Typography>
-                  </Box>
-                  {energyBreakdown.stabilityPenalty > 0 && (
-                    <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
-                      <Typography variant="caption">Stability penalty</Typography>
-                      <Typography variant="caption" fontWeight="bold">
-                        {energyBreakdown.stabilityPenalty.toFixed(2)}
-                      </Typography>
-                    </Box>
-                  )}
-                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
-                    <Typography variant="caption">Movement total</Typography>
-                    <Typography variant="caption" fontWeight="bold">
-                      {energyBreakdown.baseMovement.toFixed(2)}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
-                    <Typography variant="caption">Breakdown total</Typography>
-                    <Typography variant="caption" fontWeight="bold">
-                      {energyBreakdown.total.toFixed(2)}
+                      {energyBreakdown.stabilityPenalty.toFixed(2)}
                     </Typography>
                   </Box>
                   <Box

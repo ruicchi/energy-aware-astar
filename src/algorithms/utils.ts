@@ -251,9 +251,9 @@ export const getEnergyCostBreakdown = (
   const straightMovement = isDiagonal ? 0 : stepDistance
   const diagonalMovement = isDiagonal ? stepDistance : 0
 
-  // Uphill costs more (climbingFactor), Downhill saves energy (0.5 recovery factor)
+  // Uphill costs more (climbingFactor), Downhill is zero (coasting)
   const climbingCost =
-    elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : elevationDelta * 0.5
+    elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : 0
 
   const turnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty)
   
