@@ -89,7 +89,15 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     const hTrans = distance / S_MAX;
     const minAngle = getMinAngleToDestination(heading, row, col, destRow, destCol);
     const hRot = scenario.turnPenalty * minAngle;
-    return hTrans + hRot;
+
+    // Elevation-Aware Heuristic: Predict energy cost to climb to destination
+    const currentElevation = scenario.elevations.get(`${row}-${col}`) || 0;
+    const destElevation = scenario.elevations.get(scenario.destinationNode) || 0;
+    const elevationDelta = destElevation - currentElevation;
+    // Only penalize if destination is higher (Anisotropic)
+    const hElev = elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : 0;
+
+    return hTrans + hRot + hElev;
   };
 
   const openSet = new MinHeap();

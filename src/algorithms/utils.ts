@@ -137,16 +137,25 @@ export const getPosture = (
   }
   const psi = headingAngles[heading as Exclude<Heading, "NONE">]
 
-  // Approximate gradients Zx, Zy using neighboring cells
   const getElevation = (r: number, c: number) => scenario.elevations.get(`${r}-${c}`) || 0
 
-  const zLeft = getElevation(row, col - 1)
-  const zRight = getElevation(row, col + 1)
-  const zUp = getElevation(row - 1, col)
-  const zDown = getElevation(row + 1, col)
+  // Distance-weighted gradient approximation
+  // Weights: Cardinal = 1, Diagonal = 1/sqrt(2)
+  const invSqrt2 = 1 / Math.sqrt(2)
+  
+  const zTL = getElevation(row - 1, col - 1)
+  const zT = getElevation(row - 1, col)
+  const zTR = getElevation(row - 1, col + 1)
+  const zL = getElevation(row, col - 1)
+  const zR = getElevation(row, col + 1)
+  const zBL = getElevation(row + 1, col - 1)
+  const zB = getElevation(row + 1, col)
+  const zBR = getElevation(row + 1, col + 1)
 
-  const zx = (zRight - zLeft) / 2
-  const zy = (zDown - zUp) / 2
+  // Normalizing by total weight in each axis (1 + 2*invSqrt2)
+  const weight = 1 + 2 * invSqrt2
+  const zx = ((zR + invSqrt2 * (zTR + zBR)) - (zL + invSqrt2 * (zTL + zBL))) / weight
+  const zy = ((zB + invSqrt2 * (zBL + zBR)) - (zT + invSqrt2 * (zTL + zTR))) / weight
 
   const pitch = Math.atan(zx * Math.cos(psi) + zy * Math.sin(psi))
   const roll = Math.atan(zy * Math.cos(psi) - zx * Math.sin(psi))
@@ -229,7 +238,12 @@ export const getEnergyCostBreakdown = (
   const subtotal = stepDistance + terrainBreakdown.total + climbingCost + turnCost
 
   const { roll, pitch } = getPosture(target.row, target.col, target.heading, scenario)
-  const riskFactor = Math.sqrt(roll * roll + pitch * pitch)
+  
+  // Asymmetric Risk: Roll (lateral) more dangerous than Pitch (longitudinal)
+  const kRoll = 3.0
+  const kPitch = 1.0
+  const riskFactor = Math.sqrt(Math.pow(roll * kRoll, 2) + Math.pow(pitch * kPitch, 2))
+  
   const riskWeight = 2.0
   const stabilityPenalty = subtotal * riskWeight * riskFactor
   

@@ -70,23 +70,30 @@ export const MemoizedCell = memo(
 
     if (showGradients && elevations) {
       const getElevation = (r: number, c: number) => elevations.get(`${r}-${c}`) || 0;
-      const zLeft = getElevation(row, col - 1);
-      const zRight = getElevation(row, col + 1);
-      const zUp = getElevation(row - 1, col);
-      const zDown = getElevation(row + 1, col);
+      
+      const zTL = getElevation(row - 1, col - 1);
+      const zT = getElevation(row - 1, col);
+      const zTR = getElevation(row - 1, col + 1);
+      const zL = getElevation(row, col - 1);
+      const zR = getElevation(row, col + 1);
+      const zBL = getElevation(row + 1, col - 1);
+      const zB = getElevation(row + 1, col);
+      const zBR = getElevation(row + 1, col + 1);
 
-      const zx = (zRight - zLeft) / 2;
-      const zy = (zDown - zUp) / 2;
+      // Distance-weighted gradient: Cardinal = 1, Diagonal = 1/sqrt(2)
+      const invSqrt2 = 1 / Math.sqrt(2);
+      const weight = 1 + 2 * invSqrt2;
+      
+      const zx = ((zR + invSqrt2 * (zTR + zBR)) - (zL + invSqrt2 * (zTL + zBL))) / weight;
+      const zy = ((zB + invSqrt2 * (zBL + zBR)) - (zT + invSqrt2 * (zTL + zTR))) / weight;
 
       gradientMagnitude = Math.sqrt(zx * zx + zy * zy);
-      if (gradientMagnitude > 0.1) {
-        // atan2(y, x) gives angle in radians. y is down-positive, x is right-positive.
-        // NorthIcon points UP (-90deg or -PI/2 radians)
+      if (gradientMagnitude > 0.05) {
         gradientAngle = Math.atan2(zy, zx);
       }
 
-      // Heuristic stability check: gradient > 2 (approx 63 deg) is likely unstable
-      if (gradientMagnitude > 2) {
+      // Consistent instability threshold (approx 63 deg or slope > 2)
+      if (gradientMagnitude > 2.0) {
         isUnstable = true;
       }
     }
