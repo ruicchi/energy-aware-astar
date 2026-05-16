@@ -49,6 +49,8 @@ type FloatingMenuProps = {
   showEnergySearch: boolean;
   onToggleManhattanSearch: () => void;
   onToggleEnergySearch: () => void;
+  showGradients: boolean;
+  onToggleGradients: () => void;
   onWalkPath: () => void;
   hasPath: boolean;
   isWalking: boolean;
@@ -74,6 +76,8 @@ export const FloatingMenu = ({
   showEnergySearch,
   onToggleManhattanSearch,
   onToggleEnergySearch,
+  showGradients,
+  onToggleGradients,
   onWalkPath,
   hasPath,
   isWalking,
@@ -338,6 +342,17 @@ export const FloatingMenu = ({
                       {showEnergySearch ? "Hide Energy Search Map" : "Show Energy Search Map"}
                     </Button>
                   )}
+
+                  <Button
+                    variant={showGradients ? "contained" : "outlined"}
+                    size="small"
+                    fullWidth
+                    color="secondary"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={onToggleGradients}
+                  >
+                    {showGradients ? "Hide Gradients" : "Show Gradients"}
+                  </Button>
 
                   {hasPath && (
                     <Button

@@ -1,6 +1,7 @@
 import { memo } from "react";
 import Box from "@mui/material/Box";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import NorthIcon from "@mui/icons-material/North";
 import { type Heading } from "../types";
 
 //study
@@ -14,6 +15,8 @@ type MemoizedCellProps = {
   isDestination: boolean;
   terrainFactor: number;
   elevation: number;
+  showGradients?: boolean;
+  elevations?: Map<string, number>;
   heading?: Heading;
   onMouseDown: (key: string) => void;
   onMouseEnter: (key: string) => void;
@@ -55,9 +58,39 @@ export const MemoizedCell = memo(
     terrainFactor,
     heading,
     elevation,
+    showGradients,
+    elevations,
     onMouseDown,
     onMouseEnter,
   }: MemoizedCellProps) => {
+    //* Gradient Calculation
+    let gradientAngle = 0;
+    let gradientMagnitude = 0;
+    let isUnstable = false;
+
+    if (showGradients && elevations) {
+      const getElevation = (r: number, c: number) => elevations.get(`${r}-${c}`) || 0;
+      const zLeft = getElevation(row, col - 1);
+      const zRight = getElevation(row, col + 1);
+      const zUp = getElevation(row - 1, col);
+      const zDown = getElevation(row + 1, col);
+
+      const zx = (zRight - zLeft) / 2;
+      const zy = (zDown - zUp) / 2;
+
+      gradientMagnitude = Math.sqrt(zx * zx + zy * zy);
+      if (gradientMagnitude > 0.1) {
+        // atan2(y, x) gives angle in radians. y is down-positive, x is right-positive.
+        // NorthIcon points UP (-90deg or -PI/2 radians)
+        gradientAngle = Math.atan2(zy, zx);
+      }
+
+      // Heuristic stability check: gradient > 2 (approx 63 deg) is likely unstable
+      if (gradientMagnitude > 2) {
+        isUnstable = true;
+      }
+    }
+
     //* Determine backgroundColor based on cell state. Priority goes to robot/destination
     let bgColor = "transparent";
     if (isRobot)
@@ -66,6 +99,8 @@ export const MemoizedCell = memo(
       bgColor = "#f44336"; //* Red for Destination
     else if (isWall)
       bgColor = "#1a88e2"; //* Blue for walls/active cells
+    else if (isUnstable && showGradients)
+      bgColor = "rgba(255, 0, 0, 0.3)"; //* Light red for unstable cells
     else if (terrainFactor === 0.5)
       bgColor = "#d2b48c"; //* Dirt (Tan)
     else if (terrainFactor === 0.1)
@@ -109,7 +144,22 @@ export const MemoizedCell = memo(
             }}
           />
         )}
-        {elevation > 0 && !isRobot && !isDestination && !isWall && terrainFactor === 0 && elevation}
+        
+        {showGradients && gradientMagnitude > 0.1 && !isRobot && !isDestination && !isWall && (
+          <NorthIcon
+            sx={{
+              fontSize: cellSize * 0.6,
+              // Math.atan2 is relative to positive x-axis (Right)
+              // NorthIcon starts pointing Up (-90deg relative to Right)
+              // So we add 90deg to rotate it correctly
+              transform: `rotate(${gradientAngle * (180 / Math.PI) + 90}deg)`,
+              color: isUnstable ? "#ff5252" : "rgba(255, 255, 255, 0.6)",
+              opacity: Math.min(1, gradientMagnitude / 2),
+            }}
+          />
+        )}
+
+        {elevation > 0 && !isRobot && !isDestination && !isWall && terrainFactor === 0 && !showGradients && elevation}
       </Box>
     );
   },
@@ -122,7 +172,9 @@ export const MemoizedCell = memo(
       prevProps.terrainFactor === nextProps.terrainFactor &&
       prevProps.elevation === nextProps.elevation &&
       prevProps.cellSize === nextProps.cellSize &&
-      prevProps.heading === nextProps.heading
+      prevProps.heading === nextProps.heading &&
+      prevProps.showGradients === nextProps.showGradients &&
+      prevProps.elevations === nextProps.elevations
     );
   },
 );

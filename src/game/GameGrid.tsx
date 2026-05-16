@@ -26,6 +26,7 @@ const GameGrid = () => {
 
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
   const [selectedAlgo, setSelectedAlgo] = useState<AlgorithmType>("energyAware");
+  const [showGradients, setShowGradients] = useState<boolean>(false);
   const [robotHeading, setRobotHeading] = useState<Heading>("RIGHT");
   const [pathMetrics, setPathMetrics] = useState<{
     algorithm: string;
@@ -118,6 +119,7 @@ const GameGrid = () => {
       turnPenalty: 2.0,
       maxTraversableSlope: 45,
       initialHeading: robotHeading,
+      showGradients: showGradients,
     };
 
     let result;
@@ -222,6 +224,8 @@ const GameGrid = () => {
         showEnergySearch={showEnergySearch}
         onToggleManhattanSearch={() => setShowManhattanSearch(!showManhattanSearch)}
         onToggleEnergySearch={() => setShowEnergySearch(!showEnergySearch)}
+        showGradients={showGradients}
+        onToggleGradients={() => setShowGradients(!showGradients)}
         onWalkPath={handleWalkPath}
         hasPath={!!currentPath}
         isWalking={isWalking}
@@ -271,6 +275,8 @@ const GameGrid = () => {
               isDestination={false}
               terrainFactor={0}
               elevation={0}
+              showGradients={showGradients}
+              elevations={elevations}
               heading={robotHeading}
               onMouseDown={() => {}}
               onMouseEnter={() => {}}
@@ -291,6 +297,8 @@ const GameGrid = () => {
               isDestination={cell.key === destinationNode}
               terrainFactor={terrainFactors.get(cell.key) || 0}
               elevation={elevations.get(cell.key) || 0}
+              showGradients={showGradients}
+              elevations={elevations}
               heading={cell.key === robotNode && !isWalking && !hasFinishedWalking ? robotHeading : undefined}
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}

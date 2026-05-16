@@ -48,6 +48,7 @@ export interface Scenario {
   turnPenalty: number
   maxTraversableSlope?: number
   initialHeading: Heading
+  showGradients?: boolean
   robotPhysics?: {
     trackWidth: number // meters
     wheelBase: number // meters
