@@ -663,6 +663,14 @@ export const FloatingMenu = ({
                       {energyBreakdown.turnCost.toFixed(2)}
                     </Typography>
                   </Box>
+                  {energyBreakdown.stabilityPenalty > 0 && (
+                    <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                      <Typography variant="caption">Stability penalty</Typography>
+                      <Typography variant="caption" fontWeight="bold">
+                        {energyBreakdown.stabilityPenalty.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  )}
                   <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
                     <Typography variant="caption">Movement total</Typography>
                     <Typography variant="caption" fontWeight="bold">
