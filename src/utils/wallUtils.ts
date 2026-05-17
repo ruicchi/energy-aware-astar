@@ -27,10 +27,15 @@ export const toggleWallState = (
 
   modifiedCellsRef.current.add(key)
 
-  //^ INSTANTLY update the color on the screen to prevent lag
+  //^ INSTANTLY update the color and class on the screen to prevent lag
   const element = document.getElementById(`cell-${key}`)
   if (element) {
-    element.style.backgroundColor = isDrawingWall ? '#1a88e2' : 'transparent'
+    element.style.backgroundColor = isDrawingWall ? '#1a88e2' : ''
+    if (isDrawingWall) {
+      element.classList.add('is-wall')
+    } else {
+      element.classList.remove('is-wall')
+    }
   }
 }
 
@@ -43,6 +48,7 @@ export const clearWalls = (
     const element = document.getElementById(`cell-${key}`)
     if (element) {
       element.style.backgroundColor = ''
+      element.classList.remove('is-wall')
     }
   })
 
