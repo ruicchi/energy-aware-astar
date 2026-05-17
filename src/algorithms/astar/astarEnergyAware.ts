@@ -22,26 +22,166 @@ const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
   { dr: 1, dc: 1, heading: "DOWN_RIGHT" },
 ];
 
+const calculateHeuristic = (
+  row: number,
+  col: number,
+  heading: Heading,
+  destRow: number,
+  destCol: number,
+  scenario: Scenario,
+): number => {
+  const distance = Math.hypot(row - destRow, col - destCol);
+  const hTrans = distance / S_MAX;
+  const minAngle = getMinAngleToDestination(heading, row, col, destRow, destCol);
+  const hRot = scenario.turnPenalty * minAngle;
+
+  // Elevation-Aware Heuristic: Predict energy cost to climb to destination
+  const currentElevation = scenario.elevations.get(`${row}-${col}`) || 0;
+  const destElevation = scenario.elevations.get(scenario.destinationNode) || 0;
+  const elevationDelta = destElevation - currentElevation;
+  // Only penalize if destination is higher (Anisotropic)
+  const hElev = elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : 0;
+
+  return hTrans + hRot + hElev;
+};
+
+const getShortestPathData = (current: EnergyNode, scenario: Scenario, nodesEvaluated: number) => {
+  const shortestPath: string[] = [];
+  let totalDistance = 0;
+  let temp: EnergyNode | null = current;
+
+  while (temp) {
+    shortestPath.unshift(`${temp.row}-${temp.col}`);
+    if (temp.parent) {
+      const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col;
+      totalDistance += isDiagonal ? SQRT2 : 1.0;
+    }
+    temp = temp.parent;
+  }
+
+  const energyBreakdown = getPathEnergyBreakdown(current, scenario);
+  energyBreakdown.nodesEvaluated = nodesEvaluated;
+
+  return {
+    shortestPath: Array.from(new Set(shortestPath)),
+    totalEnergy: energyBreakdown.total,
+    totalDistance,
+    energyBreakdown,
+  };
+};
+
+const isInvalidMove = (
+  current: EnergyNode,
+  neighbor: { dr: number; dc: number; heading: Heading },
+  neighborCellKey: string,
+  neighborStateKey: string,
+  scenario: Scenario,
+  closedSet: Set<string>,
+) => {
+  const nr = current.row + neighbor.dr;
+  const nc = current.col + neighbor.dc;
+
+  // Boundary and wall checks
+  if (
+    nr < 0 ||
+    nr >= scenario.rows ||
+    nc < 0 ||
+    nc >= scenario.cols ||
+    scenario.wallNodes.has(neighborCellKey) ||
+    closedSet.has(neighborStateKey) ||
+    !isTraversableSlope(current, { row: nr, col: nc, heading: neighbor.heading }, scenario)
+  ) {
+    return true;
+  }
+
+  // Strict Corner-Cutting Prevention
+  if (neighbor.heading.includes("_")) {
+    const cardinal1 = `${current.row + neighbor.dr}-${current.col}`;
+    const cardinal2 = `${current.row}-${current.col + neighbor.dc}`;
+    if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const markNodeVisited = (
+  key: string,
+  type: "open" | "closed",
+  scenario: Scenario,
+  visitedNodesInOrder: { key: string; type: "open" | "closed" }[],
+  trackedCells: Set<string>,
+) => {
+  const isSpecial = key === scenario.robotNode || key === scenario.destinationNode;
+  if (!isSpecial && !trackedCells.has(key)) {
+    visitedNodesInOrder.push({ key, type });
+    trackedCells.add(key);
+  }
+};
+
+const processNeighbors = (
+  current: EnergyNode,
+  scenario: Scenario,
+  destRow: number,
+  destCol: number,
+  tracksHeading: boolean,
+  openSet: MinHeap,
+  allNodes: Map<string, EnergyNode>,
+  closedSet: Set<string>,
+  visitedNodesInOrder: { key: string; type: "open" | "closed" }[],
+  openedCells: Set<string>,
+) => {
+  for (const neighbor of NEIGHBORS) {
+    const nr = current.row + neighbor.dr;
+    const nc = current.col + neighbor.dc;
+    const neighborCellKey = `${nr}-${nc}`;
+    const nodeHeading = tracksHeading ? neighbor.heading : "NONE";
+    const neighborStateKey = `${neighborCellKey}-${nodeHeading}`;
+
+    if (isInvalidMove(current, neighbor, neighborCellKey, neighborStateKey, scenario, closedSet)) {
+      continue;
+    }
+
+    const cost = getEnergyCost(
+      current,
+      { row: nr, col: nc, heading: neighbor.heading },
+      scenario,
+    );
+    const tentativeG = current.g + cost;
+
+    let neighborNode = allNodes.get(neighborStateKey);
+    if (neighborNode && tentativeG >= neighborNode.g) continue;
+
+    if (!neighborNode) {
+      const h = calculateHeuristic(nr, nc, nodeHeading, destRow, destCol, scenario);
+      neighborNode = {
+        key: neighborStateKey,
+        row: nr,
+        col: nc,
+        heading: nodeHeading,
+        g: tentativeG,
+        h: h,
+        f: tentativeG + h,
+        parent: current,
+      };
+    } else {
+      neighborNode.g = tentativeG;
+      neighborNode.f = tentativeG + neighborNode.h;
+      neighborNode.parent = current;
+    }
+
+    allNodes.set(neighborStateKey, neighborNode);
+    openSet.push({ ...neighborNode });
+
+    markNodeVisited(neighborCellKey, "open", scenario, visitedNodesInOrder, openedCells);
+  }
+};
+
 export const runAStarEnergyAware = (scenario: Scenario) => {
   const [destRow, destCol] = scenario.destinationNode.split("-").map(Number);
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number);
   const tracksHeading = scenario.initialHeading !== "NONE";
-
-  const calculateHeuristic = (row: number, col: number, heading: Heading): number => {
-    const distance = Math.hypot(row - destRow, col - destCol);
-    const hTrans = distance / S_MAX;
-    const minAngle = getMinAngleToDestination(heading, row, col, destRow, destCol);
-    const hRot = scenario.turnPenalty * minAngle;
-
-    // Elevation-Aware Heuristic: Predict energy cost to climb to destination
-    const currentElevation = scenario.elevations.get(`${row}-${col}`) || 0;
-    const destElevation = scenario.elevations.get(scenario.destinationNode) || 0;
-    const elevationDelta = destElevation - currentElevation;
-    // Only penalize if destination is higher (Anisotropic)
-    const hElev = elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : 0;
-
-    return hTrans + hRot + hElev;
-  };
 
   const openSet = new MinHeap();
   const allNodes = new Map<string, EnergyNode>();
@@ -57,7 +197,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     col: startCol,
     heading: scenario.initialHeading,
     g: 0,
-    h: calculateHeuristic(startRow, startCol, scenario.initialHeading),
+    h: calculateHeuristic(startRow, startCol, scenario.initialHeading, destRow, destCol, scenario),
     f: 0,
     parent: null,
   };
@@ -65,7 +205,6 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
   openSet.push(startNode);
   allNodes.set(startNode.key, startNode);
 
-  // Add the start node to visited nodes so the animation starts from the robot's cell
   visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" });
   openedCells.add(scenario.robotNode);
 
@@ -74,7 +213,6 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
   while (openSet.size() > 0) {
     const current = openSet.pop()!;
 
-    // If we've already closed this state (row-col-heading), skip it
     if (closedSet.has(current.key)) continue;
     closedSet.add(current.key);
     nodesEvaluated++;
@@ -82,108 +220,26 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     const cellKey = `${current.row}-${current.col}`;
 
     if (current.row === destRow && current.col === destCol) {
-      const shortestPath: string[] = [];
-      let totalDistance = 0;
-      let temp: EnergyNode | null = current;
-
-      while (temp) {
-        shortestPath.unshift(`${temp.row}-${temp.col}`);
-        if (temp.parent) {
-          const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col;
-          totalDistance += isDiagonal ? SQRT2 : 1.0;
-        }
-        temp = temp.parent;
-      }
-      const energyBreakdown = getPathEnergyBreakdown(current, scenario);
-      energyBreakdown.nodesEvaluated = nodesEvaluated;
-
       return {
         visitedNodesInOrder,
-        shortestPath: Array.from(new Set(shortestPath)),
-        totalEnergy: energyBreakdown.total,
-        totalDistance: totalDistance,
-        energyBreakdown,
+        ...getShortestPathData(current, scenario, nodesEvaluated),
       };
     }
 
-    if (cellKey !== scenario.robotNode && cellKey !== scenario.destinationNode) {
-      // Only record the first time a cell is closed for smoother animation
-      if (!closedCells.has(cellKey)) {
-        visitedNodesInOrder.push({ key: cellKey, type: "closed" });
-        closedCells.add(cellKey);
-      }
-    }
+    markNodeVisited(cellKey, "closed", scenario, visitedNodesInOrder, closedCells);
 
-    for (const neighbor of NEIGHBORS) {
-      const nr = current.row + neighbor.dr;
-      const nc = current.col + neighbor.dc;
-      const neighborCellKey = `${nr}-${nc}`;
-      const nodeHeading = tracksHeading ? neighbor.heading : "NONE";
-      const neighborStateKey = `${neighborCellKey}-${nodeHeading}`;
-
-      // Boundary and wall checks
-      if (
-        nr < 0 ||
-        nr >= scenario.rows ||
-        nc < 0 ||
-        nc >= scenario.cols ||
-        scenario.wallNodes.has(neighborCellKey) ||
-        closedSet.has(neighborStateKey) ||
-        !isTraversableSlope(current, { row: nr, col: nc, heading: neighbor.heading }, scenario)
-      )
-        continue;
-
-      // Strict Corner-Cutting Prevention
-      if (neighbor.heading.includes("_")) {
-        const cardinal1 = `${current.row + neighbor.dr}-${current.col}`;
-        const cardinal2 = `${current.row}-${current.col + neighbor.dc}`;
-        if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) {
-          continue;
-        }
-      }
-
-      const cost = getEnergyCost(
-        current,
-        { row: nr, col: nc, heading: neighbor.heading },
-        scenario,
-      );
-      const tentativeG = current.g + cost;
-
-      let neighborNode = allNodes.get(neighborStateKey);
-      if (!neighborNode || tentativeG < neighborNode.g) {
-        if (!neighborNode) {
-          const h = calculateHeuristic(nr, nc, nodeHeading);
-          neighborNode = {
-            key: neighborStateKey,
-            row: nr,
-            col: nc,
-            heading: nodeHeading,
-            g: tentativeG,
-            h: h,
-            f: tentativeG + h,
-            parent: current,
-          };
-        } else {
-          neighborNode.g = tentativeG;
-          neighborNode.f = tentativeG + neighborNode.h;
-          neighborNode.parent = current;
-        }
-
-        allNodes.set(neighborStateKey, neighborNode);
-        openSet.push({ ...neighborNode });
-
-        // Only record the first time a cell is opened for smoother animation
-        if (
-          neighborCellKey !== scenario.robotNode &&
-          neighborCellKey !== scenario.destinationNode
-        ) {
-          if (!openedCells.has(neighborCellKey)) {
-            visitedNodesInOrder.push({ key: neighborCellKey, type: "open" });
-            openedCells.add(neighborCellKey);
-          }
-        }
-      }
-    }
+    processNeighbors(
+      current,
+      scenario,
+      destRow,
+      destCol,
+      tracksHeading,
+      openSet,
+      allNodes,
+      closedSet,
+      visitedNodesInOrder,
+      openedCells,
+    );
   }
 
   return {
