@@ -257,7 +257,7 @@ export const getEnergyCostBreakdown = (
     gradientPenaltyMultiplier = slopeDegrees <= 30 ? 1.0 : 20.0
   }
 
-  const turnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty)
+  const rawTurnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty)
 
   // Use average terrain factor for the move (0.5 distance in start cell, 0.5 in target cell)
   const startTerrainBreakdown = getTerrainPenaltyBreakdown(startTerrainFactor, stepDistance / 2)
@@ -268,7 +268,9 @@ export const getEnergyCostBreakdown = (
     targetTerrainBreakdown,
   )
 
-  const movementCost = stepDistance * (gradientPenaltyMultiplier + turnCost)
+  const climbingCost = stepDistance * (gradientPenaltyMultiplier - 1.0)
+  const turnCost = stepDistance * rawTurnCost
+  const movementCost = stepDistance + climbingCost + turnCost
   const subtotal = movementCost + terrainBreakdown.total
 
   const { roll, pitch } = getPosture(target.row, target.col, target.heading, scenario)
@@ -290,7 +292,7 @@ export const getEnergyCostBreakdown = (
     dirtPenalty: terrainBreakdown.dirtPenalty,
     waterPenalty: terrainBreakdown.waterPenalty,
     otherTerrainPenalty: terrainBreakdown.otherTerrainPenalty,
-    elevationCost: 0,
+    climbingCost,
     turnCost,
     stabilityPenalty,
     total,
@@ -304,7 +306,7 @@ export const createEmptyEnergyBreakdown = (): EnergyBreakdown => ({
   dirtPenalty: 0,
   waterPenalty: 0,
   otherTerrainPenalty: 0,
-  elevationCost: 0,
+  climbingCost: 0,
   turnCost: 0,
   stabilityPenalty: 0,
   total: 0,
@@ -321,7 +323,7 @@ export const addEnergyBreakdown = (
   dirtPenalty: total.dirtPenalty + step.dirtPenalty,
   waterPenalty: total.waterPenalty + step.waterPenalty,
   otherTerrainPenalty: total.otherTerrainPenalty + step.otherTerrainPenalty,
-  elevationCost: total.elevationCost + step.elevationCost,
+  climbingCost: total.climbingCost + step.climbingCost,
   turnCost: total.turnCost + step.turnCost,
   stabilityPenalty: total.stabilityPenalty + step.stabilityPenalty,
   total: total.total + step.total,

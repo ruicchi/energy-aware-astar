@@ -29,7 +29,7 @@ export type EnergyBreakdown = {
   dirtPenalty: number
   waterPenalty: number
   otherTerrainPenalty: number
-  elevationCost: number
+  climbingCost: number
   turnCost: number
   stabilityPenalty: number
   total: number
