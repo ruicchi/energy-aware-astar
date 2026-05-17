@@ -1,5 +1,6 @@
 import { type EnergyNode } from "../../types";
 
+// NOTE: this organizes nodes so that the best node is always evaluated first
 export class MinHeap {
   private heap: EnergyNode[] = [];
 

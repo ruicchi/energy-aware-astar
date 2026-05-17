@@ -36,39 +36,157 @@ const octileDistance = (r1: number, c1: number, r2: number, c2: number) => {
 
 type HeuristicType = "manhattan" | "euclidean" | "chebyshev" | "octile";
 
+const getHeuristicData = (heuristicType: HeuristicType) => {
+  switch (heuristicType) {
+    case "euclidean":
+      return { hFunc: euclideanDistance, neighbors: NEIGHBORS_8 };
+    case "chebyshev":
+      return { hFunc: chebyshevDistance, neighbors: NEIGHBORS_8 };
+    case "octile":
+      return { hFunc: octileDistance, neighbors: NEIGHBORS_8 };
+    case "manhattan":
+    default:
+      return { hFunc: manhattanDistance, neighbors: NEIGHBORS_4 };
+  }
+};
+
+const getShortestPathData = (current: EnergyNode, scenario: Scenario, nodesEvaluated: number) => {
+  const shortestPath: string[] = [];
+  let totalDistance = 0;
+  let temp: EnergyNode | null = current;
+
+  while (temp) {
+    shortestPath.unshift(`${temp.row}-${temp.col}`);
+    if (temp.parent) {
+      const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col;
+      totalDistance += isDiagonal ? SQRT2 : 1.0;
+    }
+    temp = temp.parent;
+  }
+
+  const energyBreakdown = getPathEnergyBreakdown(current, scenario);
+  energyBreakdown.nodesEvaluated = nodesEvaluated;
+
+  return {
+    shortestPath: Array.from(new Set(shortestPath)),
+    totalEnergy: energyBreakdown.total,
+    totalDistance,
+    energyBreakdown,
+  };
+};
+
+const isInvalidMove = (
+  current: EnergyNode,
+  neighbor: { dr: number; dc: number; heading: Heading },
+  neighborCellKey: string,
+  scenario: Scenario,
+  closedSet: Set<string>,
+) => {
+  const nr = current.row + neighbor.dr;
+  const nc = current.col + neighbor.dc;
+
+  // NOTE: checker if the neighbor is out of bounds or blocked by a wall
+  if (
+    nr < 0 ||
+    nr >= scenario.rows ||
+    nc < 0 ||
+    nc >= scenario.cols ||
+    scenario.wallNodes.has(neighborCellKey) ||
+    closedSet.has(neighborCellKey)
+  ) {
+    return true;
+  }
+
+  // NOTE: Corner-cutting prevention
+  if (neighbor.heading.includes("_")) {
+    const cardinal1 = `${current.row + neighbor.dr}-${current.col}`;
+    const cardinal2 = `${current.row}-${current.col + neighbor.dc}`;
+    if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const markNodeVisited = (
+  key: string,
+  type: "open" | "closed",
+  scenario: Scenario,
+  visitedNodesInOrder: { key: string; type: "open" | "closed" }[],
+  trackedCells: Set<string>,
+) => {
+  const isSpecial = key === scenario.robotNode || key === scenario.destinationNode;
+  if (!isSpecial && !trackedCells.has(key)) {
+    visitedNodesInOrder.push({ key, type });
+    trackedCells.add(key);
+  }
+};
+
+const processNeighbors = (
+  current: EnergyNode,
+  neighbors: { dr: number; dc: number; heading: Heading }[],
+  scenario: Scenario,
+  destRow: number,
+  destCol: number,
+  openSet: MinHeap,
+  allNodes: Map<string, EnergyNode>,
+  closedSet: Set<string>,
+  visitedNodesInOrder: { key: string; type: "open" | "closed" }[],
+  openedCells: Set<string>,
+) => {
+  for (const neighbor of neighbors) {
+    const nr = current.row + neighbor.dr;
+    const nc = current.col + neighbor.dc;
+    const neighborCellKey = `${nr}-${nc}`;
+
+    if (isInvalidMove(current, neighbor, neighborCellKey, scenario, closedSet)) continue;
+
+    // NOTE: calculates g(n)
+    const stepCost = getSpatialCost({ heading: neighbor.heading });
+    const tentativeG = current.g + stepCost;
+
+    let neighborNode = allNodes.get(neighborCellKey);
+    if (neighborNode && tentativeG >= neighborNode.g) continue;
+
+    if (!neighborNode) {
+      const h = Math.hypot(nr - destRow, nc - destCol);
+      neighborNode = {
+        key: neighborCellKey,
+        row: nr,
+        col: nc,
+        heading: neighbor.heading,
+        g: tentativeG,
+        h: h,
+        f: tentativeG + h,
+        parent: current,
+      };
+    } else {
+      neighborNode.g = tentativeG;
+      neighborNode.f = tentativeG + neighborNode.h;
+      neighborNode.parent = current;
+      neighborNode.heading = neighbor.heading;
+    }
+
+    allNodes.set(neighborCellKey, neighborNode);
+    openSet.push({ ...neighborNode });
+
+    markNodeVisited(neighborCellKey, "open", scenario, visitedNodesInOrder, openedCells);
+  }
+};
+
 const runAStarStandard = (scenario: Scenario, heuristicType: HeuristicType) => {
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number);
   const [destRow, destCol] = scenario.destinationNode.split("-").map(Number);
 
-  let hFunc: (r1: number, c1: number, r2: number, c2: number) => number;
-  let neighbors: { dr: number; dc: number; heading: Heading }[];
+  const { hFunc, neighbors } = getHeuristicData(heuristicType);
 
-  switch (heuristicType) {
-    case "manhattan":
-      hFunc = manhattanDistance;
-      neighbors = NEIGHBORS_4;
-      break;
-    case "euclidean":
-      hFunc = euclideanDistance;
-      neighbors = NEIGHBORS_8;
-      break;
-    case "chebyshev":
-      hFunc = chebyshevDistance;
-      neighbors = NEIGHBORS_8;
-      break;
-    case "octile":
-      hFunc = octileDistance;
-      neighbors = NEIGHBORS_8;
-      break;
-    default:
-      hFunc = manhattanDistance;
-      neighbors = NEIGHBORS_4;
-  }
-
+  // NOTE: these track where the algorithm needs to look and where it has already been
   const openSet = new MinHeap();
   const allNodes = new Map<string, EnergyNode>();
   const closedSet = new Set<string>();
 
+  // NOTE: these are only for managing animations
   const visitedNodesInOrder: { key: string; type: "open" | "closed" }[] = [];
   const openedCells = new Set<string>();
   const closedCells = new Set<string>();
@@ -99,104 +217,27 @@ const runAStarStandard = (scenario: Scenario, heuristicType: HeuristicType) => {
     closedSet.add(current.key);
     nodesEvaluated++;
 
-    const cellKey = current.key;
-
     if (current.row === destRow && current.col === destCol) {
-      const shortestPath: string[] = [];
-      let totalDistance = 0;
-      let temp: EnergyNode | null = current;
-
-      while (temp) {
-        shortestPath.unshift(`${temp.row}-${temp.col}`);
-        if (temp.parent) {
-          const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col;
-          totalDistance += isDiagonal ? SQRT2 : 1.0;
-        }
-        temp = temp.parent;
-      }
-      const energyBreakdown = getPathEnergyBreakdown(current, scenario);
-      energyBreakdown.nodesEvaluated = nodesEvaluated;
-
       return {
         visitedNodesInOrder,
-        shortestPath: Array.from(new Set(shortestPath)),
-        totalEnergy: energyBreakdown.total,
-        totalDistance: totalDistance,
-        energyBreakdown,
+        ...getShortestPathData(current, scenario, nodesEvaluated),
       };
     }
 
-    if (cellKey !== scenario.robotNode && cellKey !== scenario.destinationNode) {
-      if (!closedCells.has(cellKey)) {
-        visitedNodesInOrder.push({ key: cellKey, type: "closed" });
-        closedCells.add(cellKey);
-      }
-    }
+    markNodeVisited(current.key, "closed", scenario, visitedNodesInOrder, closedCells);
 
-    for (const neighbor of neighbors) {
-      const nr = current.row + neighbor.dr;
-      const nc = current.col + neighbor.dc;
-      const neighborCellKey = `${nr}-${nc}`;
-      const neighborStateKey = neighborCellKey;
-
-      if (
-        nr < 0 ||
-        nr >= scenario.rows ||
-        nc < 0 ||
-        nc >= scenario.cols ||
-        scenario.wallNodes.has(neighborCellKey) ||
-        closedSet.has(neighborStateKey)
-      ) {
-        continue;
-      }
-
-      // Corner-cutting prevention
-      if (neighbor.heading.includes("_")) {
-        const cardinal1 = `${current.row + neighbor.dr}-${current.col}`;
-        const cardinal2 = `${current.row}-${current.col + neighbor.dc}`;
-        if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) {
-          continue;
-        }
-      }
-
-      const stepCost = getSpatialCost({ heading: neighbor.heading });
-      const tentativeG = current.g + stepCost;
-
-      let neighborNode = allNodes.get(neighborStateKey);
-      if (!neighborNode || tentativeG < neighborNode.g) {
-        if (!neighborNode) {
-          const h = Math.hypot(nr - destRow, nc - destCol);
-          neighborNode = {
-            key: neighborStateKey,
-            row: nr,
-            col: nc,
-            heading: neighbor.heading,
-            g: tentativeG,
-            h: h,
-            f: tentativeG + h,
-            parent: current,
-          };
-        } else {
-          neighborNode.g = tentativeG;
-          neighborNode.f = tentativeG + neighborNode.h;
-          neighborNode.parent = current;
-          neighborNode.heading = neighbor.heading;
-        }
-
-        allNodes.set(neighborStateKey, neighborNode);
-        openSet.push({ ...neighborNode });
-
-        if (
-          neighborCellKey !== scenario.robotNode &&
-          neighborCellKey !== scenario.destinationNode
-        ) {
-          if (!openedCells.has(neighborCellKey)) {
-            visitedNodesInOrder.push({ key: neighborCellKey, type: "open" });
-            openedCells.add(neighborCellKey);
-          }
-        }
-      }
-    }
+    processNeighbors(
+      current,
+      neighbors,
+      scenario,
+      destRow,
+      destCol,
+      openSet,
+      allNodes,
+      closedSet,
+      visitedNodesInOrder,
+      openedCells,
+    );
   }
   return {
     visitedNodesInOrder,
@@ -207,7 +248,7 @@ const runAStarStandard = (scenario: Scenario, heuristicType: HeuristicType) => {
   };
 };
 
-// Wrapper functions that act as adapters for your GameGrid
+// NOTE: Wrapper functions that act as adapters for GameGrid
 export const runAStarManhattan = (scenario: Scenario) => runAStarStandard(scenario, "manhattan");
 export const runAStarEuclidean = (scenario: Scenario) => runAStarStandard(scenario, "euclidean");
 export const runAStarChebyshev = (scenario: Scenario) => runAStarStandard(scenario, "chebyshev");
