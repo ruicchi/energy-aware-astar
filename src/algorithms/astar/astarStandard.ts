@@ -7,20 +7,63 @@ import {
 } from "../utils";
 import { MinHeap } from "./MinHeap";
 
-const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
+const NEIGHBORS_4: { dr: number; dc: number; heading: Heading }[] = [
   { dr: -1, dc: 0, heading: "UP" },
   { dr: 1, dc: 0, heading: "DOWN" },
   { dr: 0, dc: -1, heading: "LEFT" },
   { dr: 0, dc: 1, heading: "RIGHT" },
+];
+
+const NEIGHBORS_8: { dr: number; dc: number; heading: Heading }[] = [
+  ...NEIGHBORS_4,
   { dr: -1, dc: -1, heading: "UP_LEFT" },
   { dr: -1, dc: 1, heading: "UP_RIGHT" },
   { dr: 1, dc: -1, heading: "DOWN_LEFT" },
   { dr: 1, dc: 1, heading: "DOWN_RIGHT" },
 ];
 
-export const runAStarEuclidean = (scenario: Scenario) => {
+const manhattanDistance = (r1: number, c1: number, r2: number, c2: number) =>
+  Math.abs(r1 - r2) + Math.abs(c1 - c2);
+const euclideanDistance = (r1: number, c1: number, r2: number, c2: number) =>
+  Math.hypot(r1 - r2, c1 - c2);
+const chebyshevDistance = (r1: number, c1: number, r2: number, c2: number) =>
+  Math.max(Math.abs(r1 - r2), Math.abs(c1 - c2));
+const octileDistance = (r1: number, c1: number, r2: number, c2: number) => {
+  const dx = Math.abs(r1 - r2);
+  const dy = Math.abs(c1 - c2);
+  return dx + dy + (SQRT2 - 2) * Math.min(dx, dy);
+};
+
+type HeuristicType = "manhattan" | "euclidean" | "chebyshev" | "octile";
+
+const runAStarStandard = (scenario: Scenario, heuristicType: HeuristicType) => {
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number);
   const [destRow, destCol] = scenario.destinationNode.split("-").map(Number);
+
+  let hFunc: (r1: number, c1: number, r2: number, c2: number) => number;
+  let neighbors: { dr: number; dc: number; heading: Heading }[];
+
+  switch (heuristicType) {
+    case "manhattan":
+      hFunc = manhattanDistance;
+      neighbors = NEIGHBORS_4;
+      break;
+    case "euclidean":
+      hFunc = euclideanDistance;
+      neighbors = NEIGHBORS_8;
+      break;
+    case "chebyshev":
+      hFunc = chebyshevDistance;
+      neighbors = NEIGHBORS_8;
+      break;
+    case "octile":
+      hFunc = octileDistance;
+      neighbors = NEIGHBORS_8;
+      break;
+    default:
+      hFunc = manhattanDistance;
+      neighbors = NEIGHBORS_4;
+  }
 
   const openSet = new MinHeap();
   const allNodes = new Map<string, EnergyNode>();
@@ -36,7 +79,7 @@ export const runAStarEuclidean = (scenario: Scenario) => {
     col: startCol,
     heading: scenario.initialHeading,
     g: 0,
-    h: Math.hypot(startRow - destRow, startCol - destCol),
+    h: hFunc(startRow, startCol, destRow, destCol),
     f: 0,
     parent: null,
   };
@@ -90,7 +133,7 @@ export const runAStarEuclidean = (scenario: Scenario) => {
       }
     }
 
-    for (const neighbor of NEIGHBORS) {
+    for (const neighbor of neighbors) {
       const nr = current.row + neighbor.dr;
       const nc = current.col + neighbor.dc;
       const neighborCellKey = `${nr}-${nc}`;
@@ -155,7 +198,6 @@ export const runAStarEuclidean = (scenario: Scenario) => {
       }
     }
   }
-
   return {
     visitedNodesInOrder,
     shortestPath: [],
@@ -164,3 +206,9 @@ export const runAStarEuclidean = (scenario: Scenario) => {
     energyBreakdown: createEmptyEnergyBreakdown(),
   };
 };
+
+// Wrapper functions that act as adapters for your GameGrid
+export const runAStarManhattan = (scenario: Scenario) => runAStarStandard(scenario, "manhattan");
+export const runAStarEuclidean = (scenario: Scenario) => runAStarStandard(scenario, "euclidean");
+export const runAStarChebyshev = (scenario: Scenario) => runAStarStandard(scenario, "chebyshev");
+export const runAStarOctile = (scenario: Scenario) => runAStarStandard(scenario, "octile");
