@@ -7,6 +7,7 @@ import {
   isTraversableSlope,
   SQRT2,
 } from "../utils";
+import { MinHeap } from "./MinHeap";
 
 const S_MAX = 2; // Maximum translation speed
 
@@ -20,64 +21,6 @@ const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
   { dr: 1, dc: -1, heading: "DOWN_LEFT" },
   { dr: 1, dc: 1, heading: "DOWN_RIGHT" },
 ];
-
-class MinHeap {
-  private heap: EnergyNode[] = [];
-
-  push(node: EnergyNode) {
-    this.heap.push(node);
-    this.bubbleUp();
-  }
-
-  pop(): EnergyNode | undefined {
-    if (this.size() === 0) return undefined;
-    const top = this.heap[0];
-    const bottom = this.heap.pop()!;
-    if (this.size() > 0) {
-      this.heap[0] = bottom;
-      this.bubbleDown();
-    }
-    return top;
-  }
-
-  size() {
-    return this.heap.length;
-  }
-
-  private shouldSwap(childIndex: number, parentIndex: number): boolean {
-    const child = this.heap[childIndex];
-    const parent = this.heap[parentIndex];
-    if (child.f < parent.f) return true;
-    if (child.f === parent.f) return child.h < parent.h;
-    return false;
-  }
-
-  private bubbleUp() {
-    let index = this.heap.length - 1;
-    while (index > 0) {
-      const parentIndex = Math.floor((index - 1) / 2);
-      if (!this.shouldSwap(index, parentIndex)) break;
-      [this.heap[index], this.heap[parentIndex]] = [this.heap[parentIndex], this.heap[index]];
-      index = parentIndex;
-    }
-  }
-
-  private bubbleDown() {
-    let index = 0;
-    while (true) {
-      let smallest = index;
-      const left = 2 * index + 1;
-      const right = 2 * index + 2;
-
-      if (left < this.heap.length && this.shouldSwap(left, smallest)) smallest = left;
-      if (right < this.heap.length && this.shouldSwap(right, smallest)) smallest = right;
-
-      if (smallest === index) break;
-      [this.heap[index], this.heap[smallest]] = [this.heap[smallest], this.heap[index]];
-      index = smallest;
-    }
-  }
-}
 
 export const runAStarEnergyAware = (scenario: Scenario) => {
   const [destRow, destCol] = scenario.destinationNode.split("-").map(Number);
@@ -118,13 +61,13 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     f: 0,
     parent: null,
   };
-  startNode.f = startNode.h
-  openSet.push(startNode)
-  allNodes.set(startNode.key, startNode)
+  startNode.f = startNode.h;
+  openSet.push(startNode);
+  allNodes.set(startNode.key, startNode);
 
   // Add the start node to visited nodes so the animation starts from the robot's cell
-  visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" })
-  openedCells.add(scenario.robotNode)
+  visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" });
+  openedCells.add(scenario.robotNode);
 
   let nodesEvaluated = 0;
 
@@ -186,11 +129,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
         nc >= scenario.cols ||
         scenario.wallNodes.has(neighborCellKey) ||
         closedSet.has(neighborStateKey) ||
-        !isTraversableSlope(
-          current,
-          { row: nr, col: nc, heading: neighbor.heading },
-          scenario,
-        )
+        !isTraversableSlope(current, { row: nr, col: nc, heading: neighbor.heading }, scenario)
       )
         continue;
 

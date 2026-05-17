@@ -1,85 +1,25 @@
-import { type Scenario, type Heading, type EnergyNode } from "../../types"
-import {
-  createEmptyEnergyBreakdown,
-  getPathEnergyBreakdown,
-} from "../utils"
+import { type Scenario, type Heading, type EnergyNode } from "../../types";
+import { createEmptyEnergyBreakdown, getPathEnergyBreakdown } from "../utils";
+import { MinHeap } from "./MinHeap";
 
 const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
   { dr: -1, dc: 0, heading: "UP" },
   { dr: 1, dc: 0, heading: "DOWN" },
   { dr: 0, dc: -1, heading: "LEFT" },
   { dr: 0, dc: 1, heading: "RIGHT" },
-]
-
-class MinHeap {
-  private heap: EnergyNode[] = []
-
-  push(node: EnergyNode) {
-    this.heap.push(node)
-    this.bubbleUp()
-  }
-
-  pop(): EnergyNode | undefined {
-    if (this.size() === 0) return undefined
-    const top = this.heap[0]
-    const bottom = this.heap.pop()!
-    if (this.size() > 0) {
-      this.heap[0] = bottom
-      this.bubbleDown()
-    }
-    return top
-  }
-
-  size() {
-    return this.heap.length
-  }
-
-  private shouldSwap(childIndex: number, parentIndex: number): boolean {
-    const child = this.heap[childIndex]
-    const parent = this.heap[parentIndex]
-    if (child.f < parent.f) return true
-    if (child.f === parent.f) return child.h < parent.h
-    return false
-  }
-
-  private bubbleUp() {
-    let index = this.heap.length - 1
-    while (index > 0) {
-      const parentIndex = Math.floor((index - 1) / 2)
-      if (!this.shouldSwap(index, parentIndex)) break
-      ;[this.heap[index], this.heap[parentIndex]] = [this.heap[parentIndex], this.heap[index]]
-      index = parentIndex
-    }
-  }
-
-  private bubbleDown() {
-    let index = 0
-    while (true) {
-      let smallest = index
-      const left = 2 * index + 1
-      const right = 2 * index + 2
-
-      if (left < this.heap.length && this.shouldSwap(left, smallest)) smallest = left
-      if (right < this.heap.length && this.shouldSwap(right, smallest)) smallest = right
-
-      if (smallest === index) break
-      ;[this.heap[index], this.heap[smallest]] = [this.heap[smallest], this.heap[index]]
-      index = smallest
-    }
-  }
-}
+];
 
 export const runAStarManhattan = (scenario: Scenario) => {
-  const [startRow, startCol] = scenario.robotNode.split("-").map(Number)
-  const [destRow, destCol] = scenario.destinationNode.split("-").map(Number)
+  const [startRow, startCol] = scenario.robotNode.split("-").map(Number);
+  const [destRow, destCol] = scenario.destinationNode.split("-").map(Number);
 
-  const openSet = new MinHeap()
-  const allNodes = new Map<string, EnergyNode>()
-  const closedSet = new Set<string>()
+  const openSet = new MinHeap();
+  const allNodes = new Map<string, EnergyNode>();
+  const closedSet = new Set<string>();
 
-  const visitedNodesInOrder: { key: string; type: "open" | "closed" }[] = []
-  const openedCells = new Set<string>()
-  const closedCells = new Set<string>()
+  const visitedNodesInOrder: { key: string; type: "open" | "closed" }[] = [];
+  const openedCells = new Set<string>();
+  const closedCells = new Set<string>();
 
   const startNode: EnergyNode = {
     key: scenario.robotNode,
@@ -90,39 +30,39 @@ export const runAStarManhattan = (scenario: Scenario) => {
     h: Math.abs(startRow - destRow) + Math.abs(startCol - destCol),
     f: 0,
     parent: null,
-  }
-  startNode.f = startNode.h
-  openSet.push(startNode)
-  allNodes.set(startNode.key, startNode)
+  };
+  startNode.f = startNode.h;
+  openSet.push(startNode);
+  allNodes.set(startNode.key, startNode);
 
   // Add the start node to visited nodes so the animation starts from the robot's cell
-  visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" })
-  openedCells.add(scenario.robotNode)
+  visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" });
+  openedCells.add(scenario.robotNode);
 
-  let nodesEvaluated = 0
+  let nodesEvaluated = 0;
 
   while (openSet.size() > 0) {
-    const current = openSet.pop()!
+    const current = openSet.pop()!;
 
-    if (closedSet.has(current.key)) continue
-    closedSet.add(current.key)
-    nodesEvaluated++
+    if (closedSet.has(current.key)) continue;
+    closedSet.add(current.key);
+    nodesEvaluated++;
 
-    const cellKey = current.key
+    const cellKey = current.key;
 
     if (current.row === destRow && current.col === destCol) {
-      const shortestPath: string[] = []
-      let temp: EnergyNode | null = current
+      const shortestPath: string[] = [];
+      let temp: EnergyNode | null = current;
 
       while (temp) {
-        const pathKey = `${temp.row}-${temp.col}`
+        const pathKey = `${temp.row}-${temp.col}`;
         if (shortestPath[0] !== pathKey) {
-          shortestPath.unshift(pathKey)
+          shortestPath.unshift(pathKey);
         }
-        temp = temp.parent
+        temp = temp.parent;
       }
-      const energyBreakdown = getPathEnergyBreakdown(current, scenario)
-      energyBreakdown.nodesEvaluated = nodesEvaluated
+      const energyBreakdown = getPathEnergyBreakdown(current, scenario);
+      energyBreakdown.nodesEvaluated = nodesEvaluated;
 
       return {
         visitedNodesInOrder,
@@ -130,21 +70,21 @@ export const runAStarManhattan = (scenario: Scenario) => {
         totalEnergy: energyBreakdown.total,
         totalDistance: shortestPath.length - 1,
         energyBreakdown,
-      }
+      };
     }
 
     if (cellKey !== scenario.robotNode && cellKey !== scenario.destinationNode) {
       if (!closedCells.has(cellKey)) {
-        visitedNodesInOrder.push({ key: cellKey, type: "closed" })
-        closedCells.add(cellKey)
+        visitedNodesInOrder.push({ key: cellKey, type: "closed" });
+        closedCells.add(cellKey);
       }
     }
 
     for (const neighbor of NEIGHBORS) {
-      const nr = current.row + neighbor.dr
-      const nc = current.col + neighbor.dc
-      const neighborCellKey = `${nr}-${nc}`
-      const neighborStateKey = neighborCellKey
+      const nr = current.row + neighbor.dr;
+      const nc = current.col + neighbor.dc;
+      const neighborCellKey = `${nr}-${nc}`;
+      const neighborStateKey = neighborCellKey;
 
       if (
         nr < 0 ||
@@ -154,16 +94,16 @@ export const runAStarManhattan = (scenario: Scenario) => {
         scenario.wallNodes.has(neighborCellKey) ||
         closedSet.has(neighborStateKey)
       ) {
-        continue
+        continue;
       }
 
-      const stepCost = 1.0 // Manhattan is 4-way, so always 1.0
-      const tentativeG = current.g + stepCost
+      const stepCost = 1.0; // Manhattan is 4-way, so always 1.0
+      const tentativeG = current.g + stepCost;
 
-      let neighborNode = allNodes.get(neighborStateKey)
+      let neighborNode = allNodes.get(neighborStateKey);
       if (!neighborNode || tentativeG < neighborNode.g) {
         if (!neighborNode) {
-          const h = Math.abs(nr - destRow) + Math.abs(nc - destCol)
+          const h = Math.abs(nr - destRow) + Math.abs(nc - destCol);
           neighborNode = {
             key: neighborStateKey,
             row: nr,
@@ -173,24 +113,24 @@ export const runAStarManhattan = (scenario: Scenario) => {
             h: h,
             f: tentativeG + h,
             parent: current,
-          }
+          };
         } else {
-          neighborNode.g = tentativeG
-          neighborNode.f = tentativeG + neighborNode.h
-          neighborNode.parent = current
-          neighborNode.heading = neighbor.heading
+          neighborNode.g = tentativeG;
+          neighborNode.f = tentativeG + neighborNode.h;
+          neighborNode.parent = current;
+          neighborNode.heading = neighbor.heading;
         }
 
-        allNodes.set(neighborStateKey, neighborNode)
-        openSet.push({ ...neighborNode })
+        allNodes.set(neighborStateKey, neighborNode);
+        openSet.push({ ...neighborNode });
 
         if (
           neighborCellKey !== scenario.robotNode &&
           neighborCellKey !== scenario.destinationNode
         ) {
           if (!openedCells.has(neighborCellKey)) {
-            visitedNodesInOrder.push({ key: neighborCellKey, type: "open" })
-            openedCells.add(neighborCellKey)
+            visitedNodesInOrder.push({ key: neighborCellKey, type: "open" });
+            openedCells.add(neighborCellKey);
           }
         }
       }
@@ -203,5 +143,5 @@ export const runAStarManhattan = (scenario: Scenario) => {
     totalEnergy: 0,
     totalDistance: 0,
     energyBreakdown: createEmptyEnergyBreakdown(),
-  }
-}
+  };
+};

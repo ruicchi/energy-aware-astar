@@ -1,10 +1,11 @@
-import { type Scenario, type Heading, type EnergyNode } from "../../types"
+import { type Scenario, type Heading, type EnergyNode } from "../../types";
 import {
   createEmptyEnergyBreakdown,
   getSpatialCost,
   getPathEnergyBreakdown,
   SQRT2,
-} from "../utils"
+} from "../utils";
+import { MinHeap } from "./MinHeap";
 
 const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
   { dr: -1, dc: 0, heading: "UP" },
@@ -15,83 +16,25 @@ const NEIGHBORS: { dr: number; dc: number; heading: Heading }[] = [
   { dr: -1, dc: 1, heading: "UP_RIGHT" },
   { dr: 1, dc: -1, heading: "DOWN_LEFT" },
   { dr: 1, dc: 1, heading: "DOWN_RIGHT" },
-]
-
-class MinHeap {
-  private heap: EnergyNode[] = []
-
-  push(node: EnergyNode) {
-    this.heap.push(node)
-    this.bubbleUp()
-  }
-
-  pop(): EnergyNode | undefined {
-    if (this.size() === 0) return undefined
-    const top = this.heap[0]
-    const bottom = this.heap.pop()!
-    if (this.size() > 0) {
-      this.heap[0] = bottom
-      this.bubbleDown()
-    }
-    return top
-  }
-
-  size() {
-    return this.heap.length
-  }
-
-  private shouldSwap(childIndex: number, parentIndex: number): boolean {
-    const child = this.heap[childIndex]
-    const parent = this.heap[parentIndex]
-    if (child.f < parent.f) return true
-    if (child.f === parent.f) return child.h < parent.h
-    return false
-  }
-
-  private bubbleUp() {
-    let index = this.heap.length - 1
-    while (index > 0) {
-      const parentIndex = Math.floor((index - 1) / 2)
-      if (!this.shouldSwap(index, parentIndex)) break
-      ;[this.heap[index], this.heap[parentIndex]] = [this.heap[parentIndex], this.heap[index]]
-      index = parentIndex
-    }
-  }
-
-  private bubbleDown() {
-    let index = 0
-    while (true) {
-      let smallest = index
-      const left = 2 * index + 1
-      const right = 2 * index + 2
-
-      if (left < this.heap.length && this.shouldSwap(left, smallest)) smallest = left
-      if (right < this.heap.length && this.shouldSwap(right, smallest)) smallest = right
-
-      if (smallest === index) break
-      ;[this.heap[index], this.heap[smallest]] = [this.heap[smallest], this.heap[index]]
-      index = smallest
-    }
-  }
-}
+];
 
 const octileDistance = (r1: number, c1: number, r2: number, c2: number): number => {
-  const dx = Math.abs(r1 - r2)
-  const dy = Math.abs(c1 - c2)
-  return (dx + dy) + (SQRT2 - 2) * Math.min(dx, dy)
-}
+  const dx = Math.abs(r1 - r2);
+  const dy = Math.abs(c1 - c2);
+  return dx + dy + (SQRT2 - 2) * Math.min(dx, dy);
+};
 
 export const runAStarOctile = (scenario: Scenario) => {
-  const [startRow, startCol] = scenario.robotNode.split("-").map(Number)
-  const [destRow, destCol] = scenario.destinationNode.split("-").map(Number)
+  const [startRow, startCol] = scenario.robotNode.split("-").map(Number);
+  const [destRow, destCol] = scenario.destinationNode.split("-").map(Number);
 
-  const openSet = new MinHeap()
-  const allNodes = new Map<string, EnergyNode>()
-  const closedSet = new Set<string>()
+  const openSet = new MinHeap();
+  const allNodes = new Map<string, EnergyNode>();
+  const closedSet = new Set<string>();
 
-  const visitedNodesInOrder: { key: string; type: "open" | "closed" }[] = []
-  const openedCells = new Set<string>()
-  const closedCells = new Set<string>()
+  const visitedNodesInOrder: { key: string; type: "open" | "closed" }[] = [];
+  const openedCells = new Set<string>();
+  const closedCells = new Set<string>();
 
   const startNode: EnergyNode = {
     key: scenario.robotNode,
@@ -102,40 +45,40 @@ export const runAStarOctile = (scenario: Scenario) => {
     h: octileDistance(startRow, startCol, destRow, destCol),
     f: 0,
     parent: null,
-  }
-  startNode.f = startNode.h
-  openSet.push(startNode)
-  allNodes.set(startNode.key, startNode)
+  };
+  startNode.f = startNode.h;
+  openSet.push(startNode);
+  allNodes.set(startNode.key, startNode);
 
-  visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" })
-  openedCells.add(scenario.robotNode)
+  visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" });
+  openedCells.add(scenario.robotNode);
 
-  let nodesEvaluated = 0
+  let nodesEvaluated = 0;
 
   while (openSet.size() > 0) {
-    const current = openSet.pop()!
+    const current = openSet.pop()!;
 
-    if (closedSet.has(current.key)) continue
-    closedSet.add(current.key)
-    nodesEvaluated++
+    if (closedSet.has(current.key)) continue;
+    closedSet.add(current.key);
+    nodesEvaluated++;
 
-    const cellKey = current.key
+    const cellKey = current.key;
 
     if (current.row === destRow && current.col === destCol) {
-      const shortestPath: string[] = []
-      let totalDistance = 0
-      let temp: EnergyNode | null = current
+      const shortestPath: string[] = [];
+      let totalDistance = 0;
+      let temp: EnergyNode | null = current;
 
       while (temp) {
-        shortestPath.unshift(`${temp.row}-${temp.col}`)
+        shortestPath.unshift(`${temp.row}-${temp.col}`);
         if (temp.parent) {
-          const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col
-          totalDistance += isDiagonal ? SQRT2 : 1.0
+          const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col;
+          totalDistance += isDiagonal ? SQRT2 : 1.0;
         }
-        temp = temp.parent
+        temp = temp.parent;
       }
-      const energyBreakdown = getPathEnergyBreakdown(current, scenario)
-      energyBreakdown.nodesEvaluated = nodesEvaluated
+      const energyBreakdown = getPathEnergyBreakdown(current, scenario);
+      energyBreakdown.nodesEvaluated = nodesEvaluated;
 
       return {
         visitedNodesInOrder,
@@ -143,21 +86,21 @@ export const runAStarOctile = (scenario: Scenario) => {
         totalEnergy: energyBreakdown.total,
         totalDistance: totalDistance,
         energyBreakdown,
-      }
+      };
     }
 
     if (cellKey !== scenario.robotNode && cellKey !== scenario.destinationNode) {
       if (!closedCells.has(cellKey)) {
-        visitedNodesInOrder.push({ key: cellKey, type: "closed" })
-        closedCells.add(cellKey)
+        visitedNodesInOrder.push({ key: cellKey, type: "closed" });
+        closedCells.add(cellKey);
       }
     }
 
     for (const neighbor of NEIGHBORS) {
-      const nr = current.row + neighbor.dr
-      const nc = current.col + neighbor.dc
-      const neighborCellKey = `${nr}-${nc}`
-      const neighborStateKey = neighborCellKey
+      const nr = current.row + neighbor.dr;
+      const nc = current.col + neighbor.dc;
+      const neighborCellKey = `${nr}-${nc}`;
+      const neighborStateKey = neighborCellKey;
 
       if (
         nr < 0 ||
@@ -167,25 +110,25 @@ export const runAStarOctile = (scenario: Scenario) => {
         scenario.wallNodes.has(neighborCellKey) ||
         closedSet.has(neighborStateKey)
       ) {
-        continue
+        continue;
       }
 
       // Corner-cutting prevention
       if (neighbor.heading.includes("_")) {
-        const cardinal1 = `${current.row + neighbor.dr}-${current.col}`
-        const cardinal2 = `${current.row}-${current.col + neighbor.dc}`
+        const cardinal1 = `${current.row + neighbor.dr}-${current.col}`;
+        const cardinal2 = `${current.row}-${current.col + neighbor.dc}`;
         if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) {
-          continue
+          continue;
         }
       }
 
-      const stepCost = getSpatialCost({ heading: neighbor.heading })
-      const tentativeG = current.g + stepCost
+      const stepCost = getSpatialCost({ heading: neighbor.heading });
+      const tentativeG = current.g + stepCost;
 
-      let neighborNode = allNodes.get(neighborStateKey)
+      let neighborNode = allNodes.get(neighborStateKey);
       if (!neighborNode || tentativeG < neighborNode.g) {
         if (!neighborNode) {
-          const h = octileDistance(nr, nc, destRow, destCol)
+          const h = octileDistance(nr, nc, destRow, destCol);
           neighborNode = {
             key: neighborStateKey,
             row: nr,
@@ -195,15 +138,15 @@ export const runAStarOctile = (scenario: Scenario) => {
             h: h,
             f: tentativeG + h,
             parent: current,
-          }
+          };
         } else {
-          neighborNode.g = tentativeG
-          neighborNode.f = tentativeG + neighborNode.h
-          neighborNode.parent = current
-          neighborNode.heading = neighbor.heading
+          neighborNode.g = tentativeG;
+          neighborNode.f = tentativeG + neighborNode.h;
+          neighborNode.parent = current;
+          neighborNode.heading = neighbor.heading;
         }
 
-        allNodes.set(neighborStateKey, neighborNode)
+        allNodes.set(neighborStateKey, neighborNode);
         openSet.push({ ...neighborNode });
 
         if (
@@ -211,8 +154,8 @@ export const runAStarOctile = (scenario: Scenario) => {
           neighborCellKey !== scenario.destinationNode
         ) {
           if (!openedCells.has(neighborCellKey)) {
-            visitedNodesInOrder.push({ key: neighborCellKey, type: "open" })
-            openedCells.add(neighborCellKey)
+            visitedNodesInOrder.push({ key: neighborCellKey, type: "open" });
+            openedCells.add(neighborCellKey);
           }
         }
       }
@@ -225,5 +168,5 @@ export const runAStarOctile = (scenario: Scenario) => {
     totalEnergy: 0,
     totalDistance: 0,
     energyBreakdown: createEmptyEnergyBreakdown(),
-  }
-}
+  };
+};
