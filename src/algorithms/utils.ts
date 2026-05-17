@@ -254,8 +254,9 @@ export const getEnergyCostBreakdown = (
   let gradientPenaltyMultiplier = 1.0;
 
   // Apply a massive penalty for slopes over 30 degrees to simulate real-world vehicle limits
+  // Use scenario.climbingFactor as the base multiplier for normal uphill movement
   if (elevationDelta > 0) {
-    gradientPenaltyMultiplier = slopeDegrees <= 30 ? 1.0 : 20.0;
+    gradientPenaltyMultiplier = slopeDegrees <= 30 ? scenario.climbingFactor : 20.0;
   }
 
   const rawTurnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty);
@@ -270,7 +271,7 @@ export const getEnergyCostBreakdown = (
   );
 
   const climbingCost = stepDistance * (gradientPenaltyMultiplier - 1.0);
-  const turnCost = stepDistance * rawTurnCost;
+  const turnCost = rawTurnCost;
   const movementCost = stepDistance + climbingCost + turnCost;
   const subtotal = movementCost + terrainBreakdown.total;
 

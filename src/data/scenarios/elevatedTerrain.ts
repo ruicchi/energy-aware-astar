@@ -23,9 +23,9 @@ export const elevatedTerrain: Scenario = {
   turnPenalty: 1,
   maxTraversableSlope: 15,
   robotPhysics: {
-    trackWidth: 0.6,
-    wheelBase: 0.8,
-    comHeight: 0.4,
+    trackWidth: 0.8,
+    wheelBase: 1.2,
+    comHeight: 0.6,
     stabilityMargin: 0.05,
   },
 };

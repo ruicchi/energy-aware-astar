@@ -122,9 +122,9 @@ const GameGrid = () => {
       initialHeading: robotHeading,
       showGradients: showGradients,
       robotPhysics: {
-        trackWidth: 0.6,
-        wheelBase: 0.8,
-        comHeight: 0.4,
+        trackWidth: 0.8,
+        wheelBase: 1.2,
+        comHeight: 0.6,
         stabilityMargin: 0.05,
       },
     };
@@ -250,9 +250,9 @@ const GameGrid = () => {
             showGradients: showGradients,
             // Pass robot physics for stability checks
             robotPhysics: {
-              trackWidth: 0.6,
-              wheelBase: 0.8,
-              comHeight: 0.4,
+              trackWidth: 0.8,
+              wheelBase: 1.2,
+              comHeight: 0.6,
               stabilityMargin: 0.05,
             },
           })
