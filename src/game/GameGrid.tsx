@@ -7,9 +7,16 @@ import { usePathAnimation } from "../hooks/usePathAnimation";
 import { useRobotWalk } from "../hooks/useRobotWalk";
 import { MemoizedCell } from "./MemoizedCell";
 import { FloatingMenu } from "./FloatingMenu";
-import { runAStarManhattan } from "../algorithms/astar/astarManhattan";
-import { runAStarEnergyAware } from "../algorithms/astar/astarEnergyAware";
-import { type Heading } from "../types";
+import {
+  runAStarManhattan,
+  runAStarEnergyAware,
+  runAStarEuclidean,
+  runAStarOctile,
+  runAStarChebyshev,
+} from "../algorithms/astar";
+import { type EnergyBreakdown, type Heading, type Scenario } from "../types";
+
+type AlgorithmType = "manhattan" | "energyAware" | "euclidean" | "octile" | "chebyshev";
 
 const GameGrid = () => {
   const viewport = useViewport();
@@ -18,8 +25,23 @@ const GameGrid = () => {
   const cellSize = viewport.width < 600 ? 20 : 28;
 
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
-  const [pathMetrics, setPathMetrics] = useState<{ distance: number; energy: number } | null>(null);
+  const [selectedAlgo, setSelectedAlgo] = useState<AlgorithmType>("energyAware");
+  const [showGradients, setShowGradients] = useState<boolean>(false);
   const [robotHeading, setRobotHeading] = useState<Heading>("RIGHT");
+  const [pathMetrics, setPathMetrics] = useState<{
+    algorithm: string;
+    distance: number;
+    energy: number;
+    energyBreakdown: EnergyBreakdown;
+  } | null>(null);
+
+  // Force heading to NONE if a standard algo is selected
+  const handleSelectAlgo = (algo: AlgorithmType) => {
+    setSelectedAlgo(algo);
+    if (algo !== "energyAware") {
+      setRobotHeading("NONE");
+    }
+  };
 
   //* Grid dimensions
   const cols = Math.floor(viewport.width / cellSize);
@@ -72,6 +94,7 @@ const GameGrid = () => {
     walkingStep,
     isWalking,
     hasFinishedWalking,
+    walkFailure,
     handleWalkPath,
     clearWalkState,
   } = useRobotWalk(robotHeading, setRobotHeading, addTimeout);
@@ -82,10 +105,10 @@ const GameGrid = () => {
     clearAnimations(clearWalkState);
   };
 
-  const visualizeAStar = () => {
+  const visualize = (algo: AlgorithmType) => {
     handleClearAnimations();
 
-    const scenario = {
+    const scenario: Scenario = {
       rows,
       cols,
       robotNode,
@@ -94,41 +117,65 @@ const GameGrid = () => {
       terrainFactors: terrainFactors,
       elevations: elevations,
       climbingFactor: 1.5,
-      turnPenalty: 2.0,
+      turnPenalty: 1.0,
+      maxTraversableSlope: 45,
       initialHeading: robotHeading,
+      showGradients: showGradients,
+      robotPhysics: {
+        trackWidth: 0.8,
+        wheelBase: 1.2,
+        comHeight: 0.6,
+        stabilityMargin: 0.05,
+      },
     };
 
-    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } =
-      runAStarManhattan(scenario);
-    setPathMetrics({ distance: totalDistance, energy: totalEnergy });
+    let result;
+    let algoName = "";
+    let theme: "manhattan" | "energy" = "energy";
+
+    switch (algo) {
+      case "manhattan":
+        result = runAStarManhattan(scenario);
+        algoName = "A* Manhattan";
+        theme = "manhattan";
+        break;
+      case "energyAware":
+        result = runAStarEnergyAware(scenario);
+        algoName = "Energy-Aware A*";
+        theme = "energy";
+        break;
+      case "euclidean":
+        result = runAStarEuclidean(scenario);
+        algoName = "A* Euclidean";
+        theme = "energy";
+        break;
+      case "octile":
+        result = runAStarOctile(scenario);
+        algoName = "A* Octile";
+        theme = "energy";
+        break;
+      case "chebyshev":
+        result = runAStarChebyshev(scenario);
+        algoName = "A* Chebyshev";
+        theme = "energy";
+        break;
+    }
+
+    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
+      result;
+
+    setPathMetrics({
+      algorithm: algoName,
+      distance: totalDistance,
+      energy: totalEnergy,
+      energyBreakdown,
+    });
+
     setCurrentPath(shortestPath);
-    const duration = animateResult(visitedNodesInOrder, shortestPath, "manhattan");
-    const t = setTimeout(() => setIsManhattanFinished(true), duration);
-    addTimeout(t as unknown as number);
-  };
+    const duration = animateResult(visitedNodesInOrder, shortestPath, theme);
 
-  const visualizeEnergyAwareAStar = () => {
-    handleClearAnimations();
-
-    const scenario = {
-      rows,
-      cols,
-      robotNode,
-      destinationNode,
-      wallNodes: wallNode,
-      terrainFactors: terrainFactors,
-      elevations: elevations,
-      climbingFactor: 1.5,
-      turnPenalty: 2.0,
-      initialHeading: robotHeading,
-    };
-
-    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance } =
-      runAStarEnergyAware(scenario);
-    setPathMetrics({ distance: totalDistance, energy: totalEnergy });
-    setCurrentPath(shortestPath);
-    const duration = animateResult(visitedNodesInOrder, shortestPath, "energy");
-    const t = setTimeout(() => setIsEnergyFinished(true), duration);
+    const finishAction = theme === "manhattan" ? setIsManhattanFinished : setIsEnergyFinished;
+    const t = setTimeout(() => finishAction(true), duration);
     addTimeout(t as unknown as number);
   };
 
@@ -170,9 +217,10 @@ const GameGrid = () => {
       {/* //* ADD FLOATING MENU */}
       <FloatingMenu
         onClearWalls={clearWalls}
-        onVisualizeAStar={visualizeAStar}
-        onVisualizeEnergyAwareAStar={visualizeEnergyAwareAStar}
+        onVisualize={() => visualize(selectedAlgo)}
         onReset={handleReset}
+        selectedAlgo={selectedAlgo}
+        onSelectAlgo={(algo) => handleSelectAlgo(algo as AlgorithmType)}
         activeBrush={activeBrush}
         onSelectBrush={setActiveBrush}
         elevationValue={elevationBrushValue}
@@ -184,9 +232,34 @@ const GameGrid = () => {
         showEnergySearch={showEnergySearch}
         onToggleManhattanSearch={() => setShowManhattanSearch(!showManhattanSearch)}
         onToggleEnergySearch={() => setShowEnergySearch(!showEnergySearch)}
-        onWalkPath={handleWalkPath}
+        showGradients={showGradients}
+        onToggleGradients={() => setShowGradients(!showGradients)}
+        onWalkPath={() =>
+          handleWalkPath({
+            rows,
+            cols,
+            robotNode,
+            destinationNode,
+            wallNodes: wallNode,
+            terrainFactors: terrainFactors,
+            elevations: elevations,
+            climbingFactor: 1.5,
+            turnPenalty: 1.0,
+            maxTraversableSlope: 45,
+            initialHeading: robotHeading,
+            showGradients: showGradients,
+            // Pass robot physics for stability checks
+            robotPhysics: {
+              trackWidth: 0.8,
+              wheelBase: 1.2,
+              comHeight: 0.6,
+              stabilityMargin: 0.05,
+            },
+          })
+        }
         hasPath={!!currentPath}
         isWalking={isWalking}
+        walkFailure={walkFailure}
         currentHeading={robotHeading}
         onHeadingChange={setRobotHeading}
         isLocked={isLocked}
@@ -233,6 +306,8 @@ const GameGrid = () => {
               isDestination={false}
               terrainFactor={0}
               elevation={0}
+              showGradients={showGradients}
+              elevations={elevations}
               heading={robotHeading}
               onMouseDown={() => {}}
               onMouseEnter={() => {}}
@@ -253,7 +328,13 @@ const GameGrid = () => {
               isDestination={cell.key === destinationNode}
               terrainFactor={terrainFactors.get(cell.key) || 0}
               elevation={elevations.get(cell.key) || 0}
-              heading={cell.key === robotNode && !isWalking && !hasFinishedWalking ? robotHeading : undefined}
+              showGradients={showGradients}
+              elevations={elevations}
+              heading={
+                cell.key === robotNode && !isWalking && !hasFinishedWalking
+                  ? robotHeading
+                  : undefined
+              }
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
             />
