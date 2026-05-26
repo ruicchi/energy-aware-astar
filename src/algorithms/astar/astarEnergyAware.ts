@@ -143,11 +143,7 @@ const processNeighbors = (
       continue;
     }
 
-    const cost = getEnergyCost(
-      current,
-      { row: nr, col: nc, heading: neighbor.heading },
-      scenario,
-    );
+    const cost = getEnergyCost(current, { row: nr, col: nc, heading: neighbor.heading }, scenario);
     const tentativeG = current.g + cost;
 
     let neighborNode = allNodes.get(neighborStateKey);

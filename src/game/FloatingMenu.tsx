@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef } from "react";
 import {
   Paper,
   Typography,
@@ -10,55 +10,55 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
-} from "@mui/material"
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
-import ExpandLessIcon from "@mui/icons-material/ExpandLess"
-import OpenInNewIcon from "@mui/icons-material/OpenInNew"
-import CloseIcon from "@mui/icons-material/Close"
-import NorthIcon from "@mui/icons-material/North"
-import SouthIcon from "@mui/icons-material/South"
-import EastIcon from "@mui/icons-material/East"
-import WestIcon from "@mui/icons-material/West"
-import NorthEastIcon from "@mui/icons-material/NorthEast"
-import NorthWestIcon from "@mui/icons-material/NorthWest"
-import SouthEastIcon from "@mui/icons-material/SouthEast"
-import SouthWestIcon from "@mui/icons-material/SouthWest"
-import BlockIcon from "@mui/icons-material/Block"
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import CloseIcon from "@mui/icons-material/Close";
+import NorthIcon from "@mui/icons-material/North";
+import SouthIcon from "@mui/icons-material/South";
+import EastIcon from "@mui/icons-material/East";
+import WestIcon from "@mui/icons-material/West";
+import NorthEastIcon from "@mui/icons-material/NorthEast";
+import NorthWestIcon from "@mui/icons-material/NorthWest";
+import SouthEastIcon from "@mui/icons-material/SouthEast";
+import SouthWestIcon from "@mui/icons-material/SouthWest";
+import BlockIcon from "@mui/icons-material/Block";
 
-import { type EnergyBreakdown, type Heading, type BrushMode } from "../shared/types"
+import { type EnergyBreakdown, type Heading, type BrushMode } from "../shared/types";
 
 type FloatingMenuProps = {
-  onClearWalls: () => void
-  onVisualize: () => void
-  onReset: () => void
-  selectedAlgo: string
-  onSelectAlgo: (algo: string) => void
-  activeBrush: BrushMode
-  onSelectBrush: (brush: BrushMode) => void
-  elevationValue: number
-  onElevationChange: (val: number) => void
+  onClearWalls: () => void;
+  onVisualize: () => void;
+  onReset: () => void;
+  selectedAlgo: string;
+  onSelectAlgo: (algo: string) => void;
+  activeBrush: BrushMode;
+  onSelectBrush: (brush: BrushMode) => void;
+  elevationValue: number;
+  onElevationChange: (val: number) => void;
   pathMetrics: {
-    algorithm: string
-    distance: number
-    energy: number
-    energyBreakdown: EnergyBreakdown
-  } | null
-  isManhattanFinished: boolean
-  isEnergyFinished: boolean
-  showManhattanSearch: boolean
-  showEnergySearch: boolean
-  onToggleManhattanSearch: () => void
-  onToggleEnergySearch: () => void
-  showGradients: boolean
-  onToggleGradients: () => void
-  onWalkPath: () => void
-  hasPath: boolean
-  isWalking: boolean
-  walkFailure: { row: number, col: number, reason: string } | null
-  currentHeading: Heading
-  onHeadingChange: (heading: Heading) => void
-  isLocked: boolean
-}
+    algorithm: string;
+    distance: number;
+    energy: number;
+    energyBreakdown: EnergyBreakdown;
+  } | null;
+  isManhattanFinished: boolean;
+  isEnergyFinished: boolean;
+  showManhattanSearch: boolean;
+  showEnergySearch: boolean;
+  onToggleManhattanSearch: () => void;
+  onToggleEnergySearch: () => void;
+  showGradients: boolean;
+  onToggleGradients: () => void;
+  onWalkPath: () => void;
+  hasPath: boolean;
+  isWalking: boolean;
+  walkFailure: { row: number; col: number; reason: string } | null;
+  currentHeading: Heading;
+  onHeadingChange: (heading: Heading) => void;
+  isLocked: boolean;
+};
 
 export const FloatingMenu = ({
   onClearWalls,
@@ -87,74 +87,74 @@ export const FloatingMenu = ({
   onHeadingChange,
   isLocked,
 }: FloatingMenuProps) => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
-  const isTiny = useMediaQuery("(max-width:400px)")
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTiny = useMediaQuery("(max-width:400px)");
 
-  const [position, setPosition] = useState({ x: 20, y: 20 })
-  const [isDragging, setIsDragging] = useState(false)
-  const [resultsPosition, setResultsPosition] = useState({ x: isMobile ? 20 : 240, y: 20 })
-  const [isResultsDragging, setIsResultsDragging] = useState(false)
-  const [isResultsOpen, setIsResultsOpen] = useState(false)
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [resultsPosition, setResultsPosition] = useState({ x: isMobile ? 20 : 240, y: 20 });
+  const [isResultsDragging, setIsResultsDragging] = useState(false);
+  const [isResultsOpen, setIsResultsOpen] = useState(false);
 
   //* State for dropdown
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  const dragStart = useRef({ x: 0, y: 0 })
-  const resultsDragStart = useRef({ x: 0, y: 0 })
+  const dragStart = useRef({ x: 0, y: 0 });
+  const resultsDragStart = useRef({ x: 0, y: 0 });
 
   const handlePointerDown = (e: React.PointerEvent) => {
     //* Only start dragging if we didn't click a button inside the menu
-    if ((e.target as HTMLElement).closest("button")) return
+    if ((e.target as HTMLElement).closest("button")) return;
 
-    setIsDragging(true)
+    setIsDragging(true);
     dragStart.current = {
       x: e.clientX - position.x,
       y: e.clientY - position.y,
-    }
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return
+    if (!isDragging) return;
     setPosition({
       x: e.clientX - dragStart.current.x,
       y: e.clientY - dragStart.current.y,
-    })
-  }
+    });
+  };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    setIsDragging(false)
-    e.currentTarget.releasePointerCapture(e.pointerId)
-  }
+    setIsDragging(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
 
   const handleResultsPointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest("button")) return
+    if ((e.target as HTMLElement).closest("button")) return;
 
-    setIsResultsDragging(true)
+    setIsResultsDragging(true);
     resultsDragStart.current = {
       x: e.clientX - resultsPosition.x,
       y: e.clientY - resultsPosition.y,
-    }
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
 
   const handleResultsPointerMove = (e: React.PointerEvent) => {
-    if (!isResultsDragging) return
+    if (!isResultsDragging) return;
     setResultsPosition({
       x: e.clientX - resultsDragStart.current.x,
       y: e.clientY - resultsDragStart.current.y,
-    })
-  }
+    });
+  };
 
   const handleResultsPointerUp = (e: React.PointerEvent) => {
-    setIsResultsDragging(false)
-    e.currentTarget.releasePointerCapture(e.pointerId)
-  }
+    setIsResultsDragging(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
 
   const energyPerUnit =
-    pathMetrics && pathMetrics.distance > 0 ? pathMetrics.energy / pathMetrics.distance : 0
-  const energyBreakdown = pathMetrics?.energyBreakdown
+    pathMetrics && pathMetrics.distance > 0 ? pathMetrics.energy / pathMetrics.distance : 0;
+  const energyBreakdown = pathMetrics?.energyBreakdown;
 
   return (
     <>
@@ -475,7 +475,7 @@ export const FloatingMenu = ({
                       DOWN_LEFT: <SouthWestIcon fontSize="small" />,
                       DOWN_RIGHT: <SouthEastIcon fontSize="small" />,
                       NONE: <BlockIcon fontSize="small" />,
-                    }
+                    };
 
                     return (
                       <Button
@@ -493,7 +493,7 @@ export const FloatingMenu = ({
                       >
                         {iconMap[h]}
                       </Button>
-                    )
+                    );
                   })}
                 </Box>
               </Box>
@@ -744,5 +744,5 @@ export const FloatingMenu = ({
         </Paper>
       )}
     </>
-  )
-}
+  );
+};
