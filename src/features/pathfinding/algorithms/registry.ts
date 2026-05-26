@@ -1,6 +1,9 @@
 import { PathfindingAlgorithm } from "./types"
+import { EnergyAwareStrategy } from "./astarEnergyAwareStrategy"
 
-export const algorithmRegistry: Record<string, PathfindingAlgorithm> = {}
+export const algorithmRegistry: Record<string, PathfindingAlgorithm> = {
+  energyAware: EnergyAwareStrategy
+}
 
 export const getAlgorithm = (id: string): PathfindingAlgorithm => {
   const algo = algorithmRegistry[id]
