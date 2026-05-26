@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from "react";
-import { type PathfindingResult } from "./algorithms/types";
+import { createContext, useContext, useState } from "react";
+import type { ReactNode } from "react";
+import type { PathfindingResult } from "./algorithms/types";
 
 interface PathfindingContextType {
   selectedAlgo: string;

@@ -282,7 +282,7 @@ export const getEnergyCostBreakdown = (
 
   const { roll, pitch } = getPosture(target.row, target.col, target.heading, scenario);
 
-  // Asymmetric Risk: Roll (lateral) more dangerous than Pitch (longitudinal)
+  // NOTE: Asymmetric Risk: Roll (lateral) more dangerous than Pitch (longitudinal)
   const kRoll = 3.0;
   const kPitch = 1.0;
   const riskFactor = Math.sqrt(Math.pow(roll * kRoll, 2) + Math.pow(pitch * kPitch, 2));

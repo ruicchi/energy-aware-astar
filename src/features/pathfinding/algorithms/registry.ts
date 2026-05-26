@@ -1,4 +1,4 @@
-import { PathfindingAlgorithm } from "./types";
+import type { PathfindingAlgorithm } from "./types";
 import { EnergyAwareStrategy } from "./astarEnergyAwareStrategy";
 
 export const algorithmRegistry: Record<string, PathfindingAlgorithm> = {

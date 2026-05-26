@@ -1,4 +1,4 @@
-import { PathfindingAlgorithm, PathfindingResult } from "./types";
+import type { PathfindingAlgorithm, PathfindingResult } from "./types";
 import { runAStarEnergyAware } from "../../../algorithms/astar/astarEnergyAware";
 
 export const EnergyAwareStrategy: PathfindingAlgorithm = {
