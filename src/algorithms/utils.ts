@@ -1,4 +1,4 @@
-import { type Heading, type EnergyNode, type Scenario, type EnergyBreakdown } from "../types";
+import { type Heading, type EnergyNode, type Scenario, type EnergyBreakdown } from "../shared/types";
 
 export const SQRT2 = 1.414;
 export const DEFAULT_MAX_TRAVERSABLE_SLOPE = 45;

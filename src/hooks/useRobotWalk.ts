@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { type Heading, type Scenario } from '../types'
+import { type Heading, type Scenario } from '../shared/types'
 import { isTraversableSlope } from '../algorithms/utils'
 
 export const useRobotWalk = (

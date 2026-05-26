@@ -1,4 +1,4 @@
-import { type EnergyNode } from "../../types";
+import { type EnergyNode } from "../../shared/types";
 
 // NOTE: this organizes nodes so that the best node is always evaluated first
 export class MinHeap {

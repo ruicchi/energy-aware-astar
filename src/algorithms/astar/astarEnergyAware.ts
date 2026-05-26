@@ -1,4 +1,4 @@
-import { type Scenario, type Heading, type EnergyNode } from "../../types";
+import { type Scenario, type Heading, type EnergyNode } from "../../shared/types";
 import {
   createEmptyEnergyBreakdown,
   getEnergyCost,

@@ -1,4 +1,4 @@
-import { type Scenario } from "../../types";
+import { type Scenario } from "../../shared/types";
 
 export const elevatedTerrain: Scenario = {
   rows: 20,
