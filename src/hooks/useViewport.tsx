@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 //* Listener for resizing current window size
 export const useViewport = () => {
@@ -12,9 +12,10 @@ export const useViewport = () => {
       setViewport({ width: window.innerWidth, height: window.innerHeight });
     };
 
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   return viewport;
 };
+

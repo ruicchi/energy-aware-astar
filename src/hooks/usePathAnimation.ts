@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback } from "react";
 
 export type VisitedNode = { key: string; type: "open" | "closed" };
 
@@ -20,68 +20,69 @@ export const usePathAnimation = () => {
     setIsAnimating(false);
     setShowManhattanSearch(true);
     setShowEnergySearch(true);
-    
-    if (onClear) onClear()
 
-    document
-      .querySelectorAll('[data-manhattan], [data-energy], [data-path]')
-      .forEach((el) => {
-        const node = el as HTMLElement;
-        delete node.dataset.manhattan;
-        delete node.dataset.energy;
-        delete node.dataset.path;
-      });
+    if (onClear) onClear();
+
+    document.querySelectorAll("[data-manhattan], [data-energy], [data-path]").forEach((el) => {
+      const node = el as HTMLElement;
+      delete node.dataset.manhattan;
+      delete node.dataset.energy;
+      delete node.dataset.path;
+    });
   }, []);
 
-  const animateResult = useCallback((
-    visitedNodesInOrder: VisitedNode[],
-    shortestPath: string[],
-    mode: "manhattan" | "energy" = "manhattan",
-  ): number => {
-    const searchAttr = mode === "manhattan" ? "manhattan" : "energy";
-    setIsAnimating(true);
+  const animateResult = useCallback(
+    (
+      visitedNodesInOrder: VisitedNode[],
+      shortestPath: string[],
+      mode: "manhattan" | "energy" = "manhattan",
+    ): number => {
+      const searchAttr = mode === "manhattan" ? "manhattan" : "energy";
+      setIsAnimating(true);
 
-    // 3. Animate Visited/Open Nodes
-    for (let i = 0; i < visitedNodesInOrder.length; i++) {
-      const timeout = setTimeout(() => {
-        const { key, type } = visitedNodesInOrder[i];
+      // 3. Animate Visited/Open Nodes
+      for (let i = 0; i < visitedNodesInOrder.length; i++) {
+        const timeout = setTimeout(() => {
+          const { key, type } = visitedNodesInOrder[i];
 
-        const node = document.getElementById(`cell-${key}`);
-        if (node) {
-          node.dataset[searchAttr] = type; // "open" or "closed"
-        }
-      }, 10 * i); // 10ms per node
-      animationTimeouts.current.push(timeout as unknown as number);
-    }
-
-    // 4. Animate Shortest Path after visited nodes finish
-    const pathDelay = visitedNodesInOrder.length * 10;
-    for (let i = 0; i < shortestPath.length; i++) {
-      const timeout = setTimeout(
-        () => {
-          const node = document.getElementById(`cell-${shortestPath[i]}`);
+          const node = document.getElementById(`cell-${key}`);
           if (node) {
-            node.dataset.path = mode; // "manhattan" or "energy"
+            node.dataset[searchAttr] = type; // "open" or "closed"
           }
-        },
-        pathDelay + 30 * i,
-      ); // 30ms per path node
-      animationTimeouts.current.push(timeout as unknown as number);
-    }
+        }, 10 * i); // 10ms per node
+        animationTimeouts.current.push(timeout as unknown as number);
+      }
 
-    const duration = pathDelay + shortestPath.length * 30;
-    
-    const finishTimeout = setTimeout(() => {
-      setIsAnimating(false);
-    }, duration);
-    animationTimeouts.current.push(finishTimeout as unknown as number);
+      // 4. Animate Shortest Path after visited nodes finish
+      const pathDelay = visitedNodesInOrder.length * 10;
+      for (let i = 0; i < shortestPath.length; i++) {
+        const timeout = setTimeout(
+          () => {
+            const node = document.getElementById(`cell-${shortestPath[i]}`);
+            if (node) {
+              node.dataset.path = mode; // "manhattan" or "energy"
+            }
+          },
+          pathDelay + 30 * i,
+        ); // 30ms per path node
+        animationTimeouts.current.push(timeout as unknown as number);
+      }
 
-    return duration;
-  }, []);
+      const duration = pathDelay + shortestPath.length * 30;
+
+      const finishTimeout = setTimeout(() => {
+        setIsAnimating(false);
+      }, duration);
+      animationTimeouts.current.push(finishTimeout as unknown as number);
+
+      return duration;
+    },
+    [],
+  );
 
   const addTimeout = useCallback((t: number) => {
-    animationTimeouts.current.push(t)
-  }, [])
+    animationTimeouts.current.push(t);
+  }, []);
 
   return {
     isManhattanFinished,
@@ -95,7 +96,7 @@ export const usePathAnimation = () => {
     setShowEnergySearch,
     clearAnimations,
     animateResult,
-    addTimeout
+    addTimeout,
   } as {
     isManhattanFinished: boolean;
     setIsManhattanFinished: (val: boolean) => void;
@@ -107,7 +108,11 @@ export const usePathAnimation = () => {
     showEnergySearch: boolean;
     setShowEnergySearch: (val: boolean) => void;
     clearAnimations: (onClear?: () => void) => void;
-    animateResult: (visitedNodesInOrder: VisitedNode[], shortestPath: string[], mode?: "manhattan" | "energy") => number;
+    animateResult: (
+      visitedNodesInOrder: VisitedNode[],
+      shortestPath: string[],
+      mode?: "manhattan" | "energy",
+    ) => number;
     addTimeout: (t: number) => void;
-  }
-}
+  };
+};
