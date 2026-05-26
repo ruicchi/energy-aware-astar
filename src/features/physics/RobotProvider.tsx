@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react"
-import { Heading } from "../../shared/types"
+import { type Heading } from "../../shared/types"
 
 interface RobotContextType {
   robotHeading: Heading

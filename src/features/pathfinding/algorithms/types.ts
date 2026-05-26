@@ -1,4 +1,4 @@
-import { Scenario, EnergyBreakdown } from "../../../shared/types"
+import { type Scenario, type EnergyBreakdown } from "../../../shared/types"
 
 export type VisitedNode = { key: string; type: "open" | "closed" }
 

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react"
-import { BrushMode } from "../../shared/types"
+import { type BrushMode } from "../../shared/types"
 
 interface GridContextType {
   walls: Set<string>
