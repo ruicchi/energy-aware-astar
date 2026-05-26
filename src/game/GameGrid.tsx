@@ -1,4 +1,4 @@
-//# Builds the grid cell
+// NOTE: Builds the grid cell
 import Box from "@mui/material/Box";
 import { useMemo, useRef, useState } from "react";
 import { useViewport } from "../hooks/useViewport";
@@ -21,7 +21,7 @@ type AlgorithmType = "manhattan" | "energyAware" | "euclidean" | "octile" | "che
 const GameGrid = () => {
   const viewport = useViewport();
 
-  //* Dynamic cell size for mobile
+  // Dynamic cell size for mobile
   const cellSize = viewport.width < 600 ? 20 : 28;
 
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
@@ -43,18 +43,18 @@ const GameGrid = () => {
     }
   };
 
-  //* Grid dimensions
+  // Grid dimensions
   const cols = Math.floor(viewport.width / cellSize);
   const rows = Math.floor(viewport.height / cellSize);
 
-  //* Set default coordinates
+  // Set default coordinates
   const defaultRobotCol = Math.floor(cols / 4);
   const defaultDestCol = Math.floor((cols / 4) * 3);
   const defaultRow = Math.floor(rows / 2);
 
   const currentRunId = useRef<number>(0);
 
-  //Note: we calculate defaults, and pass them into the hook
+  // NOTE: we calculate defaults, and pass them into the hook
   const {
     wallNode,
     terrainFactors,
@@ -180,14 +180,14 @@ const GameGrid = () => {
   };
 
   const handleReset = () => {
-    // 1. Increment run ID to instantly kill any currently running async animations
+    // Increment run ID to instantly kill any currently running async animations
     currentRunId.current += 1;
     handleClearAnimations();
     clearWalls();
     setPathMetrics(null);
   };
 
-  //* For caching grid from user inputs
+  // For caching grid from user inputs
   const cells = useMemo(() => {
     return Array.from({ length: rows * cols }, (_, index) => {
       const row = Math.floor(index / cols);
@@ -197,7 +197,7 @@ const GameGrid = () => {
   }, [rows, cols]);
 
   return (
-    //* Builds the container
+    // Builds the container
     <Box
       className={`
         ${!showManhattanSearch ? "hide-manhattan-search" : ""}
@@ -214,7 +214,7 @@ const GameGrid = () => {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* //* ADD FLOATING MENU */}
+      {/* ADD FLOATING MENU */}
       <FloatingMenu
         onClearWalls={clearWalls}
         onVisualize={() => visualize(selectedAlgo)}
@@ -265,7 +265,7 @@ const GameGrid = () => {
         isLocked={isLocked}
       />
 
-      {/* //* Render each cell into clickable Box cells */}
+      {/* Render each cell into clickable Box cells */}
       <Box
         sx={{
           width: cols * cellSize,
