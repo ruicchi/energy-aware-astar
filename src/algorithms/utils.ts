@@ -303,6 +303,7 @@ export const getEnergyCostBreakdown = (
     turnCost,
     stabilityPenalty,
     total,
+    nodesEvaluated: 0,
   };
 };
 
@@ -334,6 +335,7 @@ export const addEnergyBreakdown = (
   turnCost: total.turnCost + step.turnCost,
   stabilityPenalty: total.stabilityPenalty + step.stabilityPenalty,
   total: total.total + step.total,
+  nodesEvaluated: total.nodesEvaluated + step.nodesEvaluated,
 });
 
 export const getHeadingBetweenNodes = (
