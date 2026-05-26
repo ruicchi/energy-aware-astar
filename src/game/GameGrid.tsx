@@ -14,7 +14,7 @@ import {
   runAStarOctile,
   runAStarChebyshev,
 } from "../algorithms/astar";
-import { type EnergyBreakdown, type Heading, type Scenario } from "../shared/types";
+import type { EnergyBreakdown, Heading, Scenario } from "../shared/types";
 
 type AlgorithmType = "manhattan" | "energyAware" | "euclidean" | "octile" | "chebyshev";
 

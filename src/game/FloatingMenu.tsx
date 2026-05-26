@@ -25,7 +25,7 @@ import SouthEastIcon from "@mui/icons-material/SouthEast";
 import SouthWestIcon from "@mui/icons-material/SouthWest";
 import BlockIcon from "@mui/icons-material/Block";
 
-import { type EnergyBreakdown, type Heading, type BrushMode } from "../shared/types";
+import type { EnergyBreakdown, Heading, BrushMode } from "../shared/types";
 
 type FloatingMenuProps = {
   onClearWalls: () => void;

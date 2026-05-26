@@ -1,10 +1,9 @@
-import { memo } from "react";
-import Box from "@mui/material/Box";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import NorthIcon from "@mui/icons-material/North";
-import { type Heading } from "../shared/types";
+import Box from "@mui/material/Box";
+import { memo } from "react";
+import type { Heading } from "../shared/types";
 
-//study
 type MemoizedCellProps = {
   cellKey: string;
   cellSize: number;
