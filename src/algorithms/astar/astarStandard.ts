@@ -5,7 +5,7 @@ import {
   getPathEnergyBreakdown,
   SQRT2,
 } from "../utils";
-import { MinHeap } from "./MinHeap";
+import * as MinHeap from "./MinHeap";
 
 const NEIGHBORS_4: { dr: number; dc: number; heading: Heading }[] = [
   { dr: -1, dc: 0, heading: "UP" },
@@ -129,7 +129,7 @@ const processNeighbors = (
   scenario: Scenario,
   destRow: number,
   destCol: number,
-  openSet: MinHeap,
+  openSet: EnergyNode[],
   allNodes: Map<string, EnergyNode>,
   closedSet: Set<string>,
   visitedNodesInOrder: { key: string; type: "open" | "closed" }[],
@@ -169,7 +169,7 @@ const processNeighbors = (
     }
 
     allNodes.set(neighborCellKey, neighborNode);
-    openSet.push({ ...neighborNode });
+    MinHeap.push(openSet, { ...neighborNode });
 
     markNodeVisited(neighborCellKey, "open", scenario, visitedNodesInOrder, openedCells);
   }
@@ -182,7 +182,7 @@ const runAStarStandard = (scenario: Scenario, heuristicType: HeuristicType) => {
   const { hFunc, neighbors } = getHeuristicData(heuristicType);
 
   // NOTE: these track where the algorithm needs to look and where it has already been
-  const openSet = new MinHeap();
+  const openSet: EnergyNode[] = [];
   const allNodes = new Map<string, EnergyNode>();
   const closedSet = new Set<string>();
 
@@ -202,7 +202,7 @@ const runAStarStandard = (scenario: Scenario, heuristicType: HeuristicType) => {
     parent: null,
   };
   startNode.f = startNode.h;
-  openSet.push(startNode);
+  MinHeap.push(openSet, startNode);
   allNodes.set(startNode.key, startNode);
 
   visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" });
@@ -210,8 +210,8 @@ const runAStarStandard = (scenario: Scenario, heuristicType: HeuristicType) => {
 
   let nodesEvaluated = 0;
 
-  while (openSet.size() > 0) {
-    const current = openSet.pop()!;
+  while (openSet.length > 0) {
+    const current = MinHeap.pop(openSet)!;
 
     if (closedSet.has(current.key)) continue;
     closedSet.add(current.key);

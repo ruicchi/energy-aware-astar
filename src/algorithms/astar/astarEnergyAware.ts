@@ -7,7 +7,7 @@ import {
   isTraversableSlope,
   SQRT2,
 } from "../utils";
-import { MinHeap } from "./MinHeap";
+import * as MinHeap from "./MinHeap";
 
 const S_MAX = 2; // Maximum translation speed
 
@@ -126,7 +126,7 @@ const processNeighbors = (
   destRow: number,
   destCol: number,
   tracksHeading: boolean,
-  openSet: MinHeap,
+  openSet: EnergyNode[],
   allNodes: Map<string, EnergyNode>,
   closedSet: Set<string>,
   visitedNodesInOrder: { key: string; type: "open" | "closed" }[],
@@ -168,7 +168,7 @@ const processNeighbors = (
     }
 
     allNodes.set(neighborStateKey, neighborNode);
-    openSet.push({ ...neighborNode });
+    MinHeap.push(openSet, { ...neighborNode });
 
     markNodeVisited(neighborCellKey, "open", scenario, visitedNodesInOrder, openedCells);
   }
@@ -179,7 +179,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number);
   const tracksHeading = scenario.initialHeading !== "NONE";
 
-  const openSet = new MinHeap();
+  const openSet: EnergyNode[] = [];
   const allNodes = new Map<string, EnergyNode>();
   const closedSet = new Set<string>();
 
@@ -198,7 +198,7 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
     parent: null,
   };
   startNode.f = startNode.h;
-  openSet.push(startNode);
+  MinHeap.push(openSet, startNode);
   allNodes.set(startNode.key, startNode);
 
   visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" });
@@ -206,8 +206,8 @@ export const runAStarEnergyAware = (scenario: Scenario) => {
 
   let nodesEvaluated = 0;
 
-  while (openSet.size() > 0) {
-    const current = openSet.pop()!;
+  while (openSet.length > 0) {
+    const current = MinHeap.pop(openSet)!;
 
     if (closedSet.has(current.key)) continue;
     closedSet.add(current.key);
