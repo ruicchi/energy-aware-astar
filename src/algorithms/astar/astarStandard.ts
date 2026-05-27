@@ -213,12 +213,10 @@ const runAStarStandard = (scenario: Scenario, heuristicType: HeuristicType) => {
 
   const { hFunc, neighbors } = getHeuristicData(heuristicType);
 
-  // Track search state
   const openSet: EnergyNode[] = [];
   const allNodes = new Map<string, EnergyNode>();
   const closedSet = new Set<string>();
 
-  // Track animation state
   const visitedNodesInOrder: { key: string; type: "open" | "closed" }[] = [];
   const openedCells = new Set<string>();
   const closedCells = new Set<string>();

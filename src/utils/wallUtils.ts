@@ -1,61 +1,48 @@
-import React from "react";
+import type { RefObject, Dispatch, SetStateAction } from "react";
 
-//* Function to draw or erase walls
-export const toggleWallState = (
-  key: string,
-  isInitialClick: boolean,
-  drawValue: React.MutableRefObject<boolean>,
-  wallNodeRef: React.MutableRefObject<Set<string>>,
-  modifiedCellsRef: React.MutableRefObject<Set<string>>,
-) => {
-  let isDrawingWall = drawValue.current;
-
-  //^ Check if drawing or erasing
-  if (isInitialClick) {
-    isDrawingWall = !wallNodeRef.current.has(key);
-    drawValue.current = isDrawingWall;
-  } else if (isDrawingWall === wallNodeRef.current.has(key)) {
-    return;
-  }
-
-  //^ Update ref instead of state
-  if (isDrawingWall) {
-    wallNodeRef.current.add(key);
-  } else {
-    wallNodeRef.current.delete(key);
-  }
-
-  modifiedCellsRef.current.add(key);
-
-  //^ INSTANTLY update the color and class on the screen to prevent lag
+/**
+ * Updates the visual state of a grid cell directly in the DOM.
+ * Used to provide lag-free feedback during wall drawing/erasing.
+ *
+ * @param key - The unique cell identifier ("row-col")
+ * @param isWall - Whether the cell should be styled as a wall
+ */
+export const updateCellVisuals = (key: string, isWall: boolean) => {
   const element = document.getElementById(`cell-${key}`);
-  if (element) {
-    element.style.backgroundColor = isDrawingWall ? "#1a88e2" : "";
-    if (isDrawingWall) {
-      element.classList.add("is-wall");
-    } else {
-      element.classList.remove("is-wall");
-    }
+  if (!element) return;
+
+  element.style.backgroundColor = isWall ? "#1a88e2" : "";
+  if (isWall) {
+    element.classList.add("is-wall");
+  } else {
+    element.classList.remove("is-wall");
   }
 };
 
+/**
+ * Clears all walls from the grid, resetting both the state and the DOM.
+ *
+ * @param wallNodeRef - Ref to the set of current wall nodes
+ * @param modifiedCellsRef - Ref tracking cells modified during the current interaction
+ * @param setwallNode - React state setter for the official wall node set
+ */
 export const clearWalls = (
-  wallNodeRef: React.MutableRefObject<Set<string>>,
-  modifiedCellsRef: React.MutableRefObject<Set<string>>,
-  setwallNode: React.Dispatch<React.SetStateAction<Set<string>>>,
+  wallNodeRef: RefObject<Set<string>>,
+  modifiedCellsRef: RefObject<Set<string>>,
+  setwallNode: Dispatch<SetStateAction<Set<string>>>,
 ) => {
+  // Ensure the ref is not null before accessing current
+  if (!wallNodeRef.current || !modifiedCellsRef.current) return;
+
+  // Reset all wall visuals
   wallNodeRef.current.forEach((key: string) => {
-    const element = document.getElementById(`cell-${key}`);
-    if (element) {
-      element.style.backgroundColor = "";
-      element.classList.remove("is-wall");
-    }
+    updateCellVisuals(key, false);
   });
 
-  //* Clears silent tracking ref
+  // Clear tracking data
   wallNodeRef.current.clear();
   modifiedCellsRef.current.clear();
 
-  //* Clear the official React state
+  // Update official React state
   setwallNode(new Set());
 };
