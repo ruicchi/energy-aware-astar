@@ -387,3 +387,65 @@ export const getPathEnergyBreakdown = (
     return addEnergyBreakdown(total, stepBreakdown);
   }, createEmptyEnergyBreakdown());
 };
+
+/**
+ * Traces back from the destination node to the start node to construct the final path.
+ * Also calculates total distance and compiles the energy consumption breakdown.
+ *
+ * @param current - The final (destination) node reached
+ * @param scenario - Current simulation scenario configuration
+ * @param nodesEvaluated - Total number of nodes popped from the open set
+ * @returns Object containing path keys, total energy, total distance, and detailed breakdown
+ */
+export const getShortestPathData = (
+  current: EnergyNode,
+  scenario: Scenario,
+  nodesEvaluated: number,
+) => {
+  const shortestPath: string[] = [];
+  let totalDistance = 0;
+  let temp: EnergyNode | null = current;
+
+  while (temp) {
+    shortestPath.unshift(`${temp.row}-${temp.col}`);
+    if (temp.parent) {
+      const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col;
+      totalDistance += isDiagonal ? SQRT2 : 1.0;
+    }
+    temp = temp.parent;
+  }
+
+  const energyBreakdown = getPathEnergyBreakdown(current, scenario);
+  energyBreakdown.nodesEvaluated = nodesEvaluated;
+
+  return {
+    shortestPath: Array.from(new Set(shortestPath)),
+    totalEnergy: energyBreakdown.total,
+    totalDistance,
+    energyBreakdown,
+  };
+};
+
+/**
+ * Records a node as visited for visualization/animation purposes.
+ * Ensures start and destination nodes are not double-counted and prevents duplicate entries.
+ *
+ * @param key - Cell key to mark
+ * @param type - Whether the node was added to the open set or moved to the closed set
+ * @param scenario - Current simulation scenario configuration
+ * @param visitedNodesInOrder - Array tracking the sequence of visits for animation
+ * @param trackedCells - Set used to ensure each cell is only recorded once for a specific type
+ */
+export const markNodeVisited = (
+  key: string,
+  type: "open" | "closed",
+  scenario: Scenario,
+  visitedNodesInOrder: { key: string; type: "open" | "closed" }[],
+  trackedCells: Set<string>,
+) => {
+  const isSpecial = key === scenario.robotNode || key === scenario.destinationNode;
+  if (!isSpecial && !trackedCells.has(key)) {
+    visitedNodesInOrder.push({ key, type });
+    trackedCells.add(key);
+  }
+};
