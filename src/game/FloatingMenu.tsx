@@ -11,19 +11,22 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import CloseIcon from "@mui/icons-material/Close";
-import NorthIcon from "@mui/icons-material/North";
-import SouthIcon from "@mui/icons-material/South";
-import EastIcon from "@mui/icons-material/East";
-import WestIcon from "@mui/icons-material/West";
-import NorthEastIcon from "@mui/icons-material/NorthEast";
-import NorthWestIcon from "@mui/icons-material/NorthWest";
-import SouthEastIcon from "@mui/icons-material/SouthEast";
-import SouthWestIcon from "@mui/icons-material/SouthWest";
-import BlockIcon from "@mui/icons-material/Block";
+
+import {
+  ExpandMore,
+  ExpandLess,
+  OpenInNew,
+  Close,
+  North,
+  South,
+  East,
+  West,
+  NorthEast,
+  NorthWest,
+  SouthEast,
+  SouthWest,
+  Block,
+} from "@mui/icons-material";
 
 import type { EnergyBreakdown, Heading, BrushMode } from "../shared/types";
 
@@ -196,7 +199,7 @@ export const FloatingMenu = ({
             onClick={() => setIsExpanded(!isExpanded)}
             onPointerDown={(e) => e.stopPropagation()} // don't drag when clicking toggle
           >
-            {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            {isExpanded ? <ExpandLess /> : <ExpandMore />}
           </IconButton>
         </Box>
 
@@ -382,7 +385,7 @@ export const FloatingMenu = ({
                         onPointerDown={(e) => e.stopPropagation()}
                         onClick={() => setIsResultsOpen(true)}
                       >
-                        <OpenInNewIcon fontSize="inherit" />
+                        <OpenInNew fontSize="inherit" />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -466,15 +469,15 @@ export const FloatingMenu = ({
                     ] as Heading[]
                   ).map((h) => {
                     const iconMap: Record<Heading, React.ReactNode> = {
-                      UP: <NorthIcon fontSize="small" />,
-                      DOWN: <SouthIcon fontSize="small" />,
-                      LEFT: <WestIcon fontSize="small" />,
-                      RIGHT: <EastIcon fontSize="small" />,
-                      UP_LEFT: <NorthWestIcon fontSize="small" />,
-                      UP_RIGHT: <NorthEastIcon fontSize="small" />,
-                      DOWN_LEFT: <SouthWestIcon fontSize="small" />,
-                      DOWN_RIGHT: <SouthEastIcon fontSize="small" />,
-                      NONE: <BlockIcon fontSize="small" />,
+                      UP: <North fontSize="small" />,
+                      DOWN: <South fontSize="small" />,
+                      LEFT: <West fontSize="small" />,
+                      RIGHT: <East fontSize="small" />,
+                      UP_LEFT: <NorthWest fontSize="small" />,
+                      UP_RIGHT: <NorthEast fontSize="small" />,
+                      DOWN_LEFT: <SouthWest fontSize="small" />,
+                      DOWN_RIGHT: <SouthEast fontSize="small" />,
+                      NONE: <Block fontSize="small" />,
                     };
 
                     return (
@@ -628,7 +631,7 @@ export const FloatingMenu = ({
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => setIsResultsOpen(false)}
               >
-                <CloseIcon fontSize="inherit" />
+                <Close fontSize="inherit" />
               </IconButton>
             </Tooltip>
           </Box>

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { type Heading, type Scenario } from "../shared/types";
-import { isTraversableSlope } from "../algorithms/utils";
+import { isTraversableSlope } from "../utils/algorithmUtils.ts";
 
 export const useRobotWalk = (
   initialHeading: Heading,

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { clearWalls } from "../utils/wallUtils";
 import { type BrushMode } from "../shared/types";
-import { getGradientMagnitude } from "../algorithms/utils";
+import { getGradientMagnitude } from "../utils/algorithmUtils.ts";
 
 export const useGridMouseClicks = (
   initialRobot: string,

@@ -6,7 +6,7 @@ import {
   isTraversableSlope,
   getShortestPathData,
   markNodeVisited,
-} from "../utils";
+} from "../../utils/algorithmUtils.ts";
 import * as MinHeap from "./MinHeap";
 
 /**

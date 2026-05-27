@@ -5,7 +5,7 @@ import {
   SQRT2,
   getShortestPathData,
   markNodeVisited,
-} from "../utils";
+} from "../../utils/algorithmUtils";
 import * as MinHeap from "./MinHeap";
 
 /**
