@@ -2,28 +2,12 @@ import type { Heading, EnergyNode, Scenario, EnergyBreakdown, VisitedNode } from
 import { TERRAIN_CONFIG } from "../config/simulationConfig";
 import {
   SQRT2,
-  DEFAULT_MAX_TRAVERSABLE_SLOPE,
   HEADING_ANGLES,
   getStepDistance,
   getSlopeDegrees,
   getPosture,
-  isStablePosture,
-  getGradientMagnitude,
-  isTraversableSlope,
   getHeading as getHeadingBetweenNodes,
 } from "../physics/terrainPhysics";
-
-export {
-  SQRT2,
-  DEFAULT_MAX_TRAVERSABLE_SLOPE,
-  getStepDistance,
-  getSlopeDegrees,
-  getPosture,
-  isStablePosture,
-  getGradientMagnitude,
-  isTraversableSlope,
-  getHeadingBetweenNodes,
-};
 
 const HEADING_ORDER: Record<Exclude<Heading, "NONE">, number> = {
   UP: 0,

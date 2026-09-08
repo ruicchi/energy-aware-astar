@@ -1,13 +1,12 @@
 import type { Scenario, Heading, EnergyNode, PathfindingResult, AlgorithmType, VisitedNode } from "../../shared/types"
+import { SQRT2, isTraversableSlope } from "../../physics/terrainPhysics"
 import {
   createEmptyEnergyBreakdown,
   getEnergyCost,
   getMinAngleToDestination,
-  isTraversableSlope,
   getShortestPathData,
   markNodeVisited,
   getSpatialCost,
-  SQRT2,
 } from "../../utils/algorithmUtils"
 import * as MinHeap from "./MinHeap"
 
