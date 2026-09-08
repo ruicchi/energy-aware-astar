@@ -277,9 +277,7 @@ export const FloatingMenu = () => {
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={onToggleManhattanSearch}
                     >
-                      {showManhattanSearch
-                        ? "Hide A* Manhattan Search"
-                        : "Show A* Manhattan Search"}
+                      {showManhattanSearch ? "Hide Search Map" : "Show Search Map"}
                     </Button>
                   )}
                   {isEnergyFinished && (

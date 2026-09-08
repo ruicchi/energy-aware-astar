@@ -14,7 +14,6 @@ export const FloatingManual = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Left-aligned default position alongside Controls on desktop
   const [position, setPosition] = useState(() => ({
     x: isMobile ? 20 : 235,
     y: 20,
@@ -25,7 +24,6 @@ export const FloatingManual = () => {
   const dragStart = useRef({ x: 0, y: 0 });
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    //* Only start dragging if we didn't click a button inside the menu
     if ((e.target as HTMLElement).closest("button")) return;
 
     setIsDragging(true);
@@ -107,27 +105,27 @@ export const FloatingManual = () => {
             textAlign: "left",
           }}
         >
-          <Typography variant="body1" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
+          <Typography variant="caption" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
             Click within the white grid and drag your mouse to draw obstacles.
           </Typography>
-          <Typography variant="body1" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
+          <Typography variant="caption" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
             Drag the{" "}
             <Box component="span" sx={{ color: "#2e7d32", fontWeight: "bold" }}>
               green
             </Box>{" "}
             node to set the start position.
           </Typography>
-          <Typography variant="body1" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
+          <Typography variant="caption" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
             Drag the{" "}
             <Box component="span" sx={{ color: "#d32f2f", fontWeight: "bold" }}>
               red
             </Box>{" "}
             node to set the end position.
           </Typography>
-          <Typography variant="body1" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
-            Choose an algorithm from the controls panel.
+          <Typography variant="caption" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
+            Choose a heuristic from the controls panel.
           </Typography>
-          <Typography variant="body1" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
+          <Typography variant="caption" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
             Click Visualize to start the animation.
           </Typography>
         </Box>
