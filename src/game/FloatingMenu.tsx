@@ -74,14 +74,12 @@ export const FloatingMenu = () => {
   const [isResultsDragging, setIsResultsDragging] = useState(false);
   const [isResultsOpen, setIsResultsOpen] = useState(false);
 
-  //* State for dropdown
   const [isExpanded, setIsExpanded] = useState(true);
 
   const dragStart = useRef({ x: 0, y: 0 });
   const resultsDragStart = useRef({ x: 0, y: 0 });
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    //* Only start dragging if we didn't click a button inside the menu
     if ((e.target as HTMLElement).closest("button")) return;
 
     setIsDragging(true);
@@ -153,7 +151,6 @@ export const FloatingMenu = () => {
           overflow: "hidden",
         }}
       >
-        {/* Header bar that always shows */}
         <Box
           sx={{
             display: "flex",
@@ -321,6 +318,7 @@ export const FloatingMenu = () => {
                     p: 1,
                     backgroundColor: "rgba(0,0,0,0.05)",
                     borderRadius: 1,
+                    textAlign: "left",
                   }}
                 >
                   <Box
