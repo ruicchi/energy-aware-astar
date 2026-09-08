@@ -103,8 +103,7 @@ export const FloatingInstructions = () => {
             gap: 1,
             maxHeight: "calc(100vh - 120px)",
             overflowY: "auto",
-            fontSize: "1.05rem",
-            lineHeight: 1.6,
+            lineHeight: 1.0,
             textAlign: "left",
           }}
         >

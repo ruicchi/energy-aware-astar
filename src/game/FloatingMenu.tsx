@@ -192,7 +192,7 @@ export const FloatingMenu = () => {
                 color="textSecondary"
                 sx={{ mb: 0.5, display: "block" }}
               >
-                Select Algorithm
+                Select Heuristic
               </Typography>
 
               <Button
@@ -291,7 +291,7 @@ export const FloatingMenu = () => {
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={onToggleEnergySearch}
                     >
-                      {showEnergySearch ? "Hide Energy Search Map" : "Show Energy Search Map"}
+                      {showEnergySearch ? "Hide Search Map" : "Show Search Map"}
                     </Button>
                   )}
 
@@ -343,7 +343,7 @@ export const FloatingMenu = () => {
                     </Tooltip>
                   </Box>
                   <Typography variant="caption" display="block">
-                    Algorithm: {pathMetrics.algorithm}
+                    Heuristic: {pathMetrics.algorithm}
                   </Typography>
                   <Typography variant="caption" display="block">
                     Distance: {pathMetrics.distance.toFixed(2)} units
@@ -675,8 +675,8 @@ export const FloatingMenu = () => {
               borderBottom: "1px solid rgba(0,0,0,0.1)",
             }}
           >
-            <Typography variant="subtitle2" fontWeight="bold">
-              Result Calculation
+            <Typography variant="subtitle1" fontWeight="bold">
+              Calculation
             </Typography>
             <Tooltip title="Close">
               <IconButton
@@ -692,7 +692,7 @@ export const FloatingMenu = () => {
           <Box sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
             <Box>
               <Typography variant="caption" color="textSecondary" display="block">
-                Algorithm
+                Heuristic
               </Typography>
               <Typography variant="body2" fontWeight="bold">
                 {pathMetrics.algorithm}

@@ -7,7 +7,7 @@ body,
 /* Base style for the overlays */
 [data-manhattan]::after,
 [data-energy]::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -17,22 +17,22 @@ body,
   pointer-events: none;
 }
 
-/* Manhattan Search Styles (Flat) */
+/* Manhattan Search Styles */
 [data-manhattan="open"]::after {
-  background-color: rgba(0, 217, 159, 0.75);
+  background-color: rgba(152, 251, 152, 0.75);
 }
 
 [data-manhattan="closed"]::after {
-  background-color: rgba(119, 181, 192, 0.75);
+  background-color: rgba(175, 238, 238, 0.75);
 }
 
-/* Energy-Aware Specific Styles (Flat) */
+/* Energy-Aware Specific Styles */
 [data-energy="open"]::after {
-  background-color: rgba(255, 165, 0, 0.75);
+  background-color: rgba(152, 251, 152, 0.75);
 }
 
 [data-energy="closed"]::after {
-  background-color: rgba(255, 99, 71, 0.75);
+  background-color: rgba(175, 238, 238, 0.75);
 }
 
 /* Hide overlays on robot, destination, and wall cells */

@@ -1,47 +1,47 @@
-import { useState, useRef, useCallback } from "react"
-import type { ReactNode } from "react"
-import { useViewport } from "../hooks/useViewport"
-import { useGridMouseClicks } from "../hooks/useGridMouseClicks"
-import { usePathAnimation } from "../hooks/usePathAnimation"
-import { useRobotWalk } from "../hooks/useRobotWalk"
-import { findPath } from "../algorithms/astar"
-import type { Scenario, Heading, AlgorithmType, EnergyBreakdown } from "../shared/types"
-import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../config/simulationConfig"
-import { SimulationContext } from "./SimulationContext"
+import { useState, useRef, useCallback } from "react";
+import type { ReactNode } from "react";
+import { useViewport } from "../hooks/useViewport";
+import { useGridMouseClicks } from "../hooks/useGridMouseClicks";
+import { usePathAnimation } from "../hooks/usePathAnimation";
+import { useRobotWalk } from "../hooks/useRobotWalk";
+import { findPath } from "../algorithms/astar";
+import type { Scenario, Heading, AlgorithmType, EnergyBreakdown } from "../shared/types";
+import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../config/simulationConfig";
+import { SimulationContext } from "./SimulationContext";
 
 interface SimulationProviderProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export const SimulationProvider = ({ children }: SimulationProviderProps) => {
-  const viewport = useViewport()
-  const cellSize = viewport.width < 600 ? 20 : 28
-  const cols = Math.floor(viewport.width / cellSize)
-  const rows = Math.floor(viewport.height / cellSize)
+  const viewport = useViewport();
+  const cellSize = viewport.width < 600 ? 20 : 28;
+  const cols = Math.floor(viewport.width / cellSize);
+  const rows = Math.floor(viewport.height / cellSize);
 
-  const defaultRobotCol = Math.floor(cols / 4)
-  const defaultDestCol = Math.floor((cols / 4) * 3)
-  const defaultRow = Math.floor(rows / 2)
+  const defaultRobotCol = Math.floor(cols / 4);
+  const defaultDestCol = Math.floor((cols / 4) * 3);
+  const defaultRow = Math.floor(rows / 2);
 
-  const [elevationBrushValue, setElevationBrushValue] = useState<number>(5)
-  const [selectedAlgo, setSelectedAlgo] = useState<AlgorithmType>("energyAware")
-  const [showGradients, setShowGradients] = useState<boolean>(false)
-  const [robotHeading, setRobotHeading] = useState<Heading>(VEHICLE_CONFIG.defaultHeading)
+  const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
+  const [selectedAlgo, setSelectedAlgo] = useState<AlgorithmType>("energyAware");
+  const [showGradients, setShowGradients] = useState<boolean>(false);
+  const [robotHeading, setRobotHeading] = useState<Heading>(VEHICLE_CONFIG.defaultHeading);
   const [pathMetrics, setPathMetrics] = useState<{
-    algorithm: string
-    distance: number
-    energy: number
-    energyBreakdown: EnergyBreakdown
-  } | null>(null)
+    algorithm: string;
+    distance: number;
+    energy: number;
+    energyBreakdown: EnergyBreakdown;
+  } | null>(null);
 
-  const currentRunId = useRef<number>(0)
+  const currentRunId = useRef<number>(0);
 
   const handleSelectAlgo = useCallback((algo: AlgorithmType) => {
-    setSelectedAlgo(algo)
+    setSelectedAlgo(algo);
     if (algo !== "energyAware") {
-      setRobotHeading("NONE")
+      setRobotHeading("NONE");
     }
-  }, [])
+  }, []);
 
   const {
     wallNode,
@@ -59,7 +59,7 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
     `${defaultRow}-${defaultRobotCol}`,
     `${defaultRow}-${defaultDestCol}`,
     elevationBrushValue,
-  )
+  );
 
   const {
     isManhattanFinished,
@@ -76,7 +76,7 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
     clearAnimations,
     animateResult,
     addTimeout,
-  } = usePathAnimation()
+  } = usePathAnimation();
 
   const {
     currentPath,
@@ -87,21 +87,21 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
     walkFailure,
     handleWalkPath,
     clearWalkState,
-  } = useRobotWalk(robotHeading, setRobotHeading, addTimeout)
+  } = useRobotWalk(robotHeading, setRobotHeading, addTimeout);
 
-  const isLocked = isAnimating || isWalking
+  const isLocked = isAnimating || isWalking;
 
   const toggleGradients = useCallback(() => {
-    setShowGradients((prev) => !prev)
-  }, [])
+    setShowGradients((prev) => !prev);
+  }, []);
 
   const toggleManhattanSearch = useCallback(() => {
-    setShowManhattanSearch((prev) => !prev)
-  }, [setShowManhattanSearch])
+    setShowManhattanSearch((prev) => !prev);
+  }, [setShowManhattanSearch]);
 
   const toggleEnergySearch = useCallback(() => {
-    setShowEnergySearch((prev) => !prev)
-  }, [setShowEnergySearch])
+    setShowEnergySearch((prev) => !prev);
+  }, [setShowEnergySearch]);
 
   const getScenario = useCallback((): Scenario => {
     return {
@@ -118,64 +118,87 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
       initialHeading: robotHeading,
       showGradients,
       robotPhysics: VEHICLE_CONFIG,
-    }
-  }, [rows, cols, robotNode, destinationNode, wallNode, terrainFactors, elevations, robotHeading, showGradients])
+    };
+  }, [
+    rows,
+    cols,
+    robotNode,
+    destinationNode,
+    wallNode,
+    terrainFactors,
+    elevations,
+    robotHeading,
+    showGradients,
+  ]);
 
-  const visualize = useCallback((algoToRun?: AlgorithmType) => {
-    const algo = algoToRun ?? selectedAlgo
-    clearAnimations(clearWalkState)
+  const visualize = useCallback(
+    (algoToRun?: AlgorithmType) => {
+      const algo = algoToRun ?? selectedAlgo;
+      clearAnimations(clearWalkState);
 
-    const scenario = getScenario()
+      const scenario = getScenario();
 
-    const algoConfigs: Record<AlgorithmType, { name: string, theme: "manhattan" | "energy" }> = {
-      energyAware: { name: "Energy-Aware A*", theme: "energy" },
-      manhattan: { name: "A* Manhattan", theme: "manhattan" },
-      euclidean: { name: "A* Euclidean", theme: "energy" },
-      octile: { name: "A* Octile", theme: "energy" },
-      chebyshev: { name: "A* Chebyshev", theme: "energy" },
-    }
+      const algoConfigs: Record<AlgorithmType, { name: string; theme: "manhattan" | "energy" }> = {
+        energyAware: { name: "Energy-Aware", theme: "energy" },
+        manhattan: { name: "Manhattan", theme: "manhattan" },
+        euclidean: { name: "Euclidean", theme: "energy" },
+        octile: { name: "Octile", theme: "energy" },
+        chebyshev: { name: "Chebyshev", theme: "energy" },
+      };
 
-    const config = algoConfigs[algo]
-    const algoName = config.name
-    const theme = config.theme
-    const result = findPath(scenario, { algorithm: algo })
+      const config = algoConfigs[algo];
+      const algoName = config.name;
+      const theme = config.theme;
+      const result = findPath(scenario, { algorithm: algo });
 
-    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
-      result
+      const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
+        result;
 
-    setPathMetrics({
-      algorithm: algoName,
-      distance: totalDistance,
-      energy: totalEnergy,
-      energyBreakdown,
-    })
+      setPathMetrics({
+        algorithm: algoName,
+        distance: totalDistance,
+        energy: totalEnergy,
+        energyBreakdown,
+      });
 
-    currentRunId.current += 1
-    const runId = currentRunId.current
+      currentRunId.current += 1;
+      const runId = currentRunId.current;
 
-    setCurrentPath(shortestPath.length > 0 ? shortestPath : null)
+      setCurrentPath(shortestPath.length > 0 ? shortestPath : null);
 
-    const duration = animateResult(visitedNodesInOrder, shortestPath, theme)
+      const duration = animateResult(visitedNodesInOrder, shortestPath, theme);
 
-    const finishTimeout = setTimeout(() => {
-      if (runId !== currentRunId.current) return
-      if (theme === "manhattan") setIsManhattanFinished(true)
-      else setIsEnergyFinished(true)
-    }, duration)
-    addTimeout(finishTimeout as unknown as number)
-  }, [selectedAlgo, clearAnimations, clearWalkState, getScenario, setCurrentPath, animateResult, setIsManhattanFinished, setIsEnergyFinished, addTimeout])
+      const finishTimeout = setTimeout(() => {
+        if (runId !== currentRunId.current) return;
+        if (theme === "manhattan") setIsManhattanFinished(true);
+        else setIsEnergyFinished(true);
+      }, duration);
+      addTimeout(finishTimeout as unknown as number);
+    },
+    [
+      selectedAlgo,
+      clearAnimations,
+      clearWalkState,
+      getScenario,
+      setCurrentPath,
+      animateResult,
+      setIsManhattanFinished,
+      setIsEnergyFinished,
+      addTimeout,
+    ],
+  );
 
   const walkPath = useCallback(() => {
-    const scenario = getScenario()
-    handleWalkPath(scenario)
-  }, [getScenario, handleWalkPath])
+    const scenario = getScenario();
+    handleWalkPath(scenario);
+  }, [getScenario, handleWalkPath]);
 
   const resetSimulation = useCallback(() => {
-    clearWalls()
-    clearAnimations(clearWalkState)
-    setPathMetrics(null)
-    setCurrentPath(null)
-  }, [clearWalls, clearAnimations, clearWalkState, setCurrentPath])
+    clearWalls();
+    clearAnimations(clearWalkState);
+    setPathMetrics(null);
+    setCurrentPath(null);
+  }, [clearWalls, clearAnimations, clearWalkState, setCurrentPath]);
 
   return (
     <SimulationContext.Provider
@@ -230,5 +253,5 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
     >
       {children}
     </SimulationContext.Provider>
-  )
-}
+  );
+};
