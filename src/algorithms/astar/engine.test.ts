@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { findPath } from "./engine"
 import type { Scenario } from "../../shared/types"
+import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../../config/simulationConfig"
 
 const createTestScenario = (overrides: Partial<Scenario> = {}): Scenario => ({
   rows: 10,
@@ -10,16 +11,11 @@ const createTestScenario = (overrides: Partial<Scenario> = {}): Scenario => ({
   wallNodes: new Set(),
   terrainFactors: new Map(),
   elevations: new Map(),
-  climbingFactor: 1.5,
-  turnPenalty: 1.0,
-  maxTraversableSlope: 45,
+  climbingFactor: ENERGY_CONFIG.climbingFactor,
+  turnPenalty: ENERGY_CONFIG.turnPenalty,
+  maxTraversableSlope: TERRAIN_CONFIG.defaultMaxTraversableSlope,
   initialHeading: "RIGHT",
-  robotPhysics: {
-    trackWidth: 0.8,
-    wheelBase: 1.2,
-    comHeight: 0.6,
-    stabilityMargin: 0.05,
-  },
+  robotPhysics: VEHICLE_CONFIG,
   ...overrides,
 })
 

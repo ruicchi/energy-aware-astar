@@ -43,3 +43,7 @@ _Avoid_: TerrainUtils, PhysicsEngine, MathUtils
 **Grid Paint Buffer**:
 The deep module that encapsulates transient pointer drawing sessions, temporary DOM feedback styling, and atomic commit semantics across grid layers (walls, terrain friction, and elevation).
 _Avoid_: GridState, CanvasBuffer, WallManager
+
+**Simulation Configuration**:
+The consolidated configuration module defining physical vehicle dimensions, terrain parameters, energy weights, animation timings, and visualization theme colors.
+_Avoid_: Constants, GlobalSettings, AppConfig

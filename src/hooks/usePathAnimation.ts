@@ -1,35 +1,36 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback } from "react"
+import { ANIMATION_CONFIG } from "../config/simulationConfig"
 
-export type VisitedNode = { key: string; type: "open" | "closed" };
+export type VisitedNode = { key: string, type: "open" | "closed" }
 
 export const usePathAnimation = () => {
-  const [isManhattanFinished, setIsManhattanFinished] = useState<boolean>(false);
-  const [isEnergyFinished, setIsEnergyFinished] = useState<boolean>(false);
-  const [isAnimating, setIsAnimating] = useState<boolean>(false);
-  const [showManhattanSearch, setShowManhattanSearch] = useState<boolean>(true);
-  const [showEnergySearch, setShowEnergySearch] = useState<boolean>(true);
+  const [isManhattanFinished, setIsManhattanFinished] = useState<boolean>(false)
+  const [isEnergyFinished, setIsEnergyFinished] = useState<boolean>(false)
+  const [isAnimating, setIsAnimating] = useState<boolean>(false)
+  const [showManhattanSearch, setShowManhattanSearch] = useState<boolean>(true)
+  const [showEnergySearch, setShowEnergySearch] = useState<boolean>(true)
 
-  const animationTimeouts = useRef<number[]>([]);
+  const animationTimeouts = useRef<number[]>([])
 
   const clearAnimations = useCallback((onClear?: () => void) => {
-    animationTimeouts.current.forEach(clearTimeout);
-    animationTimeouts.current = [];
+    animationTimeouts.current.forEach(clearTimeout)
+    animationTimeouts.current = []
 
-    setIsManhattanFinished(false);
-    setIsEnergyFinished(false);
-    setIsAnimating(false);
-    setShowManhattanSearch(true);
-    setShowEnergySearch(true);
+    setIsManhattanFinished(false)
+    setIsEnergyFinished(false)
+    setIsAnimating(false)
+    setShowManhattanSearch(true)
+    setShowEnergySearch(true)
 
-    if (onClear) onClear();
+    if (onClear) onClear()
 
     document.querySelectorAll("[data-manhattan], [data-energy], [data-path]").forEach((el) => {
-      const node = el as HTMLElement;
-      delete node.dataset.manhattan;
-      delete node.dataset.energy;
-      delete node.dataset.path;
-    });
-  }, []);
+      const node = el as HTMLElement
+      delete node.dataset.manhattan
+      delete node.dataset.energy
+      delete node.dataset.path
+    })
+  }, [])
 
   const animateResult = useCallback(
     (
@@ -37,52 +38,52 @@ export const usePathAnimation = () => {
       shortestPath: string[],
       mode: "manhattan" | "energy" = "manhattan",
     ): number => {
-      const searchAttr = mode === "manhattan" ? "manhattan" : "energy";
-      setIsAnimating(true);
+      const searchAttr = mode === "manhattan" ? "manhattan" : "energy"
+      setIsAnimating(true)
 
-      // 3. Animate Visited/Open Nodes
+      // Animate Visited/Open Nodes
       for (let i = 0; i < visitedNodesInOrder.length; i++) {
         const timeout = setTimeout(() => {
-          const { key, type } = visitedNodesInOrder[i];
+          const { key, type } = visitedNodesInOrder[i]
 
-          const node = document.getElementById(`cell-${key}`);
+          const node = document.getElementById(`cell-${key}`)
           if (node) {
-            node.dataset[searchAttr] = type; // "open" or "closed"
+            node.dataset[searchAttr] = type // "open" or "closed"
           }
-        }, 10 * i); // 10ms per node
-        animationTimeouts.current.push(timeout as unknown as number);
+        }, ANIMATION_CONFIG.searchStepDelayMs * i)
+        animationTimeouts.current.push(timeout as unknown as number)
       }
 
-      // 4. Animate Shortest Path after visited nodes finish
-      const pathDelay = visitedNodesInOrder.length * 10;
+      // Animate Shortest Path after visited nodes finish
+      const pathDelay = visitedNodesInOrder.length * ANIMATION_CONFIG.searchStepDelayMs
       for (let i = 0; i < shortestPath.length; i++) {
         const timeout = setTimeout(
           () => {
-            const node = document.getElementById(`cell-${shortestPath[i]}`);
+            const node = document.getElementById(`cell-${shortestPath[i]}`)
             if (node) {
-              node.dataset.path = mode; // "manhattan" or "energy"
+              node.dataset.path = mode // "manhattan" or "energy"
             }
           },
-          pathDelay + 30 * i,
-        ); // 30ms per path node
-        animationTimeouts.current.push(timeout as unknown as number);
+          pathDelay + ANIMATION_CONFIG.pathStepDelayMs * i,
+        )
+        animationTimeouts.current.push(timeout as unknown as number)
       }
 
-      const duration = pathDelay + shortestPath.length * 30;
+      const duration = pathDelay + shortestPath.length * ANIMATION_CONFIG.pathStepDelayMs
 
       const finishTimeout = setTimeout(() => {
-        setIsAnimating(false);
-      }, duration);
-      animationTimeouts.current.push(finishTimeout as unknown as number);
+        setIsAnimating(false)
+      }, duration)
+      animationTimeouts.current.push(finishTimeout as unknown as number)
 
-      return duration;
+      return duration
     },
     [],
-  );
+  )
 
   const addTimeout = useCallback((t: number) => {
-    animationTimeouts.current.push(t);
-  }, []);
+    animationTimeouts.current.push(t)
+  }, [])
 
   return {
     isManhattanFinished,
@@ -97,22 +98,5 @@ export const usePathAnimation = () => {
     clearAnimations,
     animateResult,
     addTimeout,
-  } as {
-    isManhattanFinished: boolean;
-    setIsManhattanFinished: (val: boolean) => void;
-    isEnergyFinished: boolean;
-    setIsEnergyFinished: (val: boolean) => void;
-    isAnimating: boolean;
-    showManhattanSearch: boolean;
-    setShowManhattanSearch: (val: boolean) => void;
-    showEnergySearch: boolean;
-    setShowEnergySearch: (val: boolean) => void;
-    clearAnimations: (onClear?: () => void) => void;
-    animateResult: (
-      visitedNodesInOrder: VisitedNode[],
-      shortestPath: string[],
-      mode?: "manhattan" | "energy",
-    ) => number;
-    addTimeout: (t: number) => void;
-  };
-};
+  }
+}

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react"
-import { type Heading, type Scenario } from "../shared/types"
+import type { Heading, Scenario } from "../shared/types"
 import { getHeading, isTraversableSlope } from "../physics/terrainPhysics"
+import { ANIMATION_CONFIG } from "../config/simulationConfig"
 
 export const useRobotWalk = (
   initialHeading: Heading,
@@ -41,21 +42,21 @@ export const useRobotWalk = (
             { row: prevR, col: prevC },
             { row: currR, col: currC, heading: nextHeading },
             scenario,
-          );
+          )
 
           if (!isSafe) {
             // Failure State: Stop at the last safe cell and end walking
             const failTimeout = setTimeout(() => {
-              setIsWalking(false);
-              setHasFinishedWalking(true);
+              setIsWalking(false)
+              setHasFinishedWalking(true)
               setWalkFailure({
                 row: currR,
                 col: currC,
                 reason: "ROBOT TIPPED OVER / STEEP SLOPE",
-              });
-            }, cumulativeDelay);
-            addTimeout(failTimeout as unknown as number);
-            break; // Stop scheduling further steps
+              })
+            }, cumulativeDelay)
+            addTimeout(failTimeout as unknown as number)
+            break // Stop scheduling further steps
           }
 
           if (
@@ -65,46 +66,46 @@ export const useRobotWalk = (
           ) {
             // Schedule the rotation
             const rotateTimeout = setTimeout(() => {
-              setRobotHeading(nextHeading);
-            }, cumulativeDelay);
-            addTimeout(rotateTimeout as unknown as number);
+              setRobotHeading(nextHeading)
+            }, cumulativeDelay)
+            addTimeout(rotateTimeout as unknown as number)
 
-            // Pause forward movement for 300ms to let the rotation happen
-            cumulativeDelay += 300;
-            currentRobotHeading = nextHeading;
+            // Pause forward movement to let the rotation happen
+            cumulativeDelay += ANIMATION_CONFIG.walkRotateDelayMs
+            currentRobotHeading = nextHeading
           }
         }
 
         // 2. Schedule the forward movement to this node
         const moveTimeout = setTimeout(() => {
-          setWalkingStep(i);
+          setWalkingStep(i)
 
           if (i === currentPath.length - 1) {
             // Delay finishing the walking state so the last transition can complete
             const finishTimeout = setTimeout(() => {
-              setIsWalking(false);
-              setHasFinishedWalking(true);
-            }, 200);
-            addTimeout(finishTimeout as unknown as number);
+              setIsWalking(false)
+              setHasFinishedWalking(true)
+            }, ANIMATION_CONFIG.walkStepDelayMs)
+            addTimeout(finishTimeout as unknown as number)
           }
-        }, cumulativeDelay);
+        }, cumulativeDelay)
 
-        addTimeout(moveTimeout as unknown as number);
+        addTimeout(moveTimeout as unknown as number)
 
         // Standard movement time
-        cumulativeDelay += 200;
+        cumulativeDelay += ANIMATION_CONFIG.walkStepDelayMs
       }
     },
     [currentPath, isWalking, initialHeading, setRobotHeading, addTimeout],
-  );
+  )
 
   const clearWalkState = useCallback(() => {
-    setCurrentPath(null);
-    setWalkingStep(-1);
-    setIsWalking(false);
-    setHasFinishedWalking(false);
-    setWalkFailure(null);
-  }, []);
+    setCurrentPath(null)
+    setWalkingStep(-1)
+    setIsWalking(false)
+    setHasFinishedWalking(false)
+    setWalkFailure(null)
+  }, [])
 
   return {
     currentPath,
@@ -115,5 +116,5 @@ export const useRobotWalk = (
     walkFailure,
     handleWalkPath,
     clearWalkState,
-  };
-};
+  }
+}

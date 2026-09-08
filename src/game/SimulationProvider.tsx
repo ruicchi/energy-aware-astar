@@ -6,6 +6,7 @@ import { usePathAnimation } from "../hooks/usePathAnimation"
 import { useRobotWalk } from "../hooks/useRobotWalk"
 import { findPath } from "../algorithms/astar"
 import type { Scenario, Heading, AlgorithmType, EnergyBreakdown } from "../shared/types"
+import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../config/simulationConfig"
 import { SimulationContext } from "./SimulationContext"
 
 interface SimulationProviderProps {
@@ -109,17 +110,12 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
       wallNodes: wallNode,
       terrainFactors,
       elevations,
-      climbingFactor: 1.5,
-      turnPenalty: 1.0,
-      maxTraversableSlope: 45,
+      climbingFactor: ENERGY_CONFIG.climbingFactor,
+      turnPenalty: ENERGY_CONFIG.turnPenalty,
+      maxTraversableSlope: TERRAIN_CONFIG.defaultMaxTraversableSlope,
       initialHeading: robotHeading,
       showGradients,
-      robotPhysics: {
-        trackWidth: 0.8,
-        wheelBase: 1.2,
-        comHeight: 0.6,
-        stabilityMargin: 0.05,
-      },
+      robotPhysics: VEHICLE_CONFIG,
     }
   }, [rows, cols, robotNode, destinationNode, wallNode, terrainFactors, elevations, robotHeading, showGradients])
 

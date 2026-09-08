@@ -1,10 +1,11 @@
 import type { Heading, Scenario } from "../shared/types"
+import { PHYSICS_MATH, TERRAIN_CONFIG } from "../config/simulationConfig"
 
-export const SQRT2 = 1.414
-export const INV_SQRT2 = 1 / Math.sqrt(2)
-export const ELEVATION_SCALE = 0.5
-export const DEFAULT_MAX_TRAVERSABLE_SLOPE = 45
-export const MAX_STABLE_GRADIENT = 1.0
+export const SQRT2 = PHYSICS_MATH.SQRT2
+export const INV_SQRT2 = PHYSICS_MATH.INV_SQRT2
+export const ELEVATION_SCALE = TERRAIN_CONFIG.elevationScale
+export const DEFAULT_MAX_TRAVERSABLE_SLOPE = TERRAIN_CONFIG.defaultMaxTraversableSlope
+export const MAX_STABLE_GRADIENT = TERRAIN_CONFIG.maxStableGradient
 
 export const HEADING_ANGLES: Record<Exclude<Heading, "NONE">, number> = {
   UP: -Math.PI / 2,

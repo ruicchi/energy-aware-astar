@@ -4,6 +4,7 @@ import Box from "@mui/material/Box"
 import { memo } from "react"
 import type { Heading } from "../shared/types"
 import { getElevationGradient } from "../physics/terrainPhysics"
+import { TERRAIN_CONFIG, THEME_CONFIG } from "../config/simulationConfig"
 
 type MemoizedCellProps = {
   cellKey: string
@@ -73,21 +74,19 @@ export const MemoizedCell = memo(
     //* Determine backgroundColor based on cell state. Priority goes to robot/destination
     let bgColor = "transparent"
     if (isRobot)
-      bgColor = "#4caf50" //* Green for Robot
+      bgColor = THEME_CONFIG.robotColor
     else if (isDestination)
-      bgColor = "#f44336" //* Red for Destination
+      bgColor = THEME_CONFIG.destinationColor
     else if (isWall)
-      bgColor = "#1a88e2" //* Blue for walls/active cells
+      bgColor = TERRAIN_CONFIG.types.wall.color
     else if (isUnstable && showGradients)
-      bgColor = "rgba(255, 0, 0, 0.3)" //* Light red for unstable cells
-    else if (terrainFactor === 0.5)
-      bgColor = "#d2b48c" //* Dirt (Tan)
-    else if (terrainFactor === 0.1)
-      bgColor = "#00ffff" //* Water (Cyan)
+      bgColor = THEME_CONFIG.unstableOverlayColor
+    else if (terrainFactor === TERRAIN_CONFIG.types.dirt.cost)
+      bgColor = TERRAIN_CONFIG.types.dirt.color
+    else if (terrainFactor === TERRAIN_CONFIG.types.water.cost)
+      bgColor = TERRAIN_CONFIG.types.water.color
     else if (elevation > 0) {
-      //* Visual feedback for elevation (darker green for higher)
-      const brightness = Math.max(0, 255 - elevation * 20)
-      bgColor = `rgb(0, ${brightness}, 0)`
+      bgColor = TERRAIN_CONFIG.getElevationColor(elevation)
     }
 
     return (
@@ -132,7 +131,7 @@ export const MemoizedCell = memo(
               // NorthIcon starts pointing Up (-90deg relative to Right)
               // So we add 90deg to rotate it correctly
               transform: `rotate(${gradientAngle * (180 / Math.PI) + 90}deg)`,
-              color: isUnstable ? "#ff5252" : "rgba(0, 0, 0, 0.4)",
+              color: isUnstable ? THEME_CONFIG.unstableArrowColor : THEME_CONFIG.contourArrowColor,
               opacity: Math.min(1, gradientMagnitude / 2),
             }}
           />

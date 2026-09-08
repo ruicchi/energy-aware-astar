@@ -1,5 +1,6 @@
 import type { BrushMode } from "../shared/types"
 import { getElevationGradient } from "../physics/terrainPhysics"
+import { TERRAIN_CONFIG } from "../config/simulationConfig"
 
 export interface GridState {
   wallNodes: Set<string>
@@ -147,9 +148,15 @@ export class GridPaintBuffer {
     if (brush === "wall") {
       calculatedDrawValue = !this.wallNodes.has(key)
     } else if (brush === "dirt") {
-      calculatedDrawValue = this.terrainFactors.get(key) !== 0.5 ? 0.5 : 0
+      calculatedDrawValue =
+        this.terrainFactors.get(key) !== TERRAIN_CONFIG.types.dirt.cost
+          ? TERRAIN_CONFIG.types.dirt.cost
+          : 0
     } else if (brush === "water") {
-      calculatedDrawValue = this.terrainFactors.get(key) !== 0.1 ? 0.1 : 0
+      calculatedDrawValue =
+        this.terrainFactors.get(key) !== TERRAIN_CONFIG.types.water.cost
+          ? TERRAIN_CONFIG.types.water.cost
+          : 0
     } else if (brush === "elevation") {
       const current = this.elevations.get(key) ?? 0
       calculatedDrawValue = current === elevationBrushValue ? 0 : elevationBrushValue
@@ -341,27 +348,21 @@ export class GridPaintBuffer {
     if (mode === "wall") {
       if (value) {
         element.classList.add("is-wall")
-        element.style.backgroundColor = "#1a88e2"
+        element.style.backgroundColor = TERRAIN_CONFIG.types.wall.color
       } else {
         element.classList.remove("is-wall")
         element.style.backgroundColor = ""
       }
     } else if (mode === "dirt" || mode === "water") {
-      if (value === 0.5) {
-        element.style.backgroundColor = "#d2b48c"
-      } else if (value === 0.1) {
-        element.style.backgroundColor = "#00ffff"
+      if (value === TERRAIN_CONFIG.types.dirt.cost) {
+        element.style.backgroundColor = TERRAIN_CONFIG.types.dirt.color
+      } else if (value === TERRAIN_CONFIG.types.water.cost) {
+        element.style.backgroundColor = TERRAIN_CONFIG.types.water.color
       } else {
         element.style.backgroundColor = ""
       }
     } else if (mode === "elevation") {
-      const val = Number(value)
-      if (val > 0) {
-        const brightness = Math.max(0, 255 - val * 20)
-        element.style.backgroundColor = `rgb(0, ${brightness}, 0)`
-      } else {
-        element.style.backgroundColor = ""
-      }
+      element.style.backgroundColor = TERRAIN_CONFIG.getElevationColor(Number(value))
     }
   }
 }
