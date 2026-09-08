@@ -39,3 +39,7 @@ _Avoid_: SimulationContext, Store, GameManager
 **Terrain Physics**:
 The deep module computing spatial elevation gradients, vehicle posture (roll, pitch), and Santos center-of-mass stability constraints across terrain.
 _Avoid_: TerrainUtils, PhysicsEngine, MathUtils
+
+**Grid Paint Buffer**:
+The deep module that encapsulates transient pointer drawing sessions, temporary DOM feedback styling, and atomic commit semantics across grid layers (walls, terrain friction, and elevation).
+_Avoid_: GridState, CanvasBuffer, WallManager
