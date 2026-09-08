@@ -28,8 +28,8 @@ import {
   Block,
 } from "@mui/icons-material";
 
-import { useSimulation } from "./SimulationContext"
-import { TERRAIN_CONFIG } from "../config/simulationConfig"
+import { useSimulation } from "./SimulationContext";
+import { TERRAIN_CONFIG } from "../config/simulationConfig";
 
 export const FloatingMenu = () => {
   const {
@@ -183,37 +183,6 @@ export const FloatingMenu = () => {
             <Box
               sx={{
                 display: "flex",
-                gap: 1,
-                pointerEvents: isLocked ? "none" : "auto",
-                opacity: isLocked ? 0.6 : 1,
-                transition: "opacity 0.2s",
-              }}
-            >
-              <Button
-                variant="outlined"
-                color="error"
-                fullWidth
-                size="small"
-                onPointerDown={(e) => e.stopPropagation()} // don't drag when clicking button
-                onClick={onClearWalls}
-              >
-                Clear
-              </Button>
-              <Button
-                variant="outlined"
-                color="warning"
-                fullWidth
-                size="small"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={onReset}
-              >
-                Reset
-              </Button>
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
                 flexDirection: "column",
                 gap: 1,
                 pointerEvents: isLocked ? "none" : "auto",
@@ -291,7 +260,7 @@ export const FloatingMenu = () => {
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onVisualize}
               >
-                Run Pathfinding
+                Visualize
               </Button>
 
               {/* Search Map Toggles */}
@@ -440,7 +409,7 @@ export const FloatingMenu = () => {
                   color="textSecondary"
                   sx={{ mb: 1, display: "block" }}
                 >
-                  Robot Initial Heading
+                  Initial Heading
                 </Typography>
                 <Box
                   sx={{
@@ -511,19 +480,20 @@ export const FloatingMenu = () => {
                   }}
                 >
                   <Button
-                    variant={activeBrush === "wall" ? "contained" : "outlined"}
+                    variant="contained"
                     size="small"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => onSelectBrush("wall")}
                     sx={{
-                      backgroundColor: activeBrush === "wall" ? TERRAIN_CONFIG.types.wall.color : "transparent",
-                      color: activeBrush === "wall" ? "#ffffff" : TERRAIN_CONFIG.types.wall.color,
-                      borderColor: TERRAIN_CONFIG.types.wall.color,
-                      fontWeight: activeBrush === "wall" ? "bold" : "medium",
+                      backgroundColor: TERRAIN_CONFIG.types.wall.color,
+                      color: "#ffffff",
+                      fontWeight: "bold",
+                      border:
+                        activeBrush === "wall" ? "2.5px solid #111827" : "2.5px solid transparent",
+                      boxShadow: activeBrush === "wall" ? 4 : 1,
                       "&:hover": {
-                        backgroundColor: activeBrush === "wall" ? TERRAIN_CONFIG.types.wall.color : "rgba(26, 136, 226, 0.12)",
-                        borderColor: TERRAIN_CONFIG.types.wall.color,
-                        opacity: activeBrush === "wall" ? 0.9 : 1,
+                        backgroundColor: TERRAIN_CONFIG.types.wall.color,
+                        filter: "brightness(0.92)",
                       },
                     }}
                   >
@@ -532,19 +502,22 @@ export const FloatingMenu = () => {
 
                   <Tooltip title="Penalty factor: 0.5" arrow>
                     <Button
-                      variant={activeBrush === "dirt" ? "contained" : "outlined"}
+                      variant="contained"
                       size="small"
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={() => onSelectBrush("dirt")}
                       sx={{
-                        backgroundColor: activeBrush === "dirt" ? TERRAIN_CONFIG.types.dirt.color : "transparent",
-                        color: activeBrush === "dirt" ? "#3e2723" : "#6d4c41",
-                        borderColor: TERRAIN_CONFIG.types.dirt.color,
-                        fontWeight: activeBrush === "dirt" ? "bold" : "medium",
+                        backgroundColor: TERRAIN_CONFIG.types.dirt.color,
+                        color: "#3e2723",
+                        fontWeight: "bold",
+                        border:
+                          activeBrush === "dirt"
+                            ? "2.5px solid #111827"
+                            : "2.5px solid transparent",
+                        boxShadow: activeBrush === "dirt" ? 4 : 1,
                         "&:hover": {
-                          backgroundColor: activeBrush === "dirt" ? TERRAIN_CONFIG.types.dirt.color : "rgba(210, 180, 140, 0.18)",
-                          borderColor: TERRAIN_CONFIG.types.dirt.color,
-                          opacity: activeBrush === "dirt" ? 0.9 : 1,
+                          backgroundColor: TERRAIN_CONFIG.types.dirt.color,
+                          filter: "brightness(0.92)",
                         },
                       }}
                     >
@@ -554,19 +527,22 @@ export const FloatingMenu = () => {
 
                   <Tooltip title="Penalty factor: 0.1" arrow>
                     <Button
-                      variant={activeBrush === "water" ? "contained" : "outlined"}
+                      variant="contained"
                       size="small"
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={() => onSelectBrush("water")}
                       sx={{
-                        backgroundColor: activeBrush === "water" ? TERRAIN_CONFIG.types.water.color : "transparent",
-                        color: activeBrush === "water" ? "#004d40" : "#00838f",
-                        borderColor: "#00bcd4",
-                        fontWeight: activeBrush === "water" ? "bold" : "medium",
+                        backgroundColor: TERRAIN_CONFIG.types.water.color,
+                        color: "#004d40",
+                        fontWeight: "bold",
+                        border:
+                          activeBrush === "water"
+                            ? "2.5px solid #111827"
+                            : "2.5px solid transparent",
+                        boxShadow: activeBrush === "water" ? 4 : 1,
                         "&:hover": {
-                          backgroundColor: activeBrush === "water" ? TERRAIN_CONFIG.types.water.color : "rgba(0, 255, 255, 0.18)",
-                          borderColor: "#00bcd4",
-                          opacity: activeBrush === "water" ? 0.9 : 1,
+                          backgroundColor: TERRAIN_CONFIG.types.water.color,
+                          filter: "brightness(0.92)",
                         },
                       }}
                     >
@@ -575,25 +551,22 @@ export const FloatingMenu = () => {
                   </Tooltip>
 
                   <Button
-                    variant={activeBrush === "elevation" ? "contained" : "outlined"}
+                    variant="contained"
                     size="small"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => onSelectBrush("elevation")}
                     sx={{
-                      backgroundColor:
+                      backgroundColor: TERRAIN_CONFIG.getElevationColor(elevationValue),
+                      color: "#ffffff",
+                      fontWeight: "bold",
+                      border:
                         activeBrush === "elevation"
-                          ? TERRAIN_CONFIG.getElevationColor(elevationValue)
-                          : "transparent",
-                      color: activeBrush === "elevation" ? "#ffffff" : "rgb(0, 150, 0)",
-                      borderColor: "rgb(0, 160, 0)",
-                      fontWeight: activeBrush === "elevation" ? "bold" : "medium",
+                          ? "2.5px solid #111827"
+                          : "2.5px solid transparent",
+                      boxShadow: activeBrush === "elevation" ? 4 : 1,
                       "&:hover": {
-                        backgroundColor:
-                          activeBrush === "elevation"
-                            ? TERRAIN_CONFIG.getElevationColor(elevationValue)
-                            : "rgba(0, 180, 0, 0.12)",
-                        borderColor: "rgb(0, 160, 0)",
-                        opacity: activeBrush === "elevation" ? 0.9 : 1,
+                        backgroundColor: TERRAIN_CONFIG.getElevationColor(elevationValue),
+                        filter: "brightness(0.92)",
                       },
                     }}
                   >
@@ -639,6 +612,38 @@ export const FloatingMenu = () => {
                     </Button>
                   </Box>
                 )}
+              </Box>
+
+              {/* Clear and Reset Actions */}
+              <Box
+                sx={{
+                  mt: 1,
+                  borderTop: "1px solid rgba(0,0,0,0.1)",
+                  pt: 1,
+                  display: "flex",
+                  gap: 1,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  color="error"
+                  fullWidth
+                  size="small"
+                  onPointerDown={(e) => e.stopPropagation()} // don't drag when clicking button
+                  onClick={onClearWalls}
+                >
+                  Clear
+                </Button>
+                <Button
+                  variant="contained"
+                  color="warning"
+                  fullWidth
+                  size="small"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={onReset}
+                >
+                  Reset
+                </Button>
               </Box>
             </Box>
           </Box>
