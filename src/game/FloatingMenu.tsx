@@ -28,7 +28,8 @@ import {
   Block,
 } from "@mui/icons-material";
 
-import { useSimulation } from "./SimulationContext";
+import { useSimulation } from "./SimulationContext"
+import { TERRAIN_CONFIG } from "../config/simulationConfig"
 
 export const FloatingMenu = () => {
   const {
@@ -511,10 +512,20 @@ export const FloatingMenu = () => {
                 >
                   <Button
                     variant={activeBrush === "wall" ? "contained" : "outlined"}
-                    color="primary"
                     size="small"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => onSelectBrush("wall")}
+                    sx={{
+                      backgroundColor: activeBrush === "wall" ? TERRAIN_CONFIG.types.wall.color : "transparent",
+                      color: activeBrush === "wall" ? "#ffffff" : TERRAIN_CONFIG.types.wall.color,
+                      borderColor: TERRAIN_CONFIG.types.wall.color,
+                      fontWeight: activeBrush === "wall" ? "bold" : "medium",
+                      "&:hover": {
+                        backgroundColor: activeBrush === "wall" ? TERRAIN_CONFIG.types.wall.color : "rgba(26, 136, 226, 0.12)",
+                        borderColor: TERRAIN_CONFIG.types.wall.color,
+                        opacity: activeBrush === "wall" ? 0.9 : 1,
+                      },
+                    }}
                   >
                     Wall
                   </Button>
@@ -522,10 +533,20 @@ export const FloatingMenu = () => {
                   <Tooltip title="Penalty factor: 0.5" arrow>
                     <Button
                       variant={activeBrush === "dirt" ? "contained" : "outlined"}
-                      color="primary"
                       size="small"
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={() => onSelectBrush("dirt")}
+                      sx={{
+                        backgroundColor: activeBrush === "dirt" ? TERRAIN_CONFIG.types.dirt.color : "transparent",
+                        color: activeBrush === "dirt" ? "#3e2723" : "#6d4c41",
+                        borderColor: TERRAIN_CONFIG.types.dirt.color,
+                        fontWeight: activeBrush === "dirt" ? "bold" : "medium",
+                        "&:hover": {
+                          backgroundColor: activeBrush === "dirt" ? TERRAIN_CONFIG.types.dirt.color : "rgba(210, 180, 140, 0.18)",
+                          borderColor: TERRAIN_CONFIG.types.dirt.color,
+                          opacity: activeBrush === "dirt" ? 0.9 : 1,
+                        },
+                      }}
                     >
                       Dirt
                     </Button>
@@ -534,10 +555,20 @@ export const FloatingMenu = () => {
                   <Tooltip title="Penalty factor: 0.1" arrow>
                     <Button
                       variant={activeBrush === "water" ? "contained" : "outlined"}
-                      color="primary"
                       size="small"
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={() => onSelectBrush("water")}
+                      sx={{
+                        backgroundColor: activeBrush === "water" ? TERRAIN_CONFIG.types.water.color : "transparent",
+                        color: activeBrush === "water" ? "#004d40" : "#00838f",
+                        borderColor: "#00bcd4",
+                        fontWeight: activeBrush === "water" ? "bold" : "medium",
+                        "&:hover": {
+                          backgroundColor: activeBrush === "water" ? TERRAIN_CONFIG.types.water.color : "rgba(0, 255, 255, 0.18)",
+                          borderColor: "#00bcd4",
+                          opacity: activeBrush === "water" ? 0.9 : 1,
+                        },
+                      }}
                     >
                       Water
                     </Button>
@@ -545,10 +576,26 @@ export const FloatingMenu = () => {
 
                   <Button
                     variant={activeBrush === "elevation" ? "contained" : "outlined"}
-                    color="primary"
                     size="small"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() => onSelectBrush("elevation")}
+                    sx={{
+                      backgroundColor:
+                        activeBrush === "elevation"
+                          ? TERRAIN_CONFIG.getElevationColor(elevationValue)
+                          : "transparent",
+                      color: activeBrush === "elevation" ? "#ffffff" : "rgb(0, 150, 0)",
+                      borderColor: "rgb(0, 160, 0)",
+                      fontWeight: activeBrush === "elevation" ? "bold" : "medium",
+                      "&:hover": {
+                        backgroundColor:
+                          activeBrush === "elevation"
+                            ? TERRAIN_CONFIG.getElevationColor(elevationValue)
+                            : "rgba(0, 180, 0, 0.12)",
+                        borderColor: "rgb(0, 160, 0)",
+                        opacity: activeBrush === "elevation" ? 0.9 : 1,
+                      },
+                    }}
                   >
                     Elevation
                   </Button>
