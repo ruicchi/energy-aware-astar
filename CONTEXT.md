@@ -31,3 +31,7 @@ _Avoid_: Direction, Orientation, Angle
 **Pathfinding Result**:
 The telemetry and route produced by the pathfinding engine, containing visited node sequences for animation, shortest path coordinates, total distance, and itemized energy expenditure breakdowns.
 _Avoid_: SearchOutput, PlanResult
+
+**Simulation Engine**:
+The deep module coordinating grid terrain state, vehicle parameters, path planning triggers, and locomotion playback across the interface.
+_Avoid_: SimulationContext, Store, GameManager

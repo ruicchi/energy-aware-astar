@@ -1,176 +1,42 @@
-// NOTE: Builds the grid cell
-import Box from "@mui/material/Box";
-import { useMemo, useRef, useState } from "react";
-import { useViewport } from "../hooks/useViewport";
-import { useGridMouseClicks } from "../hooks/useGridMouseClicks";
-import { usePathAnimation } from "../hooks/usePathAnimation";
-import { useRobotWalk } from "../hooks/useRobotWalk";
-import { MemoizedCell } from "./MemoizedCell";
-import { FloatingMenu } from "./FloatingMenu";
-import { findPath } from "../algorithms/astar"
-import type { EnergyBreakdown, Heading, Scenario, AlgorithmType } from "../shared/types"
+import Box from "@mui/material/Box"
+import { useMemo } from "react"
+import { MemoizedCell } from "./MemoizedCell"
+import { FloatingMenu } from "./FloatingMenu"
+import { useSimulation } from "./SimulationContext"
 
 const GameGrid = () => {
-  const viewport = useViewport();
-
-  // Dynamic cell size for mobile
-  const cellSize = viewport.width < 600 ? 20 : 28;
-
-  const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
-  const [selectedAlgo, setSelectedAlgo] = useState<AlgorithmType>("energyAware");
-  const [showGradients, setShowGradients] = useState<boolean>(false);
-  const [robotHeading, setRobotHeading] = useState<Heading>("RIGHT");
-  const [pathMetrics, setPathMetrics] = useState<{
-    algorithm: string;
-    distance: number;
-    energy: number;
-    energyBreakdown: EnergyBreakdown;
-  } | null>(null);
-
-  // Force heading to NONE if a standard algo is selected
-  const handleSelectAlgo = (algo: AlgorithmType) => {
-    setSelectedAlgo(algo);
-    if (algo !== "energyAware") {
-      setRobotHeading("NONE");
-    }
-  };
-
-  // Grid dimensions
-  const cols = Math.floor(viewport.width / cellSize);
-  const rows = Math.floor(viewport.height / cellSize);
-
-  // Set default coordinates
-  const defaultRobotCol = Math.floor(cols / 4);
-  const defaultDestCol = Math.floor((cols / 4) * 3);
-  const defaultRow = Math.floor(rows / 2);
-
-  const currentRunId = useRef<number>(0);
-
-  // NOTE: we calculate defaults, and pass them into the hook
   const {
+    cols,
+    rows,
+    cellSize,
     wallNode,
     terrainFactors,
     elevations,
     robotNode,
     destinationNode,
-    activeBrush,
-    setActiveBrush,
-    handleMouseDown,
-    handleMouseEnter,
-    handleMouseUp,
-    clearWalls,
-  } = useGridMouseClicks(
-    `${defaultRow}-${defaultRobotCol}`,
-    `${defaultRow}-${defaultDestCol}`,
-    elevationBrushValue,
-  );
-
-  const {
-    isManhattanFinished,
-    setIsManhattanFinished,
-    isEnergyFinished,
-    setIsEnergyFinished,
-    isAnimating,
+    showGradients,
+    robotHeading,
     showManhattanSearch,
-    setShowManhattanSearch,
     showEnergySearch,
-    setShowEnergySearch,
-    clearAnimations,
-    animateResult,
-    addTimeout,
-  } = usePathAnimation();
-
-  const {
     currentPath,
-    setCurrentPath,
     walkingStep,
     isWalking,
     hasFinishedWalking,
-    walkFailure,
-    handleWalkPath,
-    clearWalkState,
-  } = useRobotWalk(robotHeading, setRobotHeading, addTimeout);
+    isLocked,
+    handleMouseDown,
+    handleMouseEnter,
+    handleMouseUp,
+  } = useSimulation()
 
-  const isLocked = isAnimating || isWalking;
-
-  const handleClearAnimations = () => {
-    clearAnimations(clearWalkState);
-  };
-
-  const visualize = (algo: AlgorithmType) => {
-    handleClearAnimations();
-
-    const scenario: Scenario = {
-      rows,
-      cols,
-      robotNode,
-      destinationNode,
-      wallNodes: wallNode,
-      terrainFactors: terrainFactors,
-      elevations: elevations,
-      climbingFactor: 1.5,
-      turnPenalty: 1.0,
-      maxTraversableSlope: 45,
-      initialHeading: robotHeading,
-      showGradients: showGradients,
-      robotPhysics: {
-        trackWidth: 0.8,
-        wheelBase: 1.2,
-        comHeight: 0.6,
-        stabilityMargin: 0.05,
-      },
-    };
-
-    const algoConfigs: Record<AlgorithmType, { name: string; theme: "manhattan" | "energy" }> = {
-      energyAware: { name: "Energy-Aware A*", theme: "energy" },
-      manhattan: { name: "A* Manhattan", theme: "manhattan" },
-      euclidean: { name: "A* Euclidean", theme: "energy" },
-      octile: { name: "A* Octile", theme: "energy" },
-      chebyshev: { name: "A* Chebyshev", theme: "energy" },
-    }
-
-    const config = algoConfigs[algo]
-    const algoName = config.name
-    const theme = config.theme
-    const result = findPath(scenario, { algorithm: algo })
-
-    const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
-      result;
-
-    setPathMetrics({
-      algorithm: algoName,
-      distance: totalDistance,
-      energy: totalEnergy,
-      energyBreakdown,
-    });
-
-    setCurrentPath(shortestPath);
-    const duration = animateResult(visitedNodesInOrder, shortestPath, theme);
-
-    const finishAction = theme === "manhattan" ? setIsManhattanFinished : setIsEnergyFinished;
-    const t = setTimeout(() => finishAction(true), duration);
-    addTimeout(t as unknown as number);
-  };
-
-  const handleReset = () => {
-    // Increment run ID to instantly kill any currently running async animations
-    currentRunId.current += 1;
-    handleClearAnimations();
-    clearWalls();
-    setPathMetrics(null);
-  };
-
-  // For caching grid from user inputs
   const cells = useMemo(() => {
     return Array.from({ length: rows * cols }, (_, index) => {
-      const row = Math.floor(index / cols);
-      const col = index % cols;
-      return { row, col, key: `${row}-${col}` };
-    });
-  }, [rows, cols]);
+      const row = Math.floor(index / cols)
+      const col = index % cols
+      return { row, col, key: `${row}-${col}` }
+    })
+  }, [rows, cols])
 
   return (
-    // Builds the container
     <Box
       className={`
         ${!showManhattanSearch ? "hide-manhattan-search" : ""}
@@ -187,58 +53,8 @@ const GameGrid = () => {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* ADD FLOATING MENU */}
-      <FloatingMenu
-        onClearWalls={clearWalls}
-        onVisualize={() => visualize(selectedAlgo)}
-        onReset={handleReset}
-        selectedAlgo={selectedAlgo}
-        onSelectAlgo={(algo) => handleSelectAlgo(algo as AlgorithmType)}
-        activeBrush={activeBrush}
-        onSelectBrush={setActiveBrush}
-        elevationValue={elevationBrushValue}
-        onElevationChange={setElevationBrushValue}
-        pathMetrics={pathMetrics}
-        isManhattanFinished={isManhattanFinished}
-        isEnergyFinished={isEnergyFinished}
-        showManhattanSearch={showManhattanSearch}
-        showEnergySearch={showEnergySearch}
-        onToggleManhattanSearch={() => setShowManhattanSearch(!showManhattanSearch)}
-        onToggleEnergySearch={() => setShowEnergySearch(!showEnergySearch)}
-        showGradients={showGradients}
-        onToggleGradients={() => setShowGradients(!showGradients)}
-        onWalkPath={() =>
-          handleWalkPath({
-            rows,
-            cols,
-            robotNode,
-            destinationNode,
-            wallNodes: wallNode,
-            terrainFactors: terrainFactors,
-            elevations: elevations,
-            climbingFactor: 1.5,
-            turnPenalty: 1.0,
-            maxTraversableSlope: 45,
-            initialHeading: robotHeading,
-            showGradients: showGradients,
-            // Pass robot physics for stability checks
-            robotPhysics: {
-              trackWidth: 0.8,
-              wheelBase: 1.2,
-              comHeight: 0.6,
-              stabilityMargin: 0.05,
-            },
-          })
-        }
-        hasPath={!!currentPath}
-        isWalking={isWalking}
-        walkFailure={walkFailure}
-        currentHeading={robotHeading}
-        onHeadingChange={setRobotHeading}
-        isLocked={isLocked}
-      />
+      <FloatingMenu />
 
-      {/* Render each cell into clickable Box cells */}
       <Box
         sx={{
           width: cols * cellSize,
@@ -251,7 +67,6 @@ const GameGrid = () => {
           pointerEvents: isLocked ? "none" : "auto",
         }}
       >
-        {/* Walking Robot Overlay */}
         {(isWalking || hasFinishedWalking) && currentPath && walkingStep !== -1 && (
           <Box
             sx={{
@@ -288,34 +103,32 @@ const GameGrid = () => {
           </Box>
         )}
 
-        {cells.map((cell) => {
-          return (
-            <MemoizedCell
-              key={cell.key}
-              cellKey={cell.key}
-              cellSize={cellSize}
-              row={cell.row}
-              col={cell.col}
-              isWall={wallNode.has(cell.key)}
-              isRobot={cell.key === robotNode}
-              isDestination={cell.key === destinationNode}
-              terrainFactor={terrainFactors.get(cell.key) || 0}
-              elevation={elevations.get(cell.key) || 0}
-              showGradients={showGradients}
-              elevations={elevations}
-              heading={
-                cell.key === robotNode && !isWalking && !hasFinishedWalking
-                  ? robotHeading
-                  : undefined
-              }
-              onMouseDown={handleMouseDown}
-              onMouseEnter={handleMouseEnter}
-            />
-          );
-        })}
+        {cells.map((cell) => (
+          <MemoizedCell
+            key={cell.key}
+            cellKey={cell.key}
+            cellSize={cellSize}
+            row={cell.row}
+            col={cell.col}
+            isWall={wallNode.has(cell.key)}
+            isRobot={cell.key === robotNode}
+            isDestination={cell.key === destinationNode}
+            terrainFactor={terrainFactors.get(cell.key) || 0}
+            elevation={elevations.get(cell.key) || 0}
+            showGradients={showGradients}
+            elevations={elevations}
+            heading={
+              cell.key === robotNode && !isWalking && !hasFinishedWalking
+                ? robotHeading
+                : undefined
+            }
+            onMouseDown={handleMouseDown}
+            onMouseEnter={handleMouseEnter}
+          />
+        ))}
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default GameGrid;
+export default GameGrid

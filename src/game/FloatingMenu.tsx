@@ -28,68 +28,38 @@ import {
   Block,
 } from "@mui/icons-material";
 
-import type { EnergyBreakdown, Heading, BrushMode } from "../shared/types";
+import { useSimulation } from "./SimulationContext"
 
-type FloatingMenuProps = {
-  onClearWalls: () => void;
-  onVisualize: () => void;
-  onReset: () => void;
-  selectedAlgo: string;
-  onSelectAlgo: (algo: string) => void;
-  activeBrush: BrushMode;
-  onSelectBrush: (brush: BrushMode) => void;
-  elevationValue: number;
-  onElevationChange: (val: number) => void;
-  pathMetrics: {
-    algorithm: string;
-    distance: number;
-    energy: number;
-    energyBreakdown: EnergyBreakdown;
-  } | null;
-  isManhattanFinished: boolean;
-  isEnergyFinished: boolean;
-  showManhattanSearch: boolean;
-  showEnergySearch: boolean;
-  onToggleManhattanSearch: () => void;
-  onToggleEnergySearch: () => void;
-  showGradients: boolean;
-  onToggleGradients: () => void;
-  onWalkPath: () => void;
-  hasPath: boolean;
-  isWalking: boolean;
-  walkFailure: { row: number; col: number; reason: string } | null;
-  currentHeading: Heading;
-  onHeadingChange: (heading: Heading) => void;
-  isLocked: boolean;
-};
+export const FloatingMenu = () => {
+  const {
+    clearWalls: onClearWalls,
+    visualize,
+    resetSimulation: onReset,
+    selectedAlgo,
+    handleSelectAlgo: onSelectAlgo,
+    activeBrush,
+    setActiveBrush: onSelectBrush,
+    elevationBrushValue: elevationValue,
+    setElevationBrushValue: onElevationChange,
+    pathMetrics,
+    isManhattanFinished,
+    isEnergyFinished,
+    showManhattanSearch,
+    showEnergySearch,
+    toggleManhattanSearch: onToggleManhattanSearch,
+    toggleEnergySearch: onToggleEnergySearch,
+    showGradients,
+    toggleGradients: onToggleGradients,
+    walkPath: onWalkPath,
+    hasPath,
+    isWalking,
+    walkFailure,
+    robotHeading: currentHeading,
+    setRobotHeading: onHeadingChange,
+    isLocked,
+  } = useSimulation()
 
-export const FloatingMenu = ({
-  onClearWalls,
-  onVisualize,
-  onReset,
-  selectedAlgo,
-  onSelectAlgo,
-  activeBrush,
-  onSelectBrush,
-  elevationValue,
-  onElevationChange,
-  pathMetrics,
-  isManhattanFinished,
-  isEnergyFinished,
-  showManhattanSearch,
-  showEnergySearch,
-  onToggleManhattanSearch,
-  onToggleEnergySearch,
-  showGradients,
-  onToggleGradients,
-  onWalkPath,
-  hasPath,
-  isWalking,
-  walkFailure,
-  currentHeading,
-  onHeadingChange,
-  isLocked,
-}: FloatingMenuProps) => {
+  const onVisualize = () => visualize(selectedAlgo)
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTiny = useMediaQuery("(max-width:400px)");
