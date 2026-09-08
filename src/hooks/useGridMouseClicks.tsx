@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import type { BrushMode } from "../shared/types"
 import { GridPaintBuffer } from "../game/gridPaintBuffer"
 
@@ -14,6 +14,27 @@ export const useGridMouseClicks = (
   const [destinationNode, setDestinationNode] = useState(initialDest)
   const [activeBrush, setActiveBrush] = useState<BrushMode>("wall")
 
+  const activeBrushRef = useRef<BrushMode>(activeBrush)
+  const elevationBrushValueRef = useRef<number>(elevationBrushValue)
+  const robotNodeRef = useRef<string>(robotNode)
+  const destinationNodeRef = useRef<string>(destinationNode)
+
+  useEffect(() => {
+    activeBrushRef.current = activeBrush
+  }, [activeBrush])
+
+  useEffect(() => {
+    elevationBrushValueRef.current = elevationBrushValue
+  }, [elevationBrushValue])
+
+  useEffect(() => {
+    robotNodeRef.current = robotNode
+  }, [robotNode])
+
+  useEffect(() => {
+    destinationNodeRef.current = destinationNode
+  }, [destinationNode])
+
   // The deep GridPaintBuffer encapsulates all transient stroke state,
   // DOM preview styles, and atomic commit semantics.
   const bufferRef = useRef<GridPaintBuffer>(
@@ -23,25 +44,37 @@ export const useGridMouseClicks = (
     }),
   )
 
-  const handleMouseDown = useCallback(
-    (key: string) => {
-      const buffer = bufferRef.current
-      buffer.setCommittedState({ robotNode, destinationNode })
-      const update = buffer.startStroke(
-        key,
-        activeBrush,
-        elevationBrushValue,
-      )
-      if (update?.robotMoved) setRobotNode(update.robotMoved)
-      if (update?.destinationMoved) setDestinationNode(update.destinationMoved)
-    },
-    [robotNode, destinationNode, activeBrush, elevationBrushValue],
-  )
+  const handleMouseDown = useCallback((key: string) => {
+    const buffer = bufferRef.current
+    buffer.setCommittedState({
+      robotNode: robotNodeRef.current,
+      destinationNode: destinationNodeRef.current,
+    })
+    const update = buffer.startStroke(
+      key,
+      activeBrushRef.current,
+      elevationBrushValueRef.current,
+    )
+    if (update?.robotMoved) {
+      robotNodeRef.current = update.robotMoved
+      setRobotNode(update.robotMoved)
+    }
+    if (update?.destinationMoved) {
+      destinationNodeRef.current = update.destinationMoved
+      setDestinationNode(update.destinationMoved)
+    }
+  }, [])
 
   const handleMouseEnter = useCallback((key: string) => {
     const update = bufferRef.current.continueStroke(key)
-    if (update?.robotMoved) setRobotNode(update.robotMoved)
-    if (update?.destinationMoved) setDestinationNode(update.destinationMoved)
+    if (update?.robotMoved) {
+      robotNodeRef.current = update.robotMoved
+      setRobotNode(update.robotMoved)
+    }
+    if (update?.destinationMoved) {
+      destinationNodeRef.current = update.destinationMoved
+      setDestinationNode(update.destinationMoved)
+    }
   }, [])
 
   const handleMouseUp = useCallback(() => {
@@ -55,8 +88,10 @@ export const useGridMouseClicks = (
     } else if (result.finishedBrush === "elevation") {
       setElevations(result.elevations)
     } else if (result.finishedBrush === "robot") {
+      robotNodeRef.current = result.robotNode
       setRobotNode(result.robotNode)
     } else if (result.finishedBrush === "destination") {
+      destinationNodeRef.current = result.destinationNode
       setDestinationNode(result.destinationNode)
     }
   }, [])

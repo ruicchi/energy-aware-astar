@@ -5,7 +5,7 @@ export interface VehicleConfig extends RobotPhysicsConfig {
 }
 
 export const VEHICLE_CONFIG: VehicleConfig = {
-  defaultHeading: "RIGHT",
+  defaultHeading: "NONE",
   trackWidth: 0.8,
   wheelBase: 1.2,
   comHeight: 0.6,
