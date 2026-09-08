@@ -28,7 +28,7 @@ import {
   Block,
 } from "@mui/icons-material";
 
-import { useSimulation } from "./SimulationContext"
+import { useSimulation } from "./SimulationContext";
 
 export const FloatingMenu = () => {
   const {
@@ -57,16 +57,19 @@ export const FloatingMenu = () => {
     robotHeading: currentHeading,
     setRobotHeading: onHeadingChange,
     isLocked,
-  } = useSimulation()
+  } = useSimulation();
 
-  const onVisualize = () => visualize(selectedAlgo)
+  const onVisualize = () => visualize(selectedAlgo);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTiny = useMediaQuery("(max-width:400px)");
 
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
-  const [resultsPosition, setResultsPosition] = useState({ x: isMobile ? 20 : 240, y: 20 });
+  const [resultsPosition, setResultsPosition] = useState({
+    x: isMobile ? 20 : 240,
+    y: 20,
+  });
   const [isResultsDragging, setIsResultsDragging] = useState(false);
   const [isResultsOpen, setIsResultsOpen] = useState(false);
 
@@ -193,7 +196,7 @@ export const FloatingMenu = () => {
                 onPointerDown={(e) => e.stopPropagation()} // don't drag when clicking button
                 onClick={onClearWalls}
               >
-                Clear Tiles
+                Clear
               </Button>
               <Button
                 variant="outlined"
@@ -203,7 +206,7 @@ export const FloatingMenu = () => {
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onReset}
               >
-                Reset Grid
+                Reset
               </Button>
             </Box>
 
@@ -292,7 +295,14 @@ export const FloatingMenu = () => {
 
               {/* Search Map Toggles */}
               {(isManhattanFinished || isEnergyFinished) && (
-                <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                <Box
+                  sx={{
+                    mt: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                  }}
+                >
                   {isManhattanFinished && (
                     <Button
                       variant={showManhattanSearch ? "contained" : "outlined"}
@@ -337,7 +347,14 @@ export const FloatingMenu = () => {
 
               {/* Metrics Display */}
               {pathMetrics && (
-                <Box sx={{ mt: 2, p: 1, backgroundColor: "rgba(0,0,0,0.05)", borderRadius: 1 }}>
+                <Box
+                  sx={{
+                    mt: 2,
+                    p: 1,
+                    backgroundColor: "rgba(0,0,0,0.05)",
+                    borderRadius: 1,
+                  }}
+                >
                   <Box
                     sx={{
                       display: "flex",
@@ -424,7 +441,13 @@ export const FloatingMenu = () => {
                 >
                   Robot Initial Heading
                 </Typography>
-                <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1 }}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gap: 1,
+                  }}
+                >
                   {(
                     [
                       "UP_LEFT",
@@ -480,7 +503,11 @@ export const FloatingMenu = () => {
                   Brushes
                 </Typography>
                 <Box
-                  sx={{ display: "grid", gridTemplateColumns: isTiny ? "1fr" : "1fr 1fr", gap: 1 }}
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: isTiny ? "1fr" : "1fr 1fr",
+                    gap: 1,
+                  }}
                 >
                   <Button
                     variant={activeBrush === "wall" ? "contained" : "outlined"}
@@ -529,7 +556,15 @@ export const FloatingMenu = () => {
 
                 {/* Elevation Slider */}
                 {activeBrush === "elevation" && (
-                  <Box sx={{ px: 1, mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                  <Box
+                    sx={{
+                      px: 1,
+                      mt: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                    }}
+                  >
                     <Box>
                       <Typography variant="caption" color="textSecondary">
                         Brush Height: {elevationValue}
@@ -618,7 +653,7 @@ export const FloatingMenu = () => {
 
             <Box>
               <Typography variant="caption" color="textSecondary" display="block">
-                Distance / Movement total
+                Distance
               </Typography>
               <Typography variant="body2">{pathMetrics.distance.toFixed(2)} units</Typography>
             </Box>
@@ -644,52 +679,107 @@ export const FloatingMenu = () => {
                 <Typography variant="caption" color="textSecondary" display="block">
                   Energy Breakdown
                 </Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 0.5 }}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.5,
+                    mt: 0.5,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 1,
+                    }}
+                  >
                     <Typography variant="caption">Straight movement</Typography>
                     <Typography variant="caption" fontWeight="bold">
                       {energyBreakdown.straightMovement.toFixed(2)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 1,
+                    }}
+                  >
                     <Typography variant="caption">Diagonal movement</Typography>
                     <Typography variant="caption" fontWeight="bold">
                       {energyBreakdown.diagonalMovement.toFixed(2)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 1,
+                    }}
+                  >
                     <Typography variant="caption">Turn cost</Typography>
                     <Typography variant="caption" fontWeight="bold">
                       {energyBreakdown.turnCost.toFixed(2)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 1,
+                    }}
+                  >
                     <Typography variant="caption">Dirt penalty</Typography>
                     <Typography variant="caption" fontWeight="bold">
                       {energyBreakdown.dirtPenalty.toFixed(2)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 1,
+                    }}
+                  >
                     <Typography variant="caption">Water penalty</Typography>
                     <Typography variant="caption" fontWeight="bold">
                       {energyBreakdown.waterPenalty.toFixed(2)}
                     </Typography>
                   </Box>
                   {energyBreakdown.otherTerrainPenalty !== 0 && (
-                    <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 1,
+                      }}
+                    >
                       <Typography variant="caption">Other terrain</Typography>
                       <Typography variant="caption" fontWeight="bold">
                         {energyBreakdown.otherTerrainPenalty.toFixed(2)}
                       </Typography>
                     </Box>
                   )}
-                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 1,
+                    }}
+                  >
                     <Typography variant="caption">Climbing cost</Typography>
                     <Typography variant="caption" fontWeight="bold">
                       {energyBreakdown.climbingCost.toFixed(2)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 1,
+                    }}
+                  >
                     <Typography variant="caption">Stability penalty</Typography>
                     <Typography variant="caption" fontWeight="bold">
                       {energyBreakdown.stabilityPenalty.toFixed(2)}

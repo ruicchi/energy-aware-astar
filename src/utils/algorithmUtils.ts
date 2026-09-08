@@ -1,7 +1,9 @@
-import type { Heading, EnergyNode, Scenario, EnergyBreakdown } from "../shared/types"
+import type { Heading, EnergyNode, Scenario, EnergyBreakdown, VisitedNode } from "../shared/types";
+import { TERRAIN_CONFIG } from "../config/simulationConfig";
 import {
   SQRT2,
   DEFAULT_MAX_TRAVERSABLE_SLOPE,
+  HEADING_ANGLES,
   getStepDistance,
   getSlopeDegrees,
   getPosture,
@@ -9,7 +11,7 @@ import {
   getGradientMagnitude,
   isTraversableSlope,
   getHeading as getHeadingBetweenNodes,
-} from "../physics/terrainPhysics"
+} from "../physics/terrainPhysics";
 
 export {
   SQRT2,
@@ -21,25 +23,25 @@ export {
   getGradientMagnitude,
   isTraversableSlope,
   getHeadingBetweenNodes,
-}
+};
+
+const HEADING_ORDER: Record<Exclude<Heading, "NONE">, number> = {
+  UP: 0,
+  UP_RIGHT: 1,
+  RIGHT: 2,
+  DOWN_RIGHT: 3,
+  DOWN: 4,
+  DOWN_LEFT: 5,
+  LEFT: 6,
+  UP_LEFT: 7,
+};
 
 export const getTurnCost = (current: Heading, target: Heading, penalty: number): number => {
-  if (current === "NONE" || current === target) return 0;
+  if (current === "NONE" || target === "NONE" || current === target) return 0;
 
-  const headings: Heading[] = [
-    "UP",
-    "UP_RIGHT",
-    "RIGHT",
-    "DOWN_RIGHT",
-    "DOWN",
-    "DOWN_LEFT",
-    "LEFT",
-    "UP_LEFT",
-  ];
-  const currentIndex = headings.indexOf(current);
-  const targetIndex = headings.indexOf(target);
-
-  if (currentIndex === -1 || targetIndex === -1) return 0;
+  const currentIndex = HEADING_ORDER[current];
+  const targetIndex = HEADING_ORDER[target];
+  if (currentIndex === undefined || targetIndex === undefined) return 0;
 
   let diff = Math.abs(currentIndex - targetIndex);
   if (diff > 4) diff = 8 - diff; // Shortest path around the 8-direction circle
@@ -57,23 +59,12 @@ export const getMinAngleToDestination = (
 ): number => {
   if (currentHeading === "NONE") return 0;
 
-  const headingAngles: Record<Exclude<Heading, "NONE">, number> = {
-    UP: -Math.PI / 2,
-    DOWN: Math.PI / 2,
-    LEFT: Math.PI,
-    RIGHT: 0,
-    UP_RIGHT: -Math.PI / 4,
-    UP_LEFT: (-3 * Math.PI) / 4,
-    DOWN_RIGHT: Math.PI / 4,
-    DOWN_LEFT: (3 * Math.PI) / 4,
-  };
-  const currentAngle = headingAngles[currentHeading as Exclude<Heading, "NONE">];
-
+  const currentAngle = HEADING_ANGLES[currentHeading as Exclude<Heading, "NONE">];
   const dy = destRow - currentRow;
   const dx = destCol - currentCol;
   if (dx === 0 && dy === 0) return 0;
-  const destAngle = Math.atan2(dy, dx);
 
+  const destAngle = Math.atan2(dy, dx);
   let diff = Math.abs(currentAngle - destAngle);
   if (diff > Math.PI) diff = 2 * Math.PI - diff;
   return diff;
@@ -91,15 +82,24 @@ export const getEnergyCost = (
   return getEnergyCostBreakdown(current, target, scenario).total;
 };
 
+type TerrainPenaltyBreakdown = Pick<
+  EnergyBreakdown,
+  "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total"
+>;
+
 const getTerrainPenaltyBreakdown = (
   terrainFactor: number,
   distanceBasis: number,
-): Pick<EnergyBreakdown, "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total"> => {
+): TerrainPenaltyBreakdown => {
   const terrainPenalty = distanceBasis * terrainFactor;
-  const dirtPenalty = terrainFactor === 0.5 ? terrainPenalty : 0;
-  const waterPenalty = terrainFactor === 0.1 ? terrainPenalty : 0;
+  const dirtPenalty = terrainFactor === TERRAIN_CONFIG.types.dirt.cost ? terrainPenalty : 0;
+  const waterPenalty = terrainFactor === TERRAIN_CONFIG.types.water.cost ? terrainPenalty : 0;
   const otherTerrainPenalty =
-    terrainFactor !== 0 && terrainFactor !== 0.5 && terrainFactor !== 0.1 ? terrainPenalty : 0;
+    terrainFactor !== 0 &&
+    terrainFactor !== TERRAIN_CONFIG.types.dirt.cost &&
+    terrainFactor !== TERRAIN_CONFIG.types.water.cost
+      ? terrainPenalty
+      : 0;
 
   return {
     dirtPenalty,
@@ -110,16 +110,14 @@ const getTerrainPenaltyBreakdown = (
 };
 
 const addTerrainPenaltyBreakdown = (
-  current: Pick<EnergyBreakdown, "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total">,
-  next: Pick<EnergyBreakdown, "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total">,
-): Pick<EnergyBreakdown, "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total"> => ({
+  current: TerrainPenaltyBreakdown,
+  next: TerrainPenaltyBreakdown,
+): TerrainPenaltyBreakdown => ({
   dirtPenalty: current.dirtPenalty + next.dirtPenalty,
   waterPenalty: current.waterPenalty + next.waterPenalty,
   otherTerrainPenalty: current.otherTerrainPenalty + next.otherTerrainPenalty,
   total: current.total + next.total,
 });
-
-
 
 export const getEnergyCostBreakdown = (
   current: EnergyNode,
@@ -171,7 +169,7 @@ export const getEnergyCostBreakdown = (
   // NOTE: Asymmetric Risk: Roll (lateral) more dangerous than Pitch (longitudinal)
   const kRoll = 3.0;
   const kPitch = 1.0;
-  const riskFactor = Math.sqrt(Math.pow(roll * kRoll, 2) + Math.pow(pitch * kPitch, 2));
+  const riskFactor = Math.hypot(roll * kRoll, pitch * kPitch);
 
   const riskWeight = 2.0;
   const stabilityPenalty = subtotal * riskWeight * riskFactor;
@@ -224,7 +222,6 @@ export const addEnergyBreakdown = (
   nodesEvaluated: total.nodesEvaluated + step.nodesEvaluated,
 });
 
-
 export const getPathEnergyBreakdown = (
   endNode: EnergyNode,
   scenario: Scenario,
@@ -233,14 +230,17 @@ export const getPathEnergyBreakdown = (
   let temp: EnergyNode | null = endNode;
 
   while (temp) {
-    steps.unshift(temp);
+    steps.push(temp);
     temp = temp.parent;
   }
+  steps.reverse();
 
+  let total = createEmptyEnergyBreakdown();
   let currentSimulatedHeading = scenario.initialHeading;
 
-  return steps.slice(1).reduce((total, node, index) => {
-    const parent = steps[index];
+  for (let i = 1; i < steps.length; i++) {
+    const parent = steps[i - 1];
+    const node = steps[i];
     const stepHeading = getHeadingBetweenNodes(parent, node);
 
     // Create a virtual parent node that has the simulated heading
@@ -257,9 +257,11 @@ export const getPathEnergyBreakdown = (
       scenario,
     );
 
-    currentSimulatedHeading = stepHeading
-    return addEnergyBreakdown(total, stepBreakdown)
-  }, createEmptyEnergyBreakdown());
+    currentSimulatedHeading = stepHeading;
+    total = addEnergyBreakdown(total, stepBreakdown);
+  }
+
+  return total;
 };
 
 /**
@@ -281,13 +283,14 @@ export const getShortestPathData = (
   let temp: EnergyNode | null = current;
 
   while (temp) {
-    shortestPath.unshift(`${temp.row}-${temp.col}`);
+    shortestPath.push(`${temp.row}-${temp.col}`);
     if (temp.parent) {
       const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col;
       totalDistance += isDiagonal ? SQRT2 : 1.0;
     }
     temp = temp.parent;
   }
+  shortestPath.reverse();
 
   const energyBreakdown = getPathEnergyBreakdown(current, scenario);
   energyBreakdown.nodesEvaluated = nodesEvaluated;
@@ -314,7 +317,7 @@ export const markNodeVisited = (
   key: string,
   type: "open" | "closed",
   scenario: Scenario,
-  visitedNodesInOrder: { key: string; type: "open" | "closed" }[],
+  visitedNodesInOrder: VisitedNode[],
   trackedCells: Set<string>,
 ) => {
   const isSpecial = key === scenario.robotNode || key === scenario.destinationNode;
