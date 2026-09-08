@@ -50,22 +50,21 @@ export interface Scenario {
   initialHeading: Heading;
   showGradients?: boolean;
   robotPhysics?: {
-    trackWidth: number
-    wheelBase: number
-    comHeight: number
-    stabilityMargin: number
-  }
+    trackWidth: number;
+    wheelBase: number;
+    comHeight: number;
+    stabilityMargin: number;
+  };
 }
 
-export type VisitedNode = { key: string; type: "open" | "closed" }
+export type VisitedNode = { key: string; type: "open" | "closed" };
 
 export interface PathfindingResult {
-  visitedNodesInOrder: VisitedNode[]
-  shortestPath: string[]
-  totalDistance: number
-  totalEnergy: number
-  energyBreakdown: EnergyBreakdown
+  visitedNodesInOrder: VisitedNode[];
+  shortestPath: string[];
+  totalDistance: number;
+  totalEnergy: number;
+  energyBreakdown: EnergyBreakdown;
 }
 
-export type AlgorithmType = "energyAware" | "manhattan" | "euclidean" | "octile" | "chebyshev"
-
+export type AlgorithmType = "energyAware" | "manhattan" | "euclidean" | "octile" | "chebyshev";

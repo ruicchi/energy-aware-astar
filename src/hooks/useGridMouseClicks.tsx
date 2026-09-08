@@ -1,7 +1,7 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { clearWalls } from "../utils/wallUtils";
-import { type BrushMode } from "../shared/types";
-import { getGradientMagnitude } from "../utils/algorithmUtils.ts";
+import { useState, useCallback, useRef, useEffect } from "react"
+import { clearWalls } from "../utils/wallUtils"
+import { type BrushMode } from "../shared/types"
+import { getElevationGradient } from "../physics/terrainPhysics"
 
 export const useGridMouseClicks = (
   initialRobot: string,
@@ -127,7 +127,7 @@ export const useGridMouseClicks = (
         if (key === robotNode || key === destinationNode) {
           const currentElevations = new Map(elevationsRef.current);
           currentElevations.set(key, targetValue);
-          if (getGradientMagnitude(r, c, currentElevations) > 1.0) {
+          if (getElevationGradient(r, c, currentElevations).isUnstable) {
             isDrawing.current = false;
             dragMode.current = null;
             return;
@@ -146,7 +146,7 @@ export const useGridMouseClicks = (
       if (!isDrawing.current) return;
 
       const [r, c] = key.split("-").map(Number);
-      const isUnstable = getGradientMagnitude(r, c, elevationsRef.current) > 1.0;
+      const isUnstable = getElevationGradient(r, c, elevationsRef.current).isUnstable
 
       switch (dragMode.current) {
         case "robot":
@@ -169,7 +169,7 @@ export const useGridMouseClicks = (
             if (dragMode.current === "elevation") {
               const currentElevations = new Map(elevationsRef.current);
               currentElevations.set(key, drawValue.current as number);
-              const nextUnstable = getGradientMagnitude(r, c, currentElevations) > 1.0;
+              const nextUnstable = getElevationGradient(r, c, currentElevations).isUnstable
               if (nextUnstable) break;
             } else {
               break;

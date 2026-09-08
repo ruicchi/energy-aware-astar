@@ -1,7 +1,27 @@
-import type { Heading, EnergyNode, Scenario, EnergyBreakdown } from "../shared/types";
+import type { Heading, EnergyNode, Scenario, EnergyBreakdown } from "../shared/types"
+import {
+  SQRT2,
+  DEFAULT_MAX_TRAVERSABLE_SLOPE,
+  getStepDistance,
+  getSlopeDegrees,
+  getPosture,
+  isStablePosture,
+  getGradientMagnitude,
+  isTraversableSlope,
+  getHeading as getHeadingBetweenNodes,
+} from "../physics/terrainPhysics"
 
-export const SQRT2 = 1.414;
-export const DEFAULT_MAX_TRAVERSABLE_SLOPE = 45;
+export {
+  SQRT2,
+  DEFAULT_MAX_TRAVERSABLE_SLOPE,
+  getStepDistance,
+  getSlopeDegrees,
+  getPosture,
+  isStablePosture,
+  getGradientMagnitude,
+  isTraversableSlope,
+  getHeadingBetweenNodes,
+}
 
 export const getTurnCost = (current: Heading, target: Heading, penalty: number): number => {
   if (current === "NONE" || current === target) return 0;
@@ -99,136 +119,7 @@ const addTerrainPenaltyBreakdown = (
   total: current.total + next.total,
 });
 
-const getStepDistance = (heading: Heading): number => {
-  return heading.includes("_") ? SQRT2 : 1.0;
-};
 
-export const getSlopeDegrees = (
-  current: Pick<EnergyNode, "row" | "col">,
-  target: { row: number; col: number; heading: Heading },
-  scenario: Scenario,
-): number => {
-  const currentElevation = scenario.elevations.get(`${current.row}-${current.col}`) || 0;
-  const targetElevation = scenario.elevations.get(`${target.row}-${target.col}`) || 0;
-  const elevationDelta = targetElevation - currentElevation;
-  const scaledDelta = elevationDelta * 0.5;
-
-  return Math.atan(Math.abs(scaledDelta) / getStepDistance(target.heading)) * (180 / Math.PI);
-};
-
-export const getPosture = (
-  row: number,
-  col: number,
-  heading: Heading,
-  scenario: Scenario,
-): { roll: number; pitch: number } => {
-  if (heading === "NONE") return { roll: 0, pitch: 0 };
-
-  const headingAngles: Record<Exclude<Heading, "NONE">, number> = {
-    UP: -Math.PI / 2,
-    DOWN: Math.PI / 2,
-    LEFT: Math.PI,
-    RIGHT: 0,
-    UP_RIGHT: -Math.PI / 4,
-    UP_LEFT: (-3 * Math.PI) / 4,
-    DOWN_RIGHT: Math.PI / 4,
-    DOWN_LEFT: (3 * Math.PI) / 4,
-  };
-  const psi = headingAngles[heading as Exclude<Heading, "NONE">];
-
-  const getElevation = (r: number, c: number) => scenario.elevations.get(`${r}-${c}`) || 0;
-
-  // Distance-weighted gradient approximation
-  // Weights: Cardinal = 1, Diagonal = 1/sqrt(2)
-  const invSqrt2 = 1 / Math.sqrt(2);
-
-  const zTL = getElevation(row - 1, col - 1);
-  const zT = getElevation(row - 1, col);
-  const zTR = getElevation(row - 1, col + 1);
-  const zL = getElevation(row, col - 1);
-  const zR = getElevation(row, col + 1);
-  const zBL = getElevation(row + 1, col - 1);
-  const zB = getElevation(row + 1, col);
-  const zBR = getElevation(row + 1, col + 1);
-
-  // Normalizing by total weight in each axis (1 + 2*invSqrt2)
-  const weight = 1 + 2 * invSqrt2;
-  const zx = (zR + invSqrt2 * (zTR + zBR) - (zL + invSqrt2 * (zTL + zBL))) / weight;
-  const zy = (zB + invSqrt2 * (zBL + zBR) - (zT + invSqrt2 * (zTL + zTR))) / weight;
-
-  const pitch = Math.atan(zx * Math.cos(psi) + zy * Math.sin(psi));
-  const roll = Math.atan(zy * Math.cos(psi) - zx * Math.sin(psi));
-
-  return { roll, pitch };
-};
-
-export const isStablePosture = (
-  row: number,
-  col: number,
-  heading: Heading,
-  scenario: Scenario,
-): boolean => {
-  if (!scenario.robotPhysics) return true;
-
-  const { roll, pitch } = getPosture(row, col, heading, scenario);
-  const { trackWidth, wheelBase, comHeight, stabilityMargin } = scenario.robotPhysics;
-
-  // Project CoM: x_proj = h * tan(pitch), y_proj = h * tan(roll)
-  const xProj = comHeight * Math.tan(pitch);
-  const yProj = comHeight * Math.tan(roll);
-
-  const halfWidth = trackWidth / 2;
-  const halfLength = wheelBase / 2;
-
-  return (
-    Math.abs(xProj) <= halfLength - stabilityMargin &&
-    Math.abs(yProj) <= halfWidth - stabilityMargin
-  );
-};
-
-export const getGradientMagnitude = (
-  row: number,
-  col: number,
-  elevations: Map<string, number>,
-): number => {
-  const getElevation = (r: number, c: number) => elevations.get(`${r}-${c}`) || 0;
-
-  const invSqrt2 = 1 / Math.sqrt(2);
-  const weight = 1 + 2 * invSqrt2;
-
-  const zTL = getElevation(row - 1, col - 1);
-  const zT = getElevation(row - 1, col);
-  const zTR = getElevation(row - 1, col + 1);
-  const zL = getElevation(row, col - 1);
-  const zR = getElevation(row, col + 1);
-  const zBL = getElevation(row + 1, col - 1);
-  const zB = getElevation(row + 1, col);
-  const zBR = getElevation(row + 1, col + 1);
-
-  const zx = (zR + invSqrt2 * (zTR + zBR) - (zL + invSqrt2 * (zTL + zBL))) / weight;
-  const zy = (zB + invSqrt2 * (zBL + zBR) - (zT + invSqrt2 * (zTL + zTR))) / weight;
-  return Math.sqrt(zx * zx + zy * zy);
-};
-
-export const isTraversableSlope = (
-  current: Pick<EnergyNode, "row" | "col">,
-  target: { row: number; col: number; heading: Heading },
-  scenario: Scenario,
-  ignoreStability = false,
-): boolean => {
-  const maxTraversableSlope = scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE;
-  const slopeTraversable = getSlopeDegrees(current, target, scenario) <= maxTraversableSlope;
-
-  if (ignoreStability) return slopeTraversable;
-
-  // Hard gradient limit matching visual "red arrow" threshold (1.0)
-  // Ensures robot never enters cells marked as unstable in UI
-  const gradientMagnitude = getGradientMagnitude(target.row, target.col, scenario.elevations);
-
-  if (gradientMagnitude > 1.0) return false;
-
-  return slopeTraversable && isStablePosture(target.row, target.col, target.heading, scenario);
-};
 
 export const getEnergyCostBreakdown = (
   current: EnergyNode,
@@ -333,23 +224,6 @@ export const addEnergyBreakdown = (
   nodesEvaluated: total.nodesEvaluated + step.nodesEvaluated,
 });
 
-export const getHeadingBetweenNodes = (
-  from: Pick<EnergyNode, "row" | "col">,
-  to: Pick<EnergyNode, "row" | "col">,
-): Heading => {
-  const dr = to.row - from.row;
-  const dc = to.col - from.col;
-
-  if (dr === -1 && dc === 0) return "UP";
-  if (dr === 1 && dc === 0) return "DOWN";
-  if (dr === 0 && dc === -1) return "LEFT";
-  if (dr === 0 && dc === 1) return "RIGHT";
-  if (dr === -1 && dc === -1) return "UP_LEFT";
-  if (dr === -1 && dc === 1) return "UP_RIGHT";
-  if (dr === 1 && dc === -1) return "DOWN_LEFT";
-  if (dr === 1 && dc === 1) return "DOWN_RIGHT";
-  return "NONE";
-};
 
 export const getPathEnergyBreakdown = (
   endNode: EnergyNode,

@@ -35,3 +35,7 @@ _Avoid_: SearchOutput, PlanResult
 **Simulation Engine**:
 The deep module coordinating grid terrain state, vehicle parameters, path planning triggers, and locomotion playback across the interface.
 _Avoid_: SimulationContext, Store, GameManager
+
+**Terrain Physics**:
+The deep module computing spatial elevation gradients, vehicle posture (roll, pitch), and Santos center-of-mass stability constraints across terrain.
+_Avoid_: TerrainUtils, PhysicsEngine, MathUtils

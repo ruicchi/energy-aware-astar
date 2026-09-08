@@ -1,8 +1,9 @@
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import NorthIcon from "@mui/icons-material/North";
-import Box from "@mui/material/Box";
-import { memo } from "react";
-import type { Heading } from "../shared/types";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
+import NorthIcon from "@mui/icons-material/North"
+import Box from "@mui/material/Box"
+import { memo } from "react"
+import type { Heading } from "../shared/types"
+import { getElevationGradient } from "../physics/terrainPhysics"
 
 type MemoizedCellProps = {
   cellKey: string;
@@ -62,40 +63,12 @@ export const MemoizedCell = memo(
     onMouseDown,
     onMouseEnter,
   }: MemoizedCellProps) => {
-    //* Gradient Calculation
-    let gradientAngle = 0;
-    let gradientMagnitude = 0;
-    let isUnstable = false;
-
-    if (showGradients && elevations) {
-      const getElevation = (r: number, c: number) => elevations.get(`${r}-${c}`) || 0;
-
-      const zTL = getElevation(row - 1, col - 1);
-      const zT = getElevation(row - 1, col);
-      const zTR = getElevation(row - 1, col + 1);
-      const zL = getElevation(row, col - 1);
-      const zR = getElevation(row, col + 1);
-      const zBL = getElevation(row + 1, col - 1);
-      const zB = getElevation(row + 1, col);
-      const zBR = getElevation(row + 1, col + 1);
-
-      // Distance-weighted gradient: Cardinal = 1, Diagonal = 1/sqrt(2)
-      const invSqrt2 = 1 / Math.sqrt(2);
-      const weight = 1 + 2 * invSqrt2;
-
-      const zx = (zR + invSqrt2 * (zTR + zBR) - (zL + invSqrt2 * (zTL + zBL))) / weight;
-      const zy = (zB + invSqrt2 * (zBL + zBR) - (zT + invSqrt2 * (zTL + zTR))) / weight;
-
-      gradientMagnitude = Math.sqrt(zx * zx + zy * zy);
-      if (gradientMagnitude > 0.05) {
-        gradientAngle = Math.atan2(zy, zx);
-      }
-
-      // Consistent instability threshold (slope > 45 deg or gradient > 1.0)
-      if (gradientMagnitude > 1.0) {
-        isUnstable = true;
-      }
-    }
+    const gradient = showGradients && elevations
+      ? getElevationGradient(row, col, elevations)
+      : null
+    const gradientAngle = gradient?.angle ?? 0
+    const gradientMagnitude = gradient?.magnitude ?? 0
+    const isUnstable = gradient?.isUnstable ?? false
 
     //* Determine backgroundColor based on cell state. Priority goes to robot/destination
     let bgColor = "transparent";
