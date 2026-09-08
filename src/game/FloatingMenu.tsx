@@ -220,26 +220,24 @@ export const FloatingMenu = () => {
                 Manhattan
               </Button>
 
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
-                <Button
-                  variant={selectedAlgo === "euclidean" ? "contained" : "outlined"}
-                  color="primary"
-                  size="small"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => onSelectAlgo("euclidean")}
-                >
-                  Euclidean
-                </Button>
-                <Button
-                  variant={selectedAlgo === "octile" ? "contained" : "outlined"}
-                  color="primary"
-                  size="small"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => onSelectAlgo("octile")}
-                >
-                  Octile
-                </Button>
-              </Box>
+              <Button
+                variant={selectedAlgo === "euclidean" ? "contained" : "outlined"}
+                color="primary"
+                size="small"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => onSelectAlgo("euclidean")}
+              >
+                Euclidean
+              </Button>
+              <Button
+                variant={selectedAlgo === "octile" ? "contained" : "outlined"}
+                color="primary"
+                size="small"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => onSelectAlgo("octile")}
+              >
+                Octile
+              </Button>
 
               <Button
                 variant={selectedAlgo === "chebyshev" ? "contained" : "outlined"}

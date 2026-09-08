@@ -9,6 +9,8 @@ export const usePathAnimation = () => {
   const [isAnimating, setIsAnimating] = useState<boolean>(false)
   const [showManhattanSearch, setShowManhattanSearch] = useState<boolean>(true)
   const [showEnergySearch, setShowEnergySearch] = useState<boolean>(true)
+  const [isPathVisible, setIsPathVisible] = useState<boolean>(false)
+  const [pathTheme, setPathTheme] = useState<"manhattan" | "energy" | null>(null)
 
   const animationTimeouts = useRef<number[]>([])
 
@@ -21,6 +23,8 @@ export const usePathAnimation = () => {
     setIsAnimating(false)
     setShowManhattanSearch(true)
     setShowEnergySearch(true)
+    setIsPathVisible(false)
+    setPathTheme(null)
 
     if (onClear) onClear()
 
@@ -40,6 +44,8 @@ export const usePathAnimation = () => {
     ): number => {
       const searchAttr = mode === "manhattan" ? "manhattan" : "energy"
       setIsAnimating(true)
+      setIsPathVisible(false)
+      setPathTheme(mode)
 
       // Animate Visited/Open Nodes
       for (let i = 0; i < visitedNodesInOrder.length; i++) {
@@ -54,29 +60,17 @@ export const usePathAnimation = () => {
         animationTimeouts.current.push(timeout as unknown as number)
       }
 
-      // Animate Shortest Path after visited nodes finish
+      // Show path line immediately once visited search nodes finish
       const pathDelay = visitedNodesInOrder.length * ANIMATION_CONFIG.searchStepDelayMs
-      for (let i = 0; i < shortestPath.length; i++) {
-        const timeout = setTimeout(
-          () => {
-            const node = document.getElementById(`cell-${shortestPath[i]}`)
-            if (node) {
-              node.dataset.path = mode // "manhattan" or "energy"
-            }
-          },
-          pathDelay + ANIMATION_CONFIG.pathStepDelayMs * i,
-        )
-        animationTimeouts.current.push(timeout as unknown as number)
-      }
-
-      const duration = pathDelay + shortestPath.length * ANIMATION_CONFIG.pathStepDelayMs
-
       const finishTimeout = setTimeout(() => {
+        if (shortestPath.length > 0) {
+          setIsPathVisible(true)
+        }
         setIsAnimating(false)
-      }, duration)
+      }, pathDelay)
       animationTimeouts.current.push(finishTimeout as unknown as number)
 
-      return duration
+      return pathDelay
     },
     [],
   )
@@ -95,6 +89,8 @@ export const usePathAnimation = () => {
     setShowManhattanSearch,
     showEnergySearch,
     setShowEnergySearch,
+    isPathVisible,
+    pathTheme,
     clearAnimations,
     animateResult,
     addTimeout,

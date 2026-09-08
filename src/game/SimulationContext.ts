@@ -43,6 +43,8 @@ export interface SimulationContextValue {
   isEnergyFinished: boolean
   showManhattanSearch: boolean
   showEnergySearch: boolean
+  isPathVisible: boolean
+  pathTheme: "manhattan" | "energy" | null
   toggleManhattanSearch: () => void
   toggleEnergySearch: () => void
 

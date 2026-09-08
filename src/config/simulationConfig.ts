@@ -52,4 +52,5 @@ export const THEME_CONFIG = {
   unstableOverlayColor: "rgba(255, 0, 0, 0.3)",
   unstableArrowColor: "#ff5252",
   contourArrowColor: "rgba(0, 0, 0, 0.4)",
+  pathLineColor: "#fffe6a",
 } as const;

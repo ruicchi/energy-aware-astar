@@ -6,8 +6,7 @@ body,
 
 /* Base style for the overlays */
 [data-manhattan]::after,
-[data-energy]::after,
-[data-path]::after {
+[data-energy]::after {
   content: '';
   position: absolute;
   top: 0;
@@ -27,11 +26,6 @@ body,
   background-color: rgba(119, 181, 192, 0.75);
 }
 
-[data-path="manhattan"]::after {
-  background-color: rgba(255, 254, 106, 0.75);
-  z-index: 2;
-}
-
 /* Energy-Aware Specific Styles (Flat) */
 [data-energy="open"]::after {
   background-color: rgba(255, 165, 0, 0.75);
@@ -39,11 +33,6 @@ body,
 
 [data-energy="closed"]::after {
   background-color: rgba(255, 99, 71, 0.75);
-}
-
-[data-path="energy"]::after {
-  background-color: rgba(138, 43, 226, 0.75);
-  z-index: 2;
 }
 
 /* Hide overlays on robot, destination, and wall cells */
@@ -54,12 +43,10 @@ body,
 }
 
 /* Hide search maps toggles */
-.hide-manhattan-search [data-manhattan]::after,
-.hide-manhattan-search [data-path="manhattan"]::after {
+.hide-manhattan-search [data-manhattan]::after {
   display: none !important;
 }
 
-.hide-energy-search [data-energy]::after,
-.hide-energy-search [data-path="energy"]::after {
+.hide-energy-search [data-energy]::after {
   display: none !important;
 }

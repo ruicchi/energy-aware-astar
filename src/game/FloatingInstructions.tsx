@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef } from "react";
 import {
   Paper,
   Typography,
@@ -7,47 +7,47 @@ import {
   Collapse,
   useMediaQuery,
   useTheme,
-} from "@mui/material"
-import { ExpandMore, ExpandLess } from "@mui/icons-material"
+} from "@mui/material";
+import { ExpandMore, ExpandLess } from "@mui/icons-material";
 
 export const FloatingInstructions = () => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Left-aligned default position alongside Controls on desktop
   const [position, setPosition] = useState(() => ({
     x: isMobile ? 20 : 235,
     y: 20,
-  }))
-  const [isDragging, setIsDragging] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(true)
+  }));
+  const [isDragging, setIsDragging] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  const dragStart = useRef({ x: 0, y: 0 })
+  const dragStart = useRef({ x: 0, y: 0 });
 
   const handlePointerDown = (e: React.PointerEvent) => {
     //* Only start dragging if we didn't click a button inside the menu
-    if ((e.target as HTMLElement).closest("button")) return
+    if ((e.target as HTMLElement).closest("button")) return;
 
-    setIsDragging(true)
+    setIsDragging(true);
     dragStart.current = {
       x: e.clientX - position.x,
       y: e.clientY - position.y,
-    }
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return
+    if (!isDragging) return;
     setPosition({
       x: Math.max(10, Math.min(window.innerWidth - 100, e.clientX - dragStart.current.x)),
       y: Math.max(10, Math.min(window.innerHeight - 50, e.clientY - dragStart.current.y)),
-    })
-  }
+    });
+  };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    setIsDragging(false)
-    e.currentTarget.releasePointerCapture(e.pointerId)
-  }
+    setIsDragging(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
 
   return (
     <Paper
@@ -79,8 +79,8 @@ export const FloatingInstructions = () => {
           borderBottom: isExpanded ? "1px solid rgba(0, 0, 0, 0.1)" : "none",
         }}
       >
-        <Typography variant="subtitle1" fontWeight="bold" sx={{ fontSize: "1.25rem" }}>
-          Instructions
+        <Typography variant="subtitle1" fontWeight="bold">
+          Manual
         </Typography>
 
         {/* Toggle Button */}
@@ -134,5 +134,5 @@ export const FloatingInstructions = () => {
         </Box>
       </Collapse>
     </Paper>
-  )
-}
+  );
+};
