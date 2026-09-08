@@ -69,7 +69,7 @@ export const FloatingMenu = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [resultsPosition, setResultsPosition] = useState({
     x: isMobile ? 20 : 240,
-    y: 20,
+    y: 240,
   });
   const [isResultsDragging, setIsResultsDragging] = useState(false);
   const [isResultsOpen, setIsResultsOpen] = useState(false);
@@ -614,7 +614,7 @@ export const FloatingMenu = () => {
               <Box
                 sx={{
                   mt: 1,
-                  borderTop: "1px solid rgba(0,0,0,0.1)",
+                  borderTop: "1px solid rgba(0, 0, 0, 0.1)",
                   pt: 1,
                   display: "flex",
                   gap: 1,
@@ -659,7 +659,7 @@ export const FloatingMenu = () => {
             zIndex: 1100,
             width: isMobile ? 220 : 280,
             maxWidth: "calc(100vw - 24px)",
-            backgroundColor: "rgba(255, 255, 255, 0.92)",
+            backgroundColor: "rgba(255, 255, 255, 0.5)",
             borderRadius: 2,
             overflow: "hidden",
             cursor: isResultsDragging ? "grabbing" : "grab",
@@ -715,7 +715,7 @@ export const FloatingMenu = () => {
 
             <Box sx={{ borderTop: "1px solid rgba(0,0,0,0.1)", pt: 1 }}>
               <Typography variant="caption" color="textSecondary" display="block">
-                Energy per Distance
+                Energy / distance
               </Typography>
               <Typography variant="body2" fontWeight="bold">
                 {energyPerUnit.toFixed(2)} energy / unit

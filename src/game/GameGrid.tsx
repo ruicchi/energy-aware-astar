@@ -2,7 +2,7 @@ import Box from "@mui/material/Box";
 import { useMemo } from "react";
 import { MemoizedCell } from "./MemoizedCell";
 import { FloatingMenu } from "./FloatingMenu";
-import { FloatingInstructions } from "./FloatingInstructions";
+import { FloatingManual } from "./FloatingManual";
 import { useSimulation } from "./SimulationContext";
 import { THEME_CONFIG } from "../config/simulationConfig";
 
@@ -66,7 +66,7 @@ const GameGrid = () => {
       onMouseLeave={handleMouseUp}
     >
       <FloatingMenu />
-      <FloatingInstructions />
+      <FloatingManual />
 
       <Box
         sx={{
