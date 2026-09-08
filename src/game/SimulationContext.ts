@@ -14,6 +14,7 @@ export interface SimulationContextValue {
 
   wallNode: Set<string>
   terrainFactors: Map<string, number>
+  terrainTypes: Map<string, "dirt" | "water">
   elevations: Map<string, number>
   robotNode: string
   destinationNode: string
@@ -21,6 +22,10 @@ export interface SimulationContextValue {
   setActiveBrush: (brush: BrushMode) => void
   elevationBrushValue: number
   setElevationBrushValue: (val: number) => void
+  dirtBrushValue: number
+  setDirtBrushValue: (val: number) => void
+  waterBrushValue: number
+  setWaterBrushValue: (val: number) => void
   showGradients: boolean
   setShowGradients: (show: boolean) => void
   toggleGradients: () => void

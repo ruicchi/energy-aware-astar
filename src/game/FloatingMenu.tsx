@@ -42,6 +42,10 @@ export const FloatingMenu = () => {
     setActiveBrush: onSelectBrush,
     elevationBrushValue: elevationValue,
     setElevationBrushValue: onElevationChange,
+    dirtBrushValue,
+    setDirtBrushValue: onDirtChange,
+    waterBrushValue,
+    setWaterBrushValue: onWaterChange,
     pathMetrics,
     isManhattanFinished,
     isEnergyFinished,
@@ -494,7 +498,7 @@ export const FloatingMenu = () => {
                     Wall
                   </Button>
 
-                  <Tooltip title="Penalty factor: 0.5" arrow>
+                  <Tooltip title={`Penalty factor: ${dirtBrushValue}`} arrow>
                     <Button
                       variant="contained"
                       size="small"
@@ -519,7 +523,7 @@ export const FloatingMenu = () => {
                     </Button>
                   </Tooltip>
 
-                  <Tooltip title="Penalty factor: 0.1" arrow>
+                  <Tooltip title={`Penalty factor: ${waterBrushValue}`} arrow>
                     <Button
                       variant="contained"
                       size="small"
@@ -567,6 +571,78 @@ export const FloatingMenu = () => {
                     Elevation
                   </Button>
                 </Box>
+
+                {/* Dirt Slider */}
+                {activeBrush === "dirt" && (
+                  <Box
+                    sx={{
+                      px: 1,
+                      mt: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="caption" color="textSecondary">
+                        Dirt Penalty: {dirtBrushValue}
+                      </Typography>
+                      <Slider
+                        size="small"
+                        value={dirtBrushValue}
+                        min={0.1}
+                        max={5}
+                        step={0.1}
+                        marks={[
+                          { value: 0.1, label: "0.1" },
+                          { value: 1, label: "1" },
+                          { value: 2.5, label: "2.5" },
+                          { value: 5, label: "5" },
+                        ]}
+                        onChange={(_, value) =>
+                          onDirtChange(Number((value as number).toFixed(1)))
+                        }
+                        onPointerDown={(e) => e.stopPropagation()}
+                      />
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Water Slider */}
+                {activeBrush === "water" && (
+                  <Box
+                    sx={{
+                      px: 1,
+                      mt: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="caption" color="textSecondary">
+                        Water Penalty: {waterBrushValue}
+                      </Typography>
+                      <Slider
+                        size="small"
+                        value={waterBrushValue}
+                        min={0.1}
+                        max={5}
+                        step={0.1}
+                        marks={[
+                          { value: 0.1, label: "0.1" },
+                          { value: 1, label: "1" },
+                          { value: 2.5, label: "2.5" },
+                          { value: 5, label: "5" },
+                        ]}
+                        onChange={(_, value) =>
+                          onWaterChange(Number((value as number).toFixed(1)))
+                        }
+                        onPointerDown={(e) => e.stopPropagation()}
+                      />
+                    </Box>
+                  </Box>
+                )}
 
                 {/* Elevation Slider */}
                 {activeBrush === "elevation" && (

@@ -24,6 +24,8 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
   const defaultRow = Math.floor(rows / 2);
 
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
+  const [dirtBrushValue, setDirtBrushValue] = useState<number>(TERRAIN_CONFIG.types.dirt.cost);
+  const [waterBrushValue, setWaterBrushValue] = useState<number>(TERRAIN_CONFIG.types.water.cost);
   const [selectedAlgo, setSelectedAlgo] = useState<AlgorithmType>("energyAware");
   const [showGradients, setShowGradients] = useState<boolean>(false);
   const [robotHeading, setRobotHeading] = useState<Heading>(VEHICLE_CONFIG.defaultHeading);
@@ -46,6 +48,7 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
   const {
     wallNode,
     terrainFactors,
+    terrainTypes,
     elevations,
     robotNode,
     destinationNode,
@@ -59,6 +62,8 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
     `${defaultRow}-${defaultRobotCol}`,
     `${defaultRow}-${defaultDestCol}`,
     elevationBrushValue,
+    dirtBrushValue,
+    waterBrushValue,
   );
 
   const {
@@ -111,6 +116,7 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
       destinationNode,
       wallNodes: wallNode,
       terrainFactors,
+      terrainTypes,
       elevations,
       climbingFactor: ENERGY_CONFIG.climbingFactor,
       turnPenalty: ENERGY_CONFIG.turnPenalty,
@@ -126,6 +132,7 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
     destinationNode,
     wallNode,
     terrainFactors,
+    terrainTypes,
     elevations,
     robotHeading,
     showGradients,
@@ -208,6 +215,7 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
         cellSize,
         wallNode,
         terrainFactors,
+        terrainTypes,
         elevations,
         robotNode,
         destinationNode,
@@ -215,6 +223,10 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
         setActiveBrush,
         elevationBrushValue,
         setElevationBrushValue,
+        dirtBrushValue,
+        setDirtBrushValue,
+        waterBrushValue,
+        setWaterBrushValue,
         showGradients,
         setShowGradients,
         toggleGradients,

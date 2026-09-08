@@ -12,11 +12,6 @@ export const VEHICLE_CONFIG: VehicleConfig = {
   stabilityMargin: 0.05,
 };
 
-export const PHYSICS_MATH = {
-  SQRT2: 1.414,
-  INV_SQRT2: 1 / Math.sqrt(2),
-};
-
 export const TERRAIN_CONFIG = {
   elevationScale: 0.5,
   defaultMaxTraversableSlope: 45,

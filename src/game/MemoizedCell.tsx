@@ -15,6 +15,7 @@ type MemoizedCellProps = {
   isRobot: boolean
   isDestination: boolean
   terrainFactor: number
+  terrainType?: "dirt" | "water"
   elevation: number
   showGradients?: boolean
   elevations?: Map<string, number>
@@ -57,6 +58,7 @@ export const MemoizedCell = memo(
     isRobot,
     isDestination,
     terrainFactor,
+    terrainType,
     heading,
     elevation,
     showGradients,
@@ -81,9 +83,9 @@ export const MemoizedCell = memo(
       bgColor = TERRAIN_CONFIG.types.wall.color
     else if (isUnstable && showGradients)
       bgColor = THEME_CONFIG.unstableOverlayColor
-    else if (terrainFactor === TERRAIN_CONFIG.types.dirt.cost)
+    else if (terrainType === "dirt" || (!terrainType && terrainFactor === TERRAIN_CONFIG.types.dirt.cost))
       bgColor = TERRAIN_CONFIG.types.dirt.color
-    else if (terrainFactor === TERRAIN_CONFIG.types.water.cost)
+    else if (terrainType === "water" || (!terrainType && terrainFactor === TERRAIN_CONFIG.types.water.cost))
       bgColor = TERRAIN_CONFIG.types.water.color
     else if (elevation > 0) {
       bgColor = TERRAIN_CONFIG.getElevationColor(elevation)
@@ -148,6 +150,7 @@ export const MemoizedCell = memo(
       prevProps.isRobot === nextProps.isRobot &&
       prevProps.isDestination === nextProps.isDestination &&
       prevProps.terrainFactor === nextProps.terrainFactor &&
+      prevProps.terrainType === nextProps.terrainType &&
       prevProps.elevation === nextProps.elevation &&
       prevProps.cellSize === nextProps.cellSize &&
       prevProps.heading === nextProps.heading &&

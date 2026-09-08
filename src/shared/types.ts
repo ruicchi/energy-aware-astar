@@ -50,6 +50,7 @@ export interface Scenario {
   destinationNode: string // "row-col"
   wallNodes: Set<string>
   terrainFactors: Map<string, number>
+  terrainTypes?: Map<string, "dirt" | "water">
   elevations: Map<string, number>
   climbingFactor: number
   turnPenalty: number

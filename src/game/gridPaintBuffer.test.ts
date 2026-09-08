@@ -98,6 +98,41 @@ describe("GridPaintBuffer", () => {
     expect(result?.terrainFactors.get("2-2")).toBe(0.1)
   })
 
+  it("paints terrain factors with configurable dirt and water penalties and toggles them off", () => {
+    const { elementProvider, domStore } = createMockElementProvider()
+    const buffer = new GridPaintBuffer(
+      { robotNode: "0-0", destinationNode: "5-5" },
+      elementProvider,
+    )
+
+    // Paint dirt with custom penalty 2.5
+    buffer.startStroke("2-1", "dirt", 1, 2.5, 0.1)
+    expect(domStore.get("2-1")?.bg).toBe("#d2b48c")
+    let result = buffer.endStroke()
+    expect(result?.terrainFactors.get("2-1")).toBe(2.5)
+    expect(result?.terrainTypes.get("2-1")).toBe("dirt")
+
+    // Second click with same 2.5 penalty toggles dirt off
+    buffer.startStroke("2-1", "dirt", 1, 2.5, 0.1)
+    result = buffer.endStroke()
+    expect(result?.terrainFactors.has("2-1")).toBe(false)
+    expect(result?.terrainTypes.has("2-1")).toBe(false)
+
+    // Paint water with custom penalty 1.8
+    buffer.startStroke("3-3", "water", 1, 2.5, 1.8)
+    expect(domStore.get("3-3")?.bg).toBe("#00ffff")
+    result = buffer.endStroke()
+    expect(result?.terrainFactors.get("3-3")).toBe(1.8)
+    expect(result?.terrainTypes.get("3-3")).toBe("water")
+
+    // Painting dirt over existing water cell replaces it
+    buffer.startStroke("3-3", "dirt", 1, 3.0, 1.8)
+    expect(domStore.get("3-3")?.bg).toBe("#d2b48c")
+    result = buffer.endStroke()
+    expect(result?.terrainFactors.get("3-3")).toBe(3.0)
+    expect(result?.terrainTypes.get("3-3")).toBe("dirt")
+  })
+
   it("prevents dragging robot onto an unstable elevation slope", () => {
     const { elementProvider } = createMockElementProvider()
     // A cliff at 2-3 creates an unstable slope at 2-2
@@ -208,6 +243,7 @@ describe("GridPaintBuffer", () => {
     const cleared = buffer.clear()
     expect(cleared.wallNodes.size).toBe(0)
     expect(cleared.terrainFactors.size).toBe(0)
+    expect(cleared.terrainTypes.size).toBe(0)
     expect(cleared.elevations.size).toBe(0)
 
     expect(domStore.get("1-1")?.classes.has("is-wall")).toBe(false)

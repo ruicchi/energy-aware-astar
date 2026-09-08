@@ -116,6 +116,32 @@ describe("Pathfinding Engine", () => {
       expect(result.shortestPath).not.toContain("1-2")
     })
 
+    it("correctly calculates breakdown for custom dirt and water brush penalties", () => {
+      const scenario = createTestScenario({
+        rows: 3,
+        cols: 5,
+        robotNode: "1-0",
+        destinationNode: "1-3",
+        initialHeading: "RIGHT",
+        wallNodes: new Set(["0-1", "0-2", "2-1", "2-2"]),
+        terrainFactors: new Map([
+          ["1-1", 2.0],
+          ["1-2", 3.0],
+        ]),
+        terrainTypes: new Map([
+          ["1-1", "dirt"],
+          ["1-2", "water"],
+        ]),
+      })
+
+      const result = findPath(scenario, { algorithm: "energyAware" })
+
+      expect(result.shortestPath).toEqual(["1-0", "1-1", "1-2", "1-3"])
+      expect(result.energyBreakdown.dirtPenalty).toBeGreaterThan(0)
+      expect(result.energyBreakdown.waterPenalty).toBeGreaterThan(0)
+      expect(result.energyBreakdown.otherTerrainPenalty).toBe(0)
+    })
+
     it("adopts kinematic heading when initialHeading is NONE", () => {
       const scenario = createTestScenario({
         robotNode: "2-2",

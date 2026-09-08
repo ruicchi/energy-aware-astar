@@ -1,14 +1,18 @@
 import { useState, useCallback, useRef, useEffect } from "react"
 import type { BrushMode } from "../shared/types"
 import { GridPaintBuffer } from "../game/gridPaintBuffer"
+import { TERRAIN_CONFIG } from "../config/simulationConfig"
 
 export const useGridMouseClicks = (
   initialRobot: string,
   initialDest: string,
   elevationBrushValue: number,
+  dirtBrushValue: number = TERRAIN_CONFIG.types.dirt.cost,
+  waterBrushValue: number = TERRAIN_CONFIG.types.water.cost,
 ) => {
   const [wallNode, setWallNode] = useState<Set<string>>(new Set())
   const [terrainFactors, setTerrainFactors] = useState<Map<string, number>>(new Map())
+  const [terrainTypes, setTerrainTypes] = useState<Map<string, "dirt" | "water">>(new Map())
   const [elevations, setElevations] = useState<Map<string, number>>(new Map())
   const [robotNode, setRobotNode] = useState(initialRobot)
   const [destinationNode, setDestinationNode] = useState(initialDest)
@@ -16,6 +20,8 @@ export const useGridMouseClicks = (
 
   const activeBrushRef = useRef<BrushMode>(activeBrush)
   const elevationBrushValueRef = useRef<number>(elevationBrushValue)
+  const dirtBrushValueRef = useRef<number>(dirtBrushValue)
+  const waterBrushValueRef = useRef<number>(waterBrushValue)
   const robotNodeRef = useRef<string>(robotNode)
   const destinationNodeRef = useRef<string>(destinationNode)
 
@@ -26,6 +32,42 @@ export const useGridMouseClicks = (
   useEffect(() => {
     elevationBrushValueRef.current = elevationBrushValue
   }, [elevationBrushValue])
+
+  useEffect(() => {
+    dirtBrushValueRef.current = dirtBrushValue
+    setTerrainFactors((prev) => {
+      let changed = false
+      const next = new Map(prev)
+      for (const [key, type] of terrainTypes.entries()) {
+        if (type === "dirt" && next.get(key) !== dirtBrushValue) {
+          next.set(key, dirtBrushValue)
+          changed = true
+        }
+      }
+      if (changed) {
+        bufferRef.current.setCommittedState({ terrainFactors: next })
+      }
+      return changed ? next : prev
+    })
+  }, [dirtBrushValue, terrainTypes])
+
+  useEffect(() => {
+    waterBrushValueRef.current = waterBrushValue
+    setTerrainFactors((prev) => {
+      let changed = false
+      const next = new Map(prev)
+      for (const [key, type] of terrainTypes.entries()) {
+        if (type === "water" && next.get(key) !== waterBrushValue) {
+          next.set(key, waterBrushValue)
+          changed = true
+        }
+      }
+      if (changed) {
+        bufferRef.current.setCommittedState({ terrainFactors: next })
+      }
+      return changed ? next : prev
+    })
+  }, [waterBrushValue, terrainTypes])
 
   useEffect(() => {
     robotNodeRef.current = robotNode
@@ -54,6 +96,8 @@ export const useGridMouseClicks = (
       key,
       activeBrushRef.current,
       elevationBrushValueRef.current,
+      dirtBrushValueRef.current,
+      waterBrushValueRef.current,
     )
     if (update?.robotMoved) {
       robotNodeRef.current = update.robotMoved
@@ -85,6 +129,7 @@ export const useGridMouseClicks = (
       setWallNode(result.wallNodes)
     } else if (result.finishedBrush === "dirt" || result.finishedBrush === "water") {
       setTerrainFactors(result.terrainFactors)
+      setTerrainTypes(result.terrainTypes)
     } else if (result.finishedBrush === "elevation") {
       setElevations(result.elevations)
     } else if (result.finishedBrush === "robot") {
@@ -100,12 +145,14 @@ export const useGridMouseClicks = (
     const cleared = bufferRef.current.clear()
     setWallNode(cleared.wallNodes)
     setTerrainFactors(cleared.terrainFactors)
+    setTerrainTypes(cleared.terrainTypes)
     setElevations(cleared.elevations)
   }, [])
 
   return {
     wallNode,
     terrainFactors,
+    terrainTypes,
     elevations,
     robotNode,
     destinationNode,

@@ -5,6 +5,7 @@ import { TERRAIN_CONFIG } from "../config/simulationConfig"
 export interface GridState {
   wallNodes: Set<string>
   terrainFactors: Map<string, number>
+  terrainTypes: Map<string, "dirt" | "water">
   elevations: Map<string, number>
   robotNode: string
   destinationNode: string
@@ -18,6 +19,7 @@ export interface StrokeUpdate {
 export interface GridCommitResult {
   wallNodes: Set<string>
   terrainFactors: Map<string, number>
+  terrainTypes: Map<string, "dirt" | "water">
   elevations: Map<string, number>
   robotNode: string
   destinationNode: string
@@ -41,6 +43,7 @@ interface ActiveSession {
   previousSnapshot: {
     wallNodes: Set<string>
     terrainFactors: Map<string, number>
+    terrainTypes: Map<string, "dirt" | "water">
     elevations: Map<string, number>
     robotNode: string
     destinationNode: string
@@ -60,6 +63,7 @@ const parseCoordinates = (key: string): [number, number] => {
 export class GridPaintBuffer {
   private wallNodes: Set<string>
   private terrainFactors: Map<string, number>
+  private terrainTypes: Map<string, "dirt" | "water">
   private elevations: Map<string, number>
   private robotNode: string
   private destinationNode: string
@@ -73,6 +77,15 @@ export class GridPaintBuffer {
     this.wallNodes = new Set(initialState?.wallNodes ?? [])
     this.terrainFactors = new Map(initialState?.terrainFactors ?? [])
     this.elevations = new Map(initialState?.elevations ?? [])
+    if (initialState?.terrainTypes) {
+      this.terrainTypes = new Map(initialState.terrainTypes)
+    } else {
+      this.terrainTypes = new Map()
+      for (const [k, v] of this.terrainFactors.entries()) {
+        if (v === TERRAIN_CONFIG.types.dirt.cost) this.terrainTypes.set(k, "dirt")
+        else if (v === TERRAIN_CONFIG.types.water.cost) this.terrainTypes.set(k, "water")
+      }
+    }
     this.robotNode = initialState?.robotNode ?? "0-0"
     this.destinationNode = initialState?.destinationNode ?? "0-1"
     this.elementProvider = elementProvider
@@ -86,6 +99,7 @@ export class GridPaintBuffer {
     return {
       wallNodes: new Set(this.wallNodes),
       terrainFactors: new Map(this.terrainFactors),
+      terrainTypes: new Map(this.terrainTypes),
       elevations: new Map(this.elevations),
       robotNode: this.robotNode,
       destinationNode: this.destinationNode,
@@ -98,6 +112,9 @@ export class GridPaintBuffer {
     }
     if (state.terrainFactors !== undefined) {
       this.terrainFactors = new Map(state.terrainFactors)
+    }
+    if (state.terrainTypes !== undefined) {
+      this.terrainTypes = new Map(state.terrainTypes)
     }
     if (state.elevations !== undefined) {
       this.elevations = new Map(state.elevations)
@@ -113,11 +130,14 @@ export class GridPaintBuffer {
   public startStroke(
     key: string,
     brush: BrushMode,
-    elevationBrushValue: number,
+    elevationBrushValue: number = 1,
+    dirtBrushValue: number = TERRAIN_CONFIG.types.dirt.cost,
+    waterBrushValue: number = TERRAIN_CONFIG.types.water.cost,
   ): StrokeUpdate | null {
     const previousSnapshot = {
       wallNodes: new Set(this.wallNodes),
       terrainFactors: new Map(this.terrainFactors),
+      terrainTypes: new Map(this.terrainTypes),
       elevations: new Map(this.elevations),
       robotNode: this.robotNode,
       destinationNode: this.destinationNode,
@@ -148,15 +168,21 @@ export class GridPaintBuffer {
     if (brush === "wall") {
       calculatedDrawValue = !this.wallNodes.has(key)
     } else if (brush === "dirt") {
+      const currentType = this.terrainTypes.get(key)
+      const currentCost = this.terrainFactors.get(key)
+      const isCurrentDirt =
+        currentType === "dirt" ||
+        (!currentType && currentCost === TERRAIN_CONFIG.types.dirt.cost)
       calculatedDrawValue =
-        this.terrainFactors.get(key) !== TERRAIN_CONFIG.types.dirt.cost
-          ? TERRAIN_CONFIG.types.dirt.cost
-          : 0
+        isCurrentDirt && currentCost === dirtBrushValue ? 0 : dirtBrushValue
     } else if (brush === "water") {
+      const currentType = this.terrainTypes.get(key)
+      const currentCost = this.terrainFactors.get(key)
+      const isCurrentWater =
+        currentType === "water" ||
+        (!currentType && currentCost === TERRAIN_CONFIG.types.water.cost)
       calculatedDrawValue =
-        this.terrainFactors.get(key) !== TERRAIN_CONFIG.types.water.cost
-          ? TERRAIN_CONFIG.types.water.cost
-          : 0
+        isCurrentWater && currentCost === waterBrushValue ? 0 : waterBrushValue
     } else if (brush === "elevation") {
       const current = this.elevations.get(key) ?? 0
       calculatedDrawValue = current === elevationBrushValue ? 0 : elevationBrushValue
@@ -234,6 +260,7 @@ export class GridPaintBuffer {
     return {
       wallNodes: new Set(this.wallNodes),
       terrainFactors: new Map(this.terrainFactors),
+      terrainTypes: new Map(this.terrainTypes),
       elevations: new Map(this.elevations),
       robotNode: this.robotNode,
       destinationNode: this.destinationNode,
@@ -246,6 +273,7 @@ export class GridPaintBuffer {
 
     this.wallNodes = this.session.previousSnapshot.wallNodes
     this.terrainFactors = this.session.previousSnapshot.terrainFactors
+    this.terrainTypes = this.session.previousSnapshot.terrainTypes
     this.elevations = this.session.previousSnapshot.elevations
     this.robotNode = this.session.previousSnapshot.robotNode
     this.destinationNode = this.session.previousSnapshot.destinationNode
@@ -270,6 +298,7 @@ export class GridPaintBuffer {
   public clear(): {
     wallNodes: Set<string>
     terrainFactors: Map<string, number>
+    terrainTypes: Map<string, "dirt" | "water">
     elevations: Map<string, number>
   } {
     for (const key of this.wallNodes) {
@@ -293,11 +322,13 @@ export class GridPaintBuffer {
 
     this.wallNodes.clear()
     this.terrainFactors.clear()
+    this.terrainTypes.clear()
     this.elevations.clear()
 
     return {
       wallNodes: new Set<string>(),
       terrainFactors: new Map<string, number>(),
+      terrainTypes: new Map<string, "dirt" | "water">(),
       elevations: new Map<string, number>(),
     }
   }
@@ -316,15 +347,28 @@ export class GridPaintBuffer {
       }
       this.session.modifiedCells.add(key)
       this.applyVisual(key, "wall", isWall)
-    } else if (brush === "dirt" || brush === "water") {
+    } else if (brush === "dirt") {
       const val = Number(drawValue)
       if (val === 0) {
         this.terrainFactors.delete(key)
+        this.terrainTypes.delete(key)
       } else {
         this.terrainFactors.set(key, val)
+        this.terrainTypes.set(key, "dirt")
       }
       this.session.modifiedCells.add(key)
-      this.applyVisual(key, brush, val)
+      this.applyVisual(key, "dirt", val)
+    } else if (brush === "water") {
+      const val = Number(drawValue)
+      if (val === 0) {
+        this.terrainFactors.delete(key)
+        this.terrainTypes.delete(key)
+      } else {
+        this.terrainFactors.set(key, val)
+        this.terrainTypes.set(key, "water")
+      }
+      this.session.modifiedCells.add(key)
+      this.applyVisual(key, "water", val)
     } else if (brush === "elevation") {
       const val = Number(drawValue)
       if (val === 0) {
@@ -353,10 +397,14 @@ export class GridPaintBuffer {
         element.classList.remove("is-wall")
         element.style.backgroundColor = ""
       }
-    } else if (mode === "dirt" || mode === "water") {
-      if (value === TERRAIN_CONFIG.types.dirt.cost) {
+    } else if (mode === "dirt") {
+      if (value) {
         element.style.backgroundColor = TERRAIN_CONFIG.types.dirt.color
-      } else if (value === TERRAIN_CONFIG.types.water.cost) {
+      } else {
+        element.style.backgroundColor = ""
+      }
+    } else if (mode === "water") {
+      if (value) {
         element.style.backgroundColor = TERRAIN_CONFIG.types.water.color
       } else {
         element.style.backgroundColor = ""

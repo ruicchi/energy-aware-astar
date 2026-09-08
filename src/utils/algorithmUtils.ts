@@ -74,16 +74,24 @@ type TerrainPenaltyBreakdown = Pick<
 const getTerrainPenaltyBreakdown = (
   terrainFactor: number,
   distanceBasis: number,
+  terrainType?: "dirt" | "water",
 ): TerrainPenaltyBreakdown => {
   const terrainPenalty = distanceBasis * terrainFactor;
-  const dirtPenalty = terrainFactor === TERRAIN_CONFIG.types.dirt.cost ? terrainPenalty : 0;
-  const waterPenalty = terrainFactor === TERRAIN_CONFIG.types.water.cost ? terrainPenalty : 0;
-  const otherTerrainPenalty =
-    terrainFactor !== 0 &&
-    terrainFactor !== TERRAIN_CONFIG.types.dirt.cost &&
-    terrainFactor !== TERRAIN_CONFIG.types.water.cost
-      ? terrainPenalty
-      : 0;
+  let dirtPenalty = 0;
+  let waterPenalty = 0;
+  let otherTerrainPenalty = 0;
+
+  if (terrainType === "dirt") {
+    dirtPenalty = terrainPenalty;
+  } else if (terrainType === "water") {
+    waterPenalty = terrainPenalty;
+  } else if (terrainFactor === TERRAIN_CONFIG.types.dirt.cost) {
+    dirtPenalty = terrainPenalty;
+  } else if (terrainFactor === TERRAIN_CONFIG.types.water.cost) {
+    waterPenalty = terrainPenalty;
+  } else if (terrainFactor !== 0) {
+    otherTerrainPenalty = terrainPenalty;
+  }
 
   return {
     dirtPenalty,
@@ -113,6 +121,8 @@ export const getEnergyCostBreakdown = (
 
   const startTerrainFactor = scenario.terrainFactors.get(currentKey) || 0;
   const targetTerrainFactor = scenario.terrainFactors.get(targetKey) || 0;
+  const startTerrainType = scenario.terrainTypes?.get(currentKey);
+  const targetTerrainType = scenario.terrainTypes?.get(targetKey);
 
   const currentElevation = scenario.elevations.get(currentKey) || 0;
   const targetElevation = scenario.elevations.get(targetKey) || 0;
@@ -135,8 +145,16 @@ export const getEnergyCostBreakdown = (
   const rawTurnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty);
 
   // Use average terrain factor for the move (0.5 distance in start cell, 0.5 in target cell)
-  const startTerrainBreakdown = getTerrainPenaltyBreakdown(startTerrainFactor, stepDistance / 2);
-  const targetTerrainBreakdown = getTerrainPenaltyBreakdown(targetTerrainFactor, stepDistance / 2);
+  const startTerrainBreakdown = getTerrainPenaltyBreakdown(
+    startTerrainFactor,
+    stepDistance / 2,
+    startTerrainType,
+  );
+  const targetTerrainBreakdown = getTerrainPenaltyBreakdown(
+    targetTerrainFactor,
+    stepDistance / 2,
+    targetTerrainType,
+  );
 
   const terrainBreakdown = addTerrainPenaltyBreakdown(
     startTerrainBreakdown,

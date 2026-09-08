@@ -13,6 +13,7 @@ const GameGrid = () => {
     cellSize,
     wallNode,
     terrainFactors,
+    terrainTypes,
     elevations,
     robotNode,
     destinationNode,
@@ -157,6 +158,7 @@ const GameGrid = () => {
             isRobot={cell.key === robotNode}
             isDestination={cell.key === destinationNode}
             terrainFactor={terrainFactors.get(cell.key) || 0}
+            terrainType={terrainTypes.get(cell.key)}
             elevation={elevations.get(cell.key) || 0}
             showGradients={showGradients}
             elevations={elevations}
