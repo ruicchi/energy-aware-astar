@@ -26,7 +26,7 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
   const [elevationBrushValue, setElevationBrushValue] = useState<number>(5)
   const [selectedAlgo, setSelectedAlgo] = useState<AlgorithmType>("energyAware")
   const [showGradients, setShowGradients] = useState<boolean>(false)
-  const [robotHeading, setRobotHeading] = useState<Heading>("RIGHT")
+  const [robotHeading, setRobotHeading] = useState<Heading>(VEHICLE_CONFIG.defaultHeading)
   const [pathMetrics, setPathMetrics] = useState<{
     algorithm: string
     distance: number

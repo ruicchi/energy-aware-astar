@@ -22,7 +22,7 @@ const createScenario = (overrides: Partial<Scenario> = {}): Scenario => ({
   climbingFactor: ENERGY_CONFIG.climbingFactor,
   turnPenalty: ENERGY_CONFIG.turnPenalty,
   maxTraversableSlope: TERRAIN_CONFIG.defaultMaxTraversableSlope,
-  initialHeading: "RIGHT",
+  initialHeading: VEHICLE_CONFIG.defaultHeading,
   robotPhysics: VEHICLE_CONFIG,
   ...overrides,
 })

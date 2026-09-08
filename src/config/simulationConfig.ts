@@ -1,6 +1,11 @@
-import type { RobotPhysicsConfig } from "../shared/types";
+import type { Heading, RobotPhysicsConfig } from "../shared/types";
 
-export const VEHICLE_CONFIG: RobotPhysicsConfig = {
+export interface VehicleConfig extends RobotPhysicsConfig {
+  defaultHeading: Heading;
+}
+
+export const VEHICLE_CONFIG: VehicleConfig = {
+  defaultHeading: "RIGHT",
   trackWidth: 0.8,
   wheelBase: 1.2,
   comHeight: 0.6,
