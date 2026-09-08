@@ -7,16 +7,8 @@ import { usePathAnimation } from "../hooks/usePathAnimation";
 import { useRobotWalk } from "../hooks/useRobotWalk";
 import { MemoizedCell } from "./MemoizedCell";
 import { FloatingMenu } from "./FloatingMenu";
-import {
-  runAStarManhattan,
-  runAStarEnergyAware,
-  runAStarEuclidean,
-  runAStarOctile,
-  runAStarChebyshev,
-} from "../algorithms/astar";
-import type { EnergyBreakdown, Heading, Scenario } from "../shared/types";
-
-type AlgorithmType = "manhattan" | "energyAware" | "euclidean" | "octile" | "chebyshev";
+import { findPath } from "../algorithms/astar"
+import type { EnergyBreakdown, Heading, Scenario, AlgorithmType } from "../shared/types"
 
 const GameGrid = () => {
   const viewport = useViewport();
@@ -129,37 +121,18 @@ const GameGrid = () => {
       },
     };
 
-    let result;
-    let algoName = "";
-    let theme: "manhattan" | "energy" = "energy";
-
-    switch (algo) {
-      case "manhattan":
-        result = runAStarManhattan(scenario);
-        algoName = "A* Manhattan";
-        theme = "manhattan";
-        break;
-      case "energyAware":
-        result = runAStarEnergyAware(scenario);
-        algoName = "Energy-Aware A*";
-        theme = "energy";
-        break;
-      case "euclidean":
-        result = runAStarEuclidean(scenario);
-        algoName = "A* Euclidean";
-        theme = "energy";
-        break;
-      case "octile":
-        result = runAStarOctile(scenario);
-        algoName = "A* Octile";
-        theme = "energy";
-        break;
-      case "chebyshev":
-        result = runAStarChebyshev(scenario);
-        algoName = "A* Chebyshev";
-        theme = "energy";
-        break;
+    const algoConfigs: Record<AlgorithmType, { name: string; theme: "manhattan" | "energy" }> = {
+      energyAware: { name: "Energy-Aware A*", theme: "energy" },
+      manhattan: { name: "A* Manhattan", theme: "manhattan" },
+      euclidean: { name: "A* Euclidean", theme: "energy" },
+      octile: { name: "A* Octile", theme: "energy" },
+      chebyshev: { name: "A* Chebyshev", theme: "energy" },
     }
+
+    const config = algoConfigs[algo]
+    const algoName = config.name
+    const theme = config.theme
+    const result = findPath(scenario, { algorithm: algo })
 
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
       result;

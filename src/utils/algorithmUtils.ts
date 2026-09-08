@@ -383,8 +383,8 @@ export const getPathEnergyBreakdown = (
       scenario,
     );
 
-    currentSimulatedHeading = scenario.initialHeading === "NONE" ? "NONE" : stepHeading;
-    return addEnergyBreakdown(total, stepBreakdown);
+    currentSimulatedHeading = stepHeading
+    return addEnergyBreakdown(total, stepBreakdown)
   }, createEmptyEnergyBreakdown());
 };
 

@@ -1,21 +1,19 @@
-import GameGrid from "./game/GameGrid";
-import { GridProvider } from "./features/grid/GridProvider";
-import { PathfindingProvider } from "./features/pathfinding/PathfindingProvider";
-import { RobotProvider } from "./features/physics/RobotProvider";
-import "./App.css";
+import GameGrid from "./game/GameGrid"
+import { GridProvider } from "./features/grid/GridProvider"
+import { RobotProvider } from "./features/physics/RobotProvider"
+import "./App.css"
 
 function App() {
   return (
     <div className="App">
       <GridProvider>
         <RobotProvider>
-          <PathfindingProvider>
-            <GameGrid />
-          </PathfindingProvider>
+          <GameGrid />
         </RobotProvider>
       </GridProvider>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
+
