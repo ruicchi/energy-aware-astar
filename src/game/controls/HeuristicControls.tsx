@@ -37,7 +37,7 @@ export const HeuristicControls = ({ onOpenResults }: HeuristicControlsProps) => 
       }}
     >
       <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: "block" }}>
-        Select Heuristic
+        Heuristic
       </Typography>
 
       <Button

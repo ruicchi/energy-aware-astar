@@ -30,27 +30,27 @@ export const FloatingManual = memo(() => {
         }}
       >
         <Typography variant="caption" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
-          Click within the white grid and drag your mouse to draw obstacles.
+          Click within the white grid and drag your mouse to draw obstacles
         </Typography>
         <Typography variant="caption" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
           Drag the{" "}
           <Box component="span" sx={{ color: "#2e7d32", fontWeight: "bold" }}>
             green
           </Box>{" "}
-          node to set the start position.
+          node to set the start position
         </Typography>
         <Typography variant="caption" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
           Drag the{" "}
           <Box component="span" sx={{ color: "#d32f2f", fontWeight: "bold" }}>
             red
           </Box>{" "}
-          node to set the end position.
+          node to set the end position
         </Typography>
         <Typography variant="caption" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
-          Choose a heuristic from the controls panel.
+          Select a heuristic from the controls panel
         </Typography>
         <Typography variant="caption" sx={{ fontSize: "inherit", lineHeight: "inherit" }}>
-          Click Visualize to start the animation.
+          Click Visualize to start the pathfinding animation
         </Typography>
       </Box>
     </FloatingPanel>

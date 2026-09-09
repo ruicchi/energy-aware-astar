@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import Box from "@mui/material/Box";
 import { FloatingMenu } from "./FloatingMenu";
+import { FloatingBrushes } from "./FloatingBrushes";
 import { FloatingManual } from "./FloatingManual";
 import { useSimulation } from "./SimulationContext";
 import { TerrainGrid } from "./TerrainGrid";
@@ -74,6 +75,7 @@ const GameGrid = () => {
       onMouseLeave={handleMouseUp}
     >
       <FloatingMenu />
+      <FloatingBrushes />
       <FloatingManual />
 
       <Box

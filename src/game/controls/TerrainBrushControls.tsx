@@ -19,10 +19,7 @@ export const TerrainBrushControls = () => {
   } = useSimulation();
 
   return (
-    <Box sx={{ mt: 1, borderTop: "1px solid rgba(0,0,0,0.1)", pt: 1 }}>
-      <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: "block" }}>
-        Brushes
-      </Typography>
+    <Box>
       <Box
         sx={{
           display: "grid",
@@ -103,8 +100,7 @@ export const TerrainBrushControls = () => {
             backgroundColor: TERRAIN_CONFIG.getElevationColor(elevationBrushValue),
             color: "#ffffff",
             fontWeight: "bold",
-            border:
-              activeBrush === "elevation" ? "2.5px solid #111827" : "2.5px solid transparent",
+            border: activeBrush === "elevation" ? "2.5px solid #111827" : "2.5px solid transparent",
             boxShadow: activeBrush === "elevation" ? 4 : 1,
             "&:hover": {
               backgroundColor: TERRAIN_CONFIG.getElevationColor(elevationBrushValue),
@@ -118,7 +114,15 @@ export const TerrainBrushControls = () => {
 
       {/* Dirt Slider */}
       {activeBrush === "dirt" && (
-        <Box sx={{ px: 1, mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box
+          sx={{
+            px: 1,
+            mt: 1,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+          }}
+        >
           <Box>
             <Typography variant="caption" color="textSecondary">
               Dirt Penalty: {dirtBrushValue}
@@ -144,7 +148,15 @@ export const TerrainBrushControls = () => {
 
       {/* Water Slider */}
       {activeBrush === "water" && (
-        <Box sx={{ px: 1, mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box
+          sx={{
+            px: 1,
+            mt: 1,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+          }}
+        >
           <Box>
             <Typography variant="caption" color="textSecondary">
               Water Penalty: {waterBrushValue}
@@ -170,7 +182,15 @@ export const TerrainBrushControls = () => {
 
       {/* Elevation Slider */}
       {activeBrush === "elevation" && (
-        <Box sx={{ px: 1, mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box
+          sx={{
+            px: 1,
+            mt: 1,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+          }}
+        >
           <Box>
             <Typography variant="caption" color="textSecondary">
               Brush Height: {elevationBrushValue}

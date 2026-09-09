@@ -3,7 +3,6 @@ import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { FloatingPanel } from "./FloatingPanel";
 import { HeuristicControls } from "./controls/HeuristicControls";
 import { HeadingControls } from "./controls/HeadingControls";
-import { TerrainBrushControls } from "./controls/TerrainBrushControls";
 import { MetricsModal } from "./controls/MetricsModal";
 
 export const FloatingMenu = memo(() => {
@@ -23,7 +22,6 @@ export const FloatingMenu = memo(() => {
         <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
           <HeuristicControls onOpenResults={() => setIsResultsOpen(true)} />
           <HeadingControls />
-          <TerrainBrushControls />
         </Box>
       </FloatingPanel>
 
