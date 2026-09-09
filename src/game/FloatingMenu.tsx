@@ -368,25 +368,17 @@ export const FloatingMenu = () => {
                         display: "flex",
                         flexDirection: "column",
                         gap: 0.5,
-                        animation: "pulse 2s infinite",
                       }}
                     >
                       <Typography variant="caption" color="error" fontWeight="bold">
-                        ⚠️ PATH EXECUTION FAILED
+                        FAILED
                       </Typography>
                       <Typography variant="caption" sx={{ fontSize: "9px" }}>
-                        Reason: {walkFailure.reason}
+                        {walkFailure.reason}
                       </Typography>
                       <Typography variant="caption" sx={{ fontSize: "9px" }}>
-                        Location: [{walkFailure.row}, {walkFailure.col}]
+                        LOCATION: [{walkFailure.row}, {walkFailure.col}]
                       </Typography>
-                      <style>{`
-                        @keyframes pulse {
-                          0% { opacity: 1 }
-                          50% { opacity: 0.6 }
-                          100% { opacity: 1 }
-                        }
-                      `}</style>
                     </Box>
                   )}
                 </Box>
@@ -599,9 +591,7 @@ export const FloatingMenu = () => {
                           { value: 2.5, label: "2.5" },
                           { value: 5, label: "5" },
                         ]}
-                        onChange={(_, value) =>
-                          onDirtChange(Number((value as number).toFixed(1)))
-                        }
+                        onChange={(_, value) => onDirtChange(Number((value as number).toFixed(1)))}
                         onPointerDown={(e) => e.stopPropagation()}
                       />
                     </Box>
@@ -635,9 +625,7 @@ export const FloatingMenu = () => {
                           { value: 2.5, label: "2.5" },
                           { value: 5, label: "5" },
                         ]}
-                        onChange={(_, value) =>
-                          onWaterChange(Number((value as number).toFixed(1)))
-                        }
+                        onChange={(_, value) => onWaterChange(Number((value as number).toFixed(1)))}
                         onPointerDown={(e) => e.stopPropagation()}
                       />
                     </Box>
