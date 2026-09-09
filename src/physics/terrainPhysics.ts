@@ -83,6 +83,35 @@ export const getElevationGradient = (
   return { zx, zy, magnitude, angle, isUnstable };
 };
 
+export interface GradientFieldEntry {
+  angle: number;
+  magnitude: number;
+  isUnstable: boolean;
+}
+
+export const computeGradientField = (
+  rows: number,
+  cols: number,
+  elevations: Map<string, number>,
+): Map<string, GradientFieldEntry> => {
+  const field = new Map<string, GradientFieldEntry>();
+  if (!elevations || elevations.size === 0) return field;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const grad = getElevationGradient(r, c, elevations);
+      if (grad.magnitude > 0.05 || grad.isUnstable) {
+        field.set(`${r}-${c}`, {
+          angle: grad.angle,
+          magnitude: grad.magnitude,
+          isUnstable: grad.isUnstable,
+        });
+      }
+    }
+  }
+  return field;
+};
+
 const resolveElevations = (
   source: Map<string, number> | { elevations: Map<string, number> },
 ): Map<string, number> => (source instanceof Map ? source : source.elevations);

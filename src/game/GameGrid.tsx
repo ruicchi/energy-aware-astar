@@ -1,10 +1,14 @@
 import Box from "@mui/material/Box";
 import { useMemo } from "react";
 import { MemoizedCell } from "./MemoizedCell";
+import { resolveCellDisplayState } from "./cellDisplay";
 import { FloatingMenu } from "./FloatingMenu";
 import { FloatingManual } from "./FloatingManual";
 import { useSimulation } from "./SimulationContext";
+import { computeGradientField } from "../physics/terrainPhysics";
 import { THEME_CONFIG } from "../config/simulationConfig";
+
+const noop = () => {};
 
 const GameGrid = () => {
   const {
@@ -40,6 +44,11 @@ const GameGrid = () => {
       return { row, col, key: `${row}-${col}` };
     });
   }, [rows, cols]);
+
+  const gradientField = useMemo(() => {
+    if (!showGradients) return null;
+    return computeGradientField(rows, cols, elevations);
+  }, [rows, cols, elevations, showGradients]);
 
   const isLineVisible = Boolean(
     isPathVisible &&
@@ -133,42 +142,47 @@ const GameGrid = () => {
               cellSize={cellSize}
               row={0}
               col={0}
-              isWall={false}
-              isRobot={true}
-              isDestination={false}
-              terrainFactor={0}
-              elevation={0}
-              showGradients={showGradients}
-              elevations={elevations}
-              heading={robotHeading}
-              onMouseDown={() => {}}
-              onMouseEnter={() => {}}
+              displayState={{
+                bgColor: THEME_CONFIG.robotColor,
+                isWall: false,
+                isRobot: true,
+                isDestination: false,
+                robotHeading,
+              }}
+              onMouseDown={noop}
+              onMouseEnter={noop}
             />
           </Box>
         )}
 
-        {cells.map((cell) => (
-          <MemoizedCell
-            key={cell.key}
-            cellKey={cell.key}
-            cellSize={cellSize}
-            row={cell.row}
-            col={cell.col}
-            isWall={wallNode.has(cell.key)}
-            isRobot={cell.key === robotNode}
-            isDestination={cell.key === destinationNode}
-            terrainFactor={terrainFactors.get(cell.key) || 0}
-            terrainType={terrainTypes.get(cell.key)}
-            elevation={elevations.get(cell.key) || 0}
-            showGradients={showGradients}
-            elevations={elevations}
-            heading={
-              cell.key === robotNode && !isWalking && !hasFinishedWalking ? robotHeading : undefined
-            }
-            onMouseDown={handleMouseDown}
-            onMouseEnter={handleMouseEnter}
-          />
-        ))}
+        {cells.map((cell) => {
+          const isRobot = cell.key === robotNode;
+          const displayState = resolveCellDisplayState({
+            isWall: wallNode.has(cell.key),
+            isRobot,
+            isDestination: cell.key === destinationNode,
+            terrainFactor: terrainFactors.get(cell.key) || 0,
+            terrainType: terrainTypes.get(cell.key),
+            elevation: elevations.get(cell.key) || 0,
+            robotHeading:
+              isRobot && !isWalking && !hasFinishedWalking ? robotHeading : undefined,
+            gradient: gradientField?.get(cell.key) ?? null,
+            showGradients,
+          });
+
+          return (
+            <MemoizedCell
+              key={cell.key}
+              cellKey={cell.key}
+              cellSize={cellSize}
+              row={cell.row}
+              col={cell.col}
+              displayState={displayState}
+              onMouseDown={handleMouseDown}
+              onMouseEnter={handleMouseEnter}
+            />
+          );
+        })}
       </Box>
     </Box>
   );

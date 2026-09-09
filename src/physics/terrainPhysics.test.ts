@@ -3,6 +3,7 @@ import {
   getStepDistance,
   getHeading,
   getElevationGradient,
+  computeGradientField,
   getPosture,
   isStablePosture,
   isTraversableSlope,
@@ -66,6 +67,21 @@ describe("Terrain Physics", () => {
       expect(gradient.zx).toBeGreaterThan(0)
       expect(gradient.magnitude).toBeGreaterThan(1.0)
       expect(gradient.isUnstable).toBe(true)
+    })
+
+    it("precomputes gradient field for non-empty elevations and ignores empty elevations", () => {
+      const emptyElevations = new Map<string, number>()
+      expect(computeGradientField(10, 10, emptyElevations).size).toBe(0)
+
+      const elevations = new Map<string, number>([
+        ["5-6", 20],
+        ["4-6", 20],
+        ["6-6", 20],
+      ])
+      const field = computeGradientField(10, 10, elevations)
+      expect(field.size).toBeGreaterThan(0)
+      expect(field.get("5-5")?.magnitude).toBeGreaterThan(1.0)
+      expect(field.get("5-5")?.isUnstable).toBe(true)
     })
   })
 

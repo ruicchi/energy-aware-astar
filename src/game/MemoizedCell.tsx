@@ -1,95 +1,66 @@
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
-import NorthIcon from "@mui/icons-material/North"
-import Box from "@mui/material/Box"
-import { memo } from "react"
-import type { Heading } from "../shared/types"
-import { getElevationGradient } from "../physics/terrainPhysics"
-import { TERRAIN_CONFIG, THEME_CONFIG } from "../config/simulationConfig"
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import NorthIcon from "@mui/icons-material/North";
+import Box from "@mui/material/Box";
+import { memo } from "react";
+import type { Heading } from "../shared/types";
+import { THEME_CONFIG } from "../config/simulationConfig";
+import type { CellDisplayState } from "./cellDisplay";
 
-type MemoizedCellProps = {
-  cellKey: string
-  cellSize: number
-  row: number
-  col: number
-  isWall: boolean
-  isRobot: boolean
-  isDestination: boolean
-  terrainFactor: number
-  terrainType?: "dirt" | "water"
-  elevation: number
-  showGradients?: boolean
-  elevations?: Map<string, number>
-  heading?: Heading
-  onMouseDown: (key: string) => void
-  onMouseEnter: (key: string) => void
+export type { CellDisplayState, GradientArrowDisplay } from "./cellDisplay";
+
+export interface MemoizedCellProps {
+  cellKey: string;
+  cellSize: number;
+  row: number;
+  col: number;
+  displayState: CellDisplayState;
+  onMouseDown: (key: string) => void;
+  onMouseEnter: (key: string) => void;
 }
 
 const getRotation = (heading: Heading | undefined) => {
   switch (heading) {
     case "UP":
-      return "-90deg"
+      return "-90deg";
     case "DOWN":
-      return "90deg"
+      return "90deg";
     case "LEFT":
-      return "180deg"
+      return "180deg";
     case "RIGHT":
-      return "0deg"
+      return "0deg";
     case "UP_LEFT":
-      return "-135deg"
+      return "-135deg";
     case "UP_RIGHT":
-      return "-45deg"
+      return "-45deg";
     case "DOWN_LEFT":
-      return "135deg"
+      return "135deg";
     case "DOWN_RIGHT":
-      return "45deg"
+      return "45deg";
     default:
-      return "0deg"
+      return "0deg";
   }
-}
+};
 
-//* React.memo prevents this cell from re-rendering unless its props change
+//* React.memo prevents this cell from re-rendering unless its presentation properties change
 export const MemoizedCell = memo(
   ({
     cellKey,
     cellSize,
     row,
     col,
-    isWall,
-    isRobot,
-    isDestination,
-    terrainFactor,
-    terrainType,
-    heading,
-    elevation,
-    showGradients,
-    elevations,
+    displayState,
     onMouseDown,
     onMouseEnter,
   }: MemoizedCellProps) => {
-    const gradient = showGradients && elevations
-      ? getElevationGradient(row, col, elevations)
-      : null
-    const gradientAngle = gradient?.angle ?? 0
-    const gradientMagnitude = gradient?.magnitude ?? 0
-    const isUnstable = gradient?.isUnstable ?? false
-
-    //* Determine backgroundColor based on cell state. Priority goes to robot/destination
-    let bgColor = "transparent"
-    if (isRobot)
-      bgColor = THEME_CONFIG.robotColor
-    else if (isDestination)
-      bgColor = THEME_CONFIG.destinationColor
-    else if (isWall)
-      bgColor = TERRAIN_CONFIG.types.wall.color
-    else if (isUnstable && showGradients)
-      bgColor = THEME_CONFIG.unstableOverlayColor
-    else if (terrainType === "dirt" || (!terrainType && terrainFactor === TERRAIN_CONFIG.types.dirt.cost))
-      bgColor = TERRAIN_CONFIG.types.dirt.color
-    else if (terrainType === "water" || (!terrainType && terrainFactor === TERRAIN_CONFIG.types.water.cost))
-      bgColor = TERRAIN_CONFIG.types.water.color
-    else if (elevation > 0) {
-      bgColor = TERRAIN_CONFIG.getElevationColor(elevation)
-    }
+    const {
+      bgColor,
+      isWall,
+      isRobot,
+      isDestination,
+      robotHeading,
+      elevationLabel,
+      gradientArrow,
+    } = displayState;
 
     return (
       <Box
@@ -115,47 +86,65 @@ export const MemoizedCell = memo(
           position: "relative",
         }}
       >
-        {isRobot && heading && heading !== "NONE" && (
+        {isRobot && robotHeading && robotHeading !== "NONE" && (
           <ArrowForwardIcon
             sx={{
               fontSize: cellSize * 0.8,
-              transform: `rotate(${getRotation(heading)})`,
+              transform: `rotate(${getRotation(robotHeading)})`,
               transition: "transform 0.2s ease-in-out",
             }}
           />
         )}
 
-        {showGradients && gradientMagnitude > 0.1 && !isRobot && !isDestination && !isWall && (
+        {gradientArrow && (
           <NorthIcon
             sx={{
               fontSize: cellSize * 0.6,
-              // Math.atan2 is relative to positive x-axis (Right)
-              // NorthIcon starts pointing Up (-90deg relative to Right)
-              // So we add 90deg to rotate it correctly
-              transform: `rotate(${gradientAngle * (180 / Math.PI) + 90}deg)`,
-              color: isUnstable ? THEME_CONFIG.unstableArrowColor : THEME_CONFIG.contourArrowColor,
-              opacity: Math.min(1, gradientMagnitude / 2),
+              transform: `rotate(${gradientArrow.rotationDeg}deg)`,
+              color: gradientArrow.isUnstable
+                ? THEME_CONFIG.unstableArrowColor
+                : THEME_CONFIG.contourArrowColor,
+              opacity: gradientArrow.opacity,
             }}
           />
         )}
 
-        {elevation > 0 && !isRobot && !isDestination && !isWall && terrainFactor === 0 && elevation}
+        {elevationLabel != null && elevationLabel}
       </Box>
-    )
+    );
   },
   (prevProps, nextProps) => {
-    //* This only re-renders if the cell state tracking changes
+    if (
+      prevProps.cellSize !== nextProps.cellSize ||
+      prevProps.onMouseDown !== nextProps.onMouseDown ||
+      prevProps.onMouseEnter !== nextProps.onMouseEnter
+    ) {
+      return false;
+    }
+
+    const prev = prevProps.displayState;
+    const next = nextProps.displayState;
+
+    if (
+      prev.bgColor !== next.bgColor ||
+      prev.isWall !== next.isWall ||
+      prev.isRobot !== next.isRobot ||
+      prev.isDestination !== next.isDestination ||
+      prev.robotHeading !== next.robotHeading ||
+      prev.elevationLabel !== next.elevationLabel
+    ) {
+      return false;
+    }
+
+    const prevArrow = prev.gradientArrow;
+    const nextArrow = next.gradientArrow;
+    if (!prevArrow && !nextArrow) return true;
+    if (!prevArrow || !nextArrow) return false;
+
     return (
-      prevProps.isWall === nextProps.isWall &&
-      prevProps.isRobot === nextProps.isRobot &&
-      prevProps.isDestination === nextProps.isDestination &&
-      prevProps.terrainFactor === nextProps.terrainFactor &&
-      prevProps.terrainType === nextProps.terrainType &&
-      prevProps.elevation === nextProps.elevation &&
-      prevProps.cellSize === nextProps.cellSize &&
-      prevProps.heading === nextProps.heading &&
-      prevProps.showGradients === nextProps.showGradients &&
-      prevProps.elevations === nextProps.elevations
-    )
+      prevArrow.rotationDeg === nextArrow.rotationDeg &&
+      prevArrow.opacity === nextArrow.opacity &&
+      prevArrow.isUnstable === nextArrow.isUnstable
+    );
   },
-)
+);
