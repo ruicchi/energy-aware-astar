@@ -164,3 +164,71 @@ export const isTraversableSlope = (
 
   return isStablePosture(target.row, target.col, target.heading, scenario);
 };
+
+export interface PathSafetyResult {
+  isSafe: boolean;
+  failureReason?: string;
+  failureStep?: number;
+  maxSlopeEncountered: number;
+}
+
+/**
+ * Validates whether an entire path can be safely traversed by the robot
+ * under physical constraints (slope limits, gradient stability, roll/pitch tipping).
+ */
+export const evaluatePathSafety = (
+  path: string[],
+  scenario: Scenario,
+): PathSafetyResult => {
+  if (!path || path.length === 0) {
+    return { isSafe: false, failureReason: "NO_PATH_FOUND", maxSlopeEncountered: 0 };
+  }
+
+  let maxSlopeEncountered = 0;
+
+  for (let i = 1; i < path.length; i++) {
+    const [prevR, prevC] = path[i - 1].split("-").map(Number);
+    const [currR, currC] = path[i].split("-").map(Number);
+    const heading = getHeading(path[i - 1], path[i]);
+    const slope = getSlopeDegrees(
+      { row: prevR, col: prevC },
+      { row: currR, col: currC, heading },
+      scenario.elevations,
+    );
+    if (slope > maxSlopeEncountered) {
+      maxSlopeEncountered = slope;
+    }
+
+    const maxTraversableSlope = scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE;
+    if (slope > maxTraversableSlope) {
+      return {
+        isSafe: false,
+        failureReason: `EXCEEDED_MAX_SLOPE (${slope.toFixed(1)}° > ${maxTraversableSlope}°)`,
+        failureStep: i,
+        maxSlopeEncountered,
+      };
+    }
+
+    const { isUnstable } = getElevationGradient(currR, currC, scenario.elevations);
+    if (isUnstable) {
+      return {
+        isSafe: false,
+        failureReason: "UNSTABLE_ELEVATION_GRADIENT",
+        failureStep: i,
+        maxSlopeEncountered,
+      };
+    }
+
+    if (!isStablePosture(currR, currC, heading, scenario)) {
+      return {
+        isSafe: false,
+        failureReason: "ROBOT_TIPOVER_RISK",
+        failureStep: i,
+        maxSlopeEncountered,
+      };
+    }
+  }
+
+  return { isSafe: true, maxSlopeEncountered };
+};
+
