@@ -4,7 +4,7 @@ import Box from "@mui/material/Box";
 import { memo } from "react";
 import type { Heading } from "../shared/types";
 import { THEME_CONFIG } from "../config/simulationConfig";
-import type { CellDisplayState } from "./cellDisplay";
+import { areCellDisplayPropsEqual, type CellDisplayState } from "./cellDisplay";
 
 export type { CellDisplayState, GradientArrowDisplay } from "./cellDisplay";
 
@@ -92,6 +92,7 @@ export const MemoizedCell = memo(
               fontSize: cellSize * 0.8,
               transform: `rotate(${getRotation(robotHeading)})`,
               transition: "transform 0.2s ease-in-out",
+              pointerEvents: "none",
             }}
           />
         )}
@@ -105,6 +106,7 @@ export const MemoizedCell = memo(
                 ? THEME_CONFIG.unstableArrowColor
                 : THEME_CONFIG.contourArrowColor,
               opacity: gradientArrow.opacity,
+              pointerEvents: "none",
             }}
           />
         )}
@@ -113,38 +115,5 @@ export const MemoizedCell = memo(
       </Box>
     );
   },
-  (prevProps, nextProps) => {
-    if (
-      prevProps.cellSize !== nextProps.cellSize ||
-      prevProps.onMouseDown !== nextProps.onMouseDown ||
-      prevProps.onMouseEnter !== nextProps.onMouseEnter
-    ) {
-      return false;
-    }
-
-    const prev = prevProps.displayState;
-    const next = nextProps.displayState;
-
-    if (
-      prev.bgColor !== next.bgColor ||
-      prev.isWall !== next.isWall ||
-      prev.isRobot !== next.isRobot ||
-      prev.isDestination !== next.isDestination ||
-      prev.robotHeading !== next.robotHeading ||
-      prev.elevationLabel !== next.elevationLabel
-    ) {
-      return false;
-    }
-
-    const prevArrow = prev.gradientArrow;
-    const nextArrow = next.gradientArrow;
-    if (!prevArrow && !nextArrow) return true;
-    if (!prevArrow || !nextArrow) return false;
-
-    return (
-      prevArrow.rotationDeg === nextArrow.rotationDeg &&
-      prevArrow.opacity === nextArrow.opacity &&
-      prevArrow.isUnstable === nextArrow.isUnstable
-    );
-  },
+  areCellDisplayPropsEqual,
 );

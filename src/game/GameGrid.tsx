@@ -1,14 +1,11 @@
 import Box from "@mui/material/Box";
-import { useMemo } from "react";
-import { MemoizedCell } from "./MemoizedCell";
-import { resolveCellDisplayState } from "./cellDisplay";
 import { FloatingMenu } from "./FloatingMenu";
 import { FloatingManual } from "./FloatingManual";
 import { useSimulation } from "./SimulationContext";
-import { computeGradientField } from "../physics/terrainPhysics";
+import { TerrainGrid } from "./TerrainGrid";
+import { RobotActor } from "./actors/RobotActor";
+import { DestinationActor } from "./actors/DestinationActor";
 import { THEME_CONFIG } from "../config/simulationConfig";
-
-const noop = () => {};
 
 const GameGrid = () => {
   const {
@@ -32,23 +29,11 @@ const GameGrid = () => {
     isWalking,
     hasFinishedWalking,
     isLocked,
+    activeStrokeBrush,
     handleMouseDown,
     handleMouseEnter,
     handleMouseUp,
   } = useSimulation();
-
-  const cells = useMemo(() => {
-    return Array.from({ length: rows * cols }, (_, index) => {
-      const row = Math.floor(index / cols);
-      const col = index % cols;
-      return { row, col, key: `${row}-${col}` };
-    });
-  }, [rows, cols]);
-
-  const gradientField = useMemo(() => {
-    if (!showGradients) return null;
-    return computeGradientField(rows, cols, elevations);
-  }, [rows, cols, elevations, showGradients]);
 
   const isLineVisible = Boolean(
     isPathVisible &&
@@ -120,69 +105,38 @@ const GameGrid = () => {
           </svg>
         )}
 
-        {(isWalking || hasFinishedWalking) && currentPath && walkingStep !== -1 && (
-          <Box
-            sx={{
-              position: "absolute",
-              width: cellSize,
-              height: cellSize,
-              zIndex: 10,
-              pointerEvents: "none",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "#4caf50",
-              left: Number(currentPath[walkingStep].split("-")[1]) * cellSize,
-              top: Number(currentPath[walkingStep].split("-")[0]) * cellSize,
-              transition: isWalking ? "all 0.2s linear" : "none",
-            }}
-          >
-            <MemoizedCell
-              cellKey="walking-robot"
-              cellSize={cellSize}
-              row={0}
-              col={0}
-              displayState={{
-                bgColor: THEME_CONFIG.robotColor,
-                isWall: false,
-                isRobot: true,
-                isDestination: false,
-                robotHeading,
-              }}
-              onMouseDown={noop}
-              onMouseEnter={noop}
-            />
-          </Box>
-        )}
+        <TerrainGrid
+          rows={rows}
+          cols={cols}
+          cellSize={cellSize}
+          wallNode={wallNode}
+          terrainFactors={terrainFactors}
+          terrainTypes={terrainTypes}
+          elevations={elevations}
+          showGradients={showGradients}
+          onMouseDown={handleMouseDown}
+          onMouseEnter={handleMouseEnter}
+        />
 
-        {cells.map((cell) => {
-          const isRobot = cell.key === robotNode;
-          const displayState = resolveCellDisplayState({
-            isWall: wallNode.has(cell.key),
-            isRobot,
-            isDestination: cell.key === destinationNode,
-            terrainFactor: terrainFactors.get(cell.key) || 0,
-            terrainType: terrainTypes.get(cell.key),
-            elevation: elevations.get(cell.key) || 0,
-            robotHeading:
-              isRobot && !isWalking && !hasFinishedWalking ? robotHeading : undefined,
-            gradient: gradientField?.get(cell.key) ?? null,
-            showGradients,
-          });
+        <RobotActor
+          robotNode={robotNode}
+          cellSize={cellSize}
+          robotHeading={robotHeading}
+          isDragging={activeStrokeBrush === "robot"}
+          isWalking={isWalking}
+          hasFinishedWalking={hasFinishedWalking}
+          walkingStep={walkingStep}
+          currentPath={currentPath}
+          onMouseDown={handleMouseDown}
+        />
 
-          return (
-            <MemoizedCell
-              key={cell.key}
-              cellKey={cell.key}
-              cellSize={cellSize}
-              row={cell.row}
-              col={cell.col}
-              displayState={displayState}
-              onMouseDown={handleMouseDown}
-              onMouseEnter={handleMouseEnter}
-            />
-          );
-        })}
+        <DestinationActor
+          destinationNode={destinationNode}
+          cellSize={cellSize}
+          isDragging={activeStrokeBrush === "destination"}
+          isWalking={isWalking}
+          onMouseDown={handleMouseDown}
+        />
       </Box>
     </Box>
   );

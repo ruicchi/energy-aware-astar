@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { FloatingPanel } from "./FloatingPanel";
 import { HeuristicControls } from "./controls/HeuristicControls";
@@ -6,7 +6,7 @@ import { HeadingControls } from "./controls/HeadingControls";
 import { TerrainBrushControls } from "./controls/TerrainBrushControls";
 import { MetricsModal } from "./controls/MetricsModal";
 
-export const FloatingMenu = () => {
+export const FloatingMenu = memo(() => {
   const [isResultsOpen, setIsResultsOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -30,4 +30,4 @@ export const FloatingMenu = () => {
       {isResultsOpen && <MetricsModal onClose={() => setIsResultsOpen(false)} />}
     </>
   );
-};
+});

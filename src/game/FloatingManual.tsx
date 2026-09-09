@@ -1,7 +1,8 @@
+import { memo } from "react";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { FloatingPanel } from "./FloatingPanel";
 
-export const FloatingManual = () => {
+export const FloatingManual = memo(() => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -54,4 +55,4 @@ export const FloatingManual = () => {
       </Box>
     </FloatingPanel>
   );
-};
+});

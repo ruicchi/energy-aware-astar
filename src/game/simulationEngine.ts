@@ -90,6 +90,7 @@ export interface SimulationState {
     energy: number;
     energyBreakdown: EnergyBreakdown;
   } | null;
+  activeStrokeBrush: BrushMode | "robot" | "destination" | null;
 }
 
 export interface SimulationEngineOptions {
@@ -247,6 +248,7 @@ export class SimulationEngine {
       walkingStep: this.walkingStep,
       walkFailure: this.walkFailure,
       pathMetrics: this.pathMetrics,
+      activeStrokeBrush: this.strokeSession?.brush ?? null,
     };
 
     return this.cachedSnapshot;
@@ -383,6 +385,10 @@ export class SimulationEngine {
   public startPaint(key: string): void {
     if (this.isAnimating || this.isWalking) return;
 
+    if (this.currentPath || this.isManhattanFinished || this.isEnergyFinished) {
+      this.clearAnimations();
+    }
+
     const previousSnapshot = {
       wallNodes: new Set(this.wallNodes),
       terrainFactors: new Map(this.terrainFactors),
@@ -399,6 +405,7 @@ export class SimulationEngine {
         modifiedCells: new Set(),
         previousSnapshot,
       };
+      this.notify();
       return;
     }
 
@@ -409,6 +416,7 @@ export class SimulationEngine {
         modifiedCells: new Set(),
         previousSnapshot,
       };
+      this.notify();
       return;
     }
 
@@ -455,6 +463,7 @@ export class SimulationEngine {
 
     if (brush === "robot") {
       if (key !== this.destinationNode && !this.wallNodes.has(key)) {
+        if (this.robotNode === key) return;
         const [r, c] = parseCoordinates(key);
         if (!getElevationGradient(r, c, this.elevations).isUnstable) {
           this.robotNode = key;
@@ -466,6 +475,7 @@ export class SimulationEngine {
 
     if (brush === "destination") {
       if (key !== this.robotNode && !this.wallNodes.has(key)) {
+        if (this.destinationNode === key) return;
         const [r, c] = parseCoordinates(key);
         if (!getElevationGradient(r, c, this.elevations).isUnstable) {
           this.destinationNode = key;

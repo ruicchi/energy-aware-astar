@@ -90,3 +90,42 @@ export const resolveCellDisplayState = ({
     gradientArrow,
   };
 };
+
+export interface CellComparisonProps {
+  cellSize: number;
+  displayState: CellDisplayState;
+}
+
+export const areCellDisplayPropsEqual = (
+  prevProps: CellComparisonProps,
+  nextProps: CellComparisonProps,
+): boolean => {
+  if (prevProps.cellSize !== nextProps.cellSize) {
+    return false;
+  }
+
+  const prev = prevProps.displayState;
+  const next = nextProps.displayState;
+
+  if (
+    prev.bgColor !== next.bgColor ||
+    prev.isWall !== next.isWall ||
+    prev.isRobot !== next.isRobot ||
+    prev.isDestination !== next.isDestination ||
+    prev.robotHeading !== next.robotHeading ||
+    prev.elevationLabel !== next.elevationLabel
+  ) {
+    return false;
+  }
+
+  const prevArrow = prev.gradientArrow;
+  const nextArrow = next.gradientArrow;
+  if (!prevArrow && !nextArrow) return true;
+  if (!prevArrow || !nextArrow) return false;
+
+  return (
+    prevArrow.rotationDeg === nextArrow.rotationDeg &&
+    prevArrow.opacity === nextArrow.opacity &&
+    prevArrow.isUnstable === nextArrow.isUnstable
+  );
+};
