@@ -1,6 +1,7 @@
 import { useState, memo } from "react";
-import { Box, useTheme, useMediaQuery } from "@mui/material";
+import { Box, useTheme, useMediaQuery, Divider } from "@mui/material";
 import { FloatingPanel } from "./FloatingPanel";
+import { ScenarioControls } from "./controls/ScenarioControls";
 import { HeuristicControls } from "./controls/HeuristicControls";
 import { HeadingControls } from "./controls/HeadingControls";
 import { MetricsModal } from "./controls/MetricsModal";
@@ -27,6 +28,8 @@ export const FloatingMenu = memo(function FloatingMenu() {
         collapsible
       >
         <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+          <ScenarioControls />
+          <Divider sx={{ my: 0.5 }} />
           <HeuristicControls onOpenResults={() => setIsResultsOpen(true)} />
           <HeadingControls />
         </Box>

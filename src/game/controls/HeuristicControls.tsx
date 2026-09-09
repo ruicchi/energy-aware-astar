@@ -105,8 +105,21 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
         Visualize
       </Button>
 
+      {hasPath && (
+        <Button
+          variant="contained"
+          color="secondary"
+          fullWidth
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={walkPath}
+          sx={{ mt: 1 }}
+        >
+          {isWalking ? "Walking..." : "Walk Path"}
+        </Button>
+      )}
+
       {(isManhattanFinished || isEnergyFinished) && (
-        <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box sx={{ mt: 0.5, display: "flex", flexDirection: "column", gap: 0.5 }}>
           {isManhattanFinished && (
             <Button
               variant={showManhattanSearch ? "contained" : "outlined"}
@@ -131,26 +144,13 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
               {showEnergySearch ? "Hide Search Map" : "Show Search Map"}
             </Button>
           )}
-
-          {hasPath && (
-            <Button
-              variant="contained"
-              color="secondary"
-              fullWidth
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={walkPath}
-              sx={{ mt: 1 }}
-            >
-              {isWalking ? "Walking..." : "Walk Path"}
-            </Button>
-          )}
         </Box>
       )}
 
       {pathMetrics && (
         <Box
           sx={{
-            mt: 2,
+            mt: 1.5,
             p: 1,
             backgroundColor: "rgba(0,0,0,0.05)",
             borderRadius: 1,
@@ -190,6 +190,16 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
           <Typography variant="caption" display="block">
             Evaluated Nodes: {pathMetrics.energyBreakdown.nodesEvaluated}
           </Typography>
+          {pathMetrics.isSafe !== undefined && (
+            <Typography
+              variant="caption"
+              display="block"
+              fontWeight="bold"
+              color={pathMetrics.isSafe ? "success.main" : "error.main"}
+            >
+              Safety: {pathMetrics.isSafe ? "Safe ✓" : `Unsafe ✗ (${pathMetrics.safetyFailureReason ?? "Hazard"})`}
+            </Typography>
+          )}
 
           {walkFailure && (
             <Box

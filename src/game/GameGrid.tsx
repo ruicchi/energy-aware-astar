@@ -14,6 +14,7 @@ export default function GameGrid() {
     cols,
     rows,
     cellSize,
+    isFixedDimensions,
     wallNode,
     terrainFactors,
     terrainTypes,
@@ -70,6 +71,9 @@ export default function GameGrid() {
         userSelect: "none",
         position: "relative",
         touchAction: "none",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
@@ -85,6 +89,9 @@ export default function GameGrid() {
           position: "relative",
           backgroundColor: THEME_CONFIG.gridBackgroundColor,
           pointerEvents: isLocked ? "none" : "auto",
+          boxShadow: isFixedDimensions ? "0 8px 32px rgba(0, 0, 0, 0.45)" : "none",
+          border: isFixedDimensions ? "2px solid rgba(255, 255, 255, 0.15)" : "none",
+          borderRadius: isFixedDimensions ? 1 : 0,
         }}
       >
         <Box

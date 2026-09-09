@@ -87,7 +87,7 @@ export const UI_CONFIG = {
   panelWidth: {
     tiny: 160,
     mobile: 180,
-    default: 200,
+    default: 220,
     manual: 580,
     metrics: 280,
     metricsMobile: 220,

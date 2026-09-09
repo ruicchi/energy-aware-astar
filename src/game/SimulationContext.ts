@@ -31,10 +31,13 @@ export interface SimulationContextValue extends SimulationState {
   handleMouseUp: () => void;
 
   visualize: (algo?: AlgorithmType) => void;
+  solveInstantly: (algo?: AlgorithmType) => void;
   walkPath: () => void;
   clearWalls: () => void;
   clearAnimations: () => void;
   resetSimulation: () => void;
+  loadScenario: (scenario: Scenario, options?: { name?: string; instantSolve?: boolean }) => void;
+  resetToFreeform: () => void;
   getScenario: () => Scenario;
 }
 

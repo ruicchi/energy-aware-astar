@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useViewport } from "../hooks/useViewport";
 import { SimulationEngine } from "./simulationEngine";
 import { SimulationContext, type SimulationContextValue } from "./SimulationContext";
-import type { AlgorithmType, BrushMode, Heading } from "../shared/types";
+import type { AlgorithmType, BrushMode, Heading, Scenario } from "../shared/types";
 import { GRID_CONFIG } from "../config/simulationConfig";
 
 interface SimulationProviderProps {
@@ -12,26 +12,43 @@ interface SimulationProviderProps {
 
 export function SimulationProvider({ children }: SimulationProviderProps) {
   const viewport = useViewport();
-  const cellSize =
-    viewport.width < GRID_CONFIG.mobileBreakpoint
+  const [engine] = useState(() => {
+    const defaultCellSize =
+      viewport.width < GRID_CONFIG.mobileBreakpoint
+        ? GRID_CONFIG.mobileCellSize
+        : GRID_CONFIG.defaultCellSize;
+    const initialCols = Math.floor(viewport.width / defaultCellSize);
+    const initialRows = Math.floor(viewport.height / defaultCellSize);
+    return new SimulationEngine({ cols: initialCols, rows: initialRows, cellSize: defaultCellSize });
+  });
+
+  const state = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
+
+  const targetCellSize = state.isFixedDimensions
+    ? Math.min(
+        GRID_CONFIG.defaultCellSize,
+        Math.max(12, Math.floor(Math.min(viewport.width - 24, viewport.height - 24) / 25)),
+      )
+    : viewport.width < GRID_CONFIG.mobileBreakpoint
       ? GRID_CONFIG.mobileCellSize
       : GRID_CONFIG.defaultCellSize;
-  const cols = Math.floor(viewport.width / cellSize);
-  const rows = Math.floor(viewport.height / cellSize);
 
-  const [engine] = useState(() => new SimulationEngine({ cols, rows, cellSize }));
+  const cols = Math.floor(viewport.width / targetCellSize);
+  const rows = Math.floor(viewport.height / targetCellSize);
 
   useEffect(() => {
-    engine.setDimensions(cols, rows, cellSize);
-  }, [engine, cols, rows, cellSize]);
+    if (state.isFixedDimensions) {
+      engine.setDimensions(state.cols, state.rows, targetCellSize);
+    } else {
+      engine.setDimensions(cols, rows, targetCellSize);
+    }
+  }, [engine, state.isFixedDimensions, state.cols, state.rows, cols, rows, targetCellSize]);
 
   useEffect(() => {
     return () => {
       engine.destroy();
     };
   }, [engine]);
-
-  const state = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
 
   const setActiveBrush = useCallback((b: BrushMode) => engine.setActiveBrush(b), [engine]);
   const setElevationBrushValue = useCallback((v: number) => engine.setElevationBrushValue(v), [engine]);
@@ -47,10 +64,25 @@ export function SimulationProvider({ children }: SimulationProviderProps) {
   const handleMouseEnter = useCallback((key: string) => engine.continuePaint(key), [engine]);
   const handleMouseUp = useCallback(() => engine.endPaint(), [engine]);
   const visualize = useCallback((algo?: AlgorithmType) => engine.visualize(algo), [engine]);
+  const solveInstantly = useCallback((algo?: AlgorithmType) => engine.solveInstantly(algo), [engine]);
   const walkPath = useCallback(() => engine.walk(), [engine]);
   const clearWalls = useCallback(() => engine.clearWalls(), [engine]);
   const clearAnimations = useCallback(() => engine.clearAnimations(), [engine]);
   const resetSimulation = useCallback(() => engine.reset(), [engine]);
+  const loadScenario = useCallback(
+    (scenario: Scenario, options?: { name?: string; instantSolve?: boolean }) =>
+      engine.loadScenario(scenario, options),
+    [engine],
+  );
+  const resetToFreeform = useCallback(() => {
+    const freeformCellSize =
+      viewport.width < GRID_CONFIG.mobileBreakpoint
+        ? GRID_CONFIG.mobileCellSize
+        : GRID_CONFIG.defaultCellSize;
+    const freeformCols = Math.floor(viewport.width / freeformCellSize);
+    const freeformRows = Math.floor(viewport.height / freeformCellSize);
+    engine.resetToFreeform(freeformCols, freeformRows, freeformCellSize);
+  }, [engine, viewport.width, viewport.height]);
   const getScenario = useCallback(() => engine.getScenario(), [engine]);
 
   const value: SimulationContextValue = useMemo(
@@ -74,10 +106,13 @@ export function SimulationProvider({ children }: SimulationProviderProps) {
       handleMouseEnter,
       handleMouseUp,
       visualize,
+      solveInstantly,
       walkPath,
       clearWalls,
       clearAnimations,
       resetSimulation,
+      loadScenario,
+      resetToFreeform,
       getScenario,
     }),
     [
@@ -97,13 +132,16 @@ export function SimulationProvider({ children }: SimulationProviderProps) {
       handleMouseEnter,
       handleMouseUp,
       visualize,
+      solveInstantly,
       walkPath,
       clearWalls,
       clearAnimations,
       resetSimulation,
+      loadScenario,
+      resetToFreeform,
       getScenario,
     ],
   );
 
   return <SimulationContext.Provider value={value}>{children}</SimulationContext.Provider>;
-};
+}

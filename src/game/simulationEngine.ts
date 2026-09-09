@@ -14,7 +14,12 @@ import {
   BRUSH_CONFIG,
   getHeadingRotation,
 } from "../config/simulationConfig";
-import { getElevationGradient, getHeading, isTraversableSlope } from "../physics/terrainPhysics";
+import {
+  getElevationGradient,
+  getHeading,
+  isTraversableSlope,
+  evaluatePathSafety,
+} from "../physics/terrainPhysics";
 import { findPath } from "../algorithms/astar";
 
 export interface SimulationDomElement {
@@ -71,6 +76,8 @@ export interface SimulationState {
   cols: number;
   rows: number;
   cellSize: number;
+  isFixedDimensions: boolean;
+  loadedScenarioName: string | null;
 
   // Grid / Scenario Terrain State
   wallNodes: Set<string>;
@@ -111,6 +118,8 @@ export interface SimulationState {
     distance: number;
     energy: number;
     energyBreakdown: EnergyBreakdown;
+    isSafe?: boolean;
+    safetyFailureReason?: string;
   } | null;
   activeStrokeBrush: BrushMode | "robot" | "destination" | null;
 }
@@ -162,6 +171,10 @@ export class SimulationEngine {
   private cols: number;
   private rows: number;
   private cellSize: number;
+  private isFixedDimensions: boolean = false;
+  private loadedScenarioName: string | null = null;
+  private maxTraversableSlope: number | null = null;
+  private initialScenarioHeading: Heading = VEHICLE_CONFIG.defaultHeading;
 
   private wallNodes: Set<string>;
   private terrainFactors: Map<string, number>;
@@ -197,6 +210,8 @@ export class SimulationEngine {
     distance: number;
     energy: number;
     energyBreakdown: EnergyBreakdown;
+    isSafe?: boolean;
+    safetyFailureReason?: string;
   } | null = null;
 
   private strokeSession: ActiveStrokeSession | null = null;
@@ -245,6 +260,8 @@ export class SimulationEngine {
       cols: this.cols,
       rows: this.rows,
       cellSize: this.cellSize,
+      isFixedDimensions: this.isFixedDimensions,
+      loadedScenarioName: this.loadedScenarioName,
       wallNodes: this.wallNodes,
       terrainFactors: this.terrainFactors,
       terrainTypes: this.terrainTypes,
@@ -289,6 +306,13 @@ export class SimulationEngine {
   // --- Dimension & Viewport Management ---
 
   public setDimensions(cols: number, rows: number, cellSize: number): void {
+    if (this.isFixedDimensions) {
+      if (this.cellSize !== cellSize) {
+        this.cellSize = cellSize;
+        this.notify();
+      }
+      return;
+    }
     if (cols === this.cols && rows === this.rows && cellSize === this.cellSize) return;
     this.cols = cols;
     this.rows = rows;
@@ -310,7 +334,7 @@ export class SimulationEngine {
       elevations: this.elevations,
       climbingFactor: ENERGY_CONFIG.climbingFactor,
       turnPenalty: ENERGY_CONFIG.turnPenalty,
-      maxTraversableSlope: TERRAIN_CONFIG.defaultMaxTraversableSlope,
+      maxTraversableSlope: this.maxTraversableSlope ?? TERRAIN_CONFIG.defaultMaxTraversableSlope,
       initialHeading: this.robotHeading,
       showGradients: this.showGradients,
       robotPhysics: VEHICLE_CONFIG,
@@ -382,13 +406,25 @@ export class SimulationEngine {
     this.notify();
   }
 
-  public setSelectedAlgo(algo: AlgorithmType): void {
+  public setSelectedAlgo(algo: AlgorithmType, instantSolveIfPathVisible = true): void {
     if (this.selectedAlgo === algo) return;
     this.selectedAlgo = algo;
     if (algo !== "energyAware") {
       this.robotHeading = "NONE";
+    } else if (this.loadedScenarioName && this.initialScenarioHeading !== "NONE") {
+      this.robotHeading = this.initialScenarioHeading;
     }
-    this.notify();
+
+    if (
+      instantSolveIfPathVisible &&
+      (this.isPathVisible || Boolean(this.currentPath && this.currentPath.length > 0)) &&
+      !this.isAnimating &&
+      !this.isWalking
+    ) {
+      this.solveInstantly(algo);
+    } else {
+      this.notify();
+    }
   }
 
   public toggleManhattanSearch(): void {
@@ -763,11 +799,15 @@ export class SimulationEngine {
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
       result;
 
+    const safety = evaluatePathSafety(shortestPath, scenario);
+
     this.pathMetrics = {
       algorithm: config.name,
       distance: totalDistance,
       energy: totalEnergy,
       energyBreakdown,
+      isSafe: safety.isSafe,
+      safetyFailureReason: safety.failureReason,
     };
 
     this.currentPath = shortestPath.length > 0 ? shortestPath : null;
@@ -906,6 +946,138 @@ export class SimulationEngine {
     }
   }
 
+  // --- Scenario Loading & Instant Solving ---
+
+  public loadScenario(
+    scenario: Scenario,
+    options: {
+      name?: string;
+      instantSolve?: boolean;
+    } = {},
+  ): void {
+    const { name = "Test Scenario", instantSolve = true } = options;
+
+    this.currentRunId += 1;
+    this.clearTimers();
+    this.domAdapter.clearAllSearchVisuals();
+
+    // Clear old wall classes from DOM
+    for (const key of this.wallNodes) {
+      const element = this.domAdapter.getCellElement(key);
+      if (element) {
+        element.style.backgroundColor = "";
+        element.classList.remove("is-wall");
+      }
+    }
+
+    this.isFixedDimensions = true;
+    this.loadedScenarioName = name;
+    this.cols = scenario.cols ?? 25;
+    this.rows = scenario.rows ?? 25;
+
+    this.robotNode = scenario.robotNode;
+    this.destinationNode = scenario.destinationNode;
+    this.robotHeading = scenario.initialHeading ?? VEHICLE_CONFIG.defaultHeading;
+    this.initialScenarioHeading = this.robotHeading;
+    this.wallNodes = new Set(scenario.wallNodes);
+    this.terrainFactors = new Map(scenario.terrainFactors);
+    this.terrainTypes = new Map(scenario.terrainTypes ?? []);
+    this.elevations = new Map(scenario.elevations);
+    this.maxTraversableSlope = scenario.maxTraversableSlope ?? TERRAIN_CONFIG.defaultMaxTraversableSlope;
+
+    if (this.elevations.size > 0) {
+      this.showGradients = true;
+    }
+
+    this.walkingStep = -1;
+    this.isWalking = false;
+    this.hasFinishedWalking = false;
+    this.walkFailure = null;
+
+    const [startR, startC] = this.robotNode.split("-").map(Number);
+    this.domAdapter.updateRobotPosition?.(startC, startR, this.cellSize);
+    this.domAdapter.updateRobotHeading?.(this.robotHeading);
+
+    if (instantSolve) {
+      this.solveInstantly(this.selectedAlgo);
+    } else {
+      this.isPathVisible = false;
+      this.currentPath = null;
+      this.pathMetrics = null;
+      this.isManhattanFinished = false;
+      this.isEnergyFinished = false;
+      this.playbackStatus = "idle";
+      this.notify();
+    }
+  }
+
+  public solveInstantly(algoToRun?: AlgorithmType): void {
+    const algo = algoToRun ?? this.selectedAlgo;
+    this.clearTimers();
+    this.domAdapter.clearAllSearchVisuals();
+
+    this.isWalking = false;
+    this.hasFinishedWalking = false;
+    this.walkFailure = null;
+    this.walkingStep = -1;
+
+    const [startR, startC] = this.robotNode.split("-").map(Number);
+    this.domAdapter.updateRobotPosition?.(startC, startR, this.cellSize);
+    this.domAdapter.updateRobotHeading?.(this.robotHeading);
+
+    const scenario = this.getScenario();
+
+    const algoConfigs: Record<AlgorithmType, { name: string; theme: "manhattan" | "energy" }> = {
+      energyAware: { name: "Energy-Aware", theme: "energy" },
+      manhattan: { name: "Manhattan", theme: "manhattan" },
+      euclidean: { name: "Euclidean", theme: "energy" },
+      octile: { name: "Octile", theme: "energy" },
+      chebyshev: { name: "Chebyshev", theme: "energy" },
+    };
+
+    const config = algoConfigs[algo];
+    const theme = config.theme;
+    const result = findPath(scenario, { algorithm: algo });
+    const { shortestPath, totalEnergy, totalDistance, energyBreakdown } = result;
+    const safety = evaluatePathSafety(shortestPath, scenario);
+
+    this.pathMetrics = {
+      algorithm: config.name,
+      distance: totalDistance,
+      energy: totalEnergy,
+      energyBreakdown,
+      isSafe: safety.isSafe,
+      safetyFailureReason: safety.failureReason,
+    };
+
+    this.currentPath = shortestPath.length > 0 ? shortestPath : null;
+    this.isAnimating = false;
+    this.isPathVisible = shortestPath.length > 0;
+    this.pathTheme = theme;
+    this.playbackStatus = "idle";
+
+    if (theme === "manhattan") {
+      this.isManhattanFinished = true;
+      this.isEnergyFinished = false;
+    } else {
+      this.isEnergyFinished = true;
+      this.isManhattanFinished = false;
+    }
+
+    this.notify();
+  }
+
+  public resetToFreeform(cols?: number, rows?: number, cellSize?: number): void {
+    this.isFixedDimensions = false;
+    this.loadedScenarioName = null;
+    this.maxTraversableSlope = null;
+    this.initialScenarioHeading = VEHICLE_CONFIG.defaultHeading;
+    if (cols) this.cols = cols;
+    if (rows) this.rows = rows;
+    if (cellSize) this.cellSize = cellSize;
+    this.reset();
+  }
+
   // --- Reset Simulation State ---
 
   public reset(): void {
@@ -914,6 +1086,11 @@ export class SimulationEngine {
     this.domAdapter.clearAllSearchVisuals();
 
     this.clearWalls();
+
+    if (!this.isFixedDimensions) {
+      this.maxTraversableSlope = null;
+      this.initialScenarioHeading = VEHICLE_CONFIG.defaultHeading;
+    }
 
     this.isManhattanFinished = false;
     this.isEnergyFinished = false;

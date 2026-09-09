@@ -4,6 +4,7 @@ import {
   type SimulationDomAdapter,
   type SimulationDomElement,
 } from "./simulationEngine";
+import type { Scenario } from "../shared/types";
 
 describe("SimulationEngine", () => {
   beforeEach(() => {
@@ -405,6 +406,116 @@ describe("SimulationEngine", () => {
       expect(state.isManhattanFinished).toBe(false);
       expect(state.isEnergyFinished).toBe(false);
       expect(state.playbackStatus).toBe("idle");
+    });
+  });
+
+  describe("Scenario Loading & Instant Solving", () => {
+    it("loads test scenario, locks dimensions, and solves instantly without animation delay", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 40,
+        rows: 25,
+        domAdapter,
+      });
+
+      const testScenario: Scenario = {
+        rows: 25,
+        cols: 25,
+        robotNode: "2-2",
+        destinationNode: "10-10",
+        initialHeading: "DOWN_RIGHT",
+        wallNodes: new Set(["5-5", "5-6", "5-7"]),
+        terrainFactors: new Map([["4-4", 2.0]]),
+        elevations: new Map([["3-3", 4]]),
+        climbingFactor: 1.5,
+        turnPenalty: 1.0,
+        maxTraversableSlope: 45,
+      };
+
+      engine.loadScenario(testScenario, { name: "Test Case", instantSolve: true });
+
+      const snapshot = engine.getSnapshot();
+      expect(snapshot.isFixedDimensions).toBe(true);
+      expect(snapshot.loadedScenarioName).toBe("Test Case");
+      expect(snapshot.rows).toBe(25);
+      expect(snapshot.cols).toBe(25);
+      expect(snapshot.robotNode).toBe("2-2");
+      expect(snapshot.destinationNode).toBe("10-10");
+      expect(snapshot.wallNodes.has("5-5")).toBe(true);
+      expect(snapshot.terrainFactors.get("4-4")).toBe(2.0);
+      expect(snapshot.elevations.get("3-3")).toBe(4);
+      expect(snapshot.showGradients).toBe(true);
+
+      // Instant solve verifies path and metrics exist immediately without ticking timers
+      expect(snapshot.isAnimating).toBe(false);
+      expect(snapshot.isPathVisible).toBe(true);
+      expect(snapshot.currentPath).not.toBeNull();
+      expect(snapshot.currentPath!.length).toBeGreaterThan(0);
+      expect(snapshot.pathMetrics).not.toBeNull();
+      expect(snapshot.pathMetrics!.algorithm).toBe("Energy-Aware");
+      expect(snapshot.pathMetrics!.isSafe).toBe(true);
+    });
+
+    it("immediately re-solves path when switching heuristic on a loaded scenario", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({ cols: 25, rows: 25, domAdapter });
+
+      const testScenario: Scenario = {
+        rows: 25,
+        cols: 25,
+        robotNode: "2-2",
+        destinationNode: "5-5",
+        wallNodes: new Set(),
+        terrainFactors: new Map(),
+        elevations: new Map(),
+        climbingFactor: 1.5,
+        turnPenalty: 1.0,
+      };
+
+      engine.loadScenario(testScenario, { instantSolve: true });
+      expect(engine.getSnapshot().pathMetrics?.algorithm).toBe("Energy-Aware");
+
+      // Switching heuristic updates path and metrics immediately
+      engine.setSelectedAlgo("manhattan");
+      const manhattanSnapshot = engine.getSnapshot();
+      expect(manhattanSnapshot.selectedAlgo).toBe("manhattan");
+      expect(manhattanSnapshot.pathMetrics?.algorithm).toBe("Manhattan");
+      expect(manhattanSnapshot.isPathVisible).toBe(true);
+
+      engine.setSelectedAlgo("euclidean");
+      const euclideanSnapshot = engine.getSnapshot();
+      expect(euclideanSnapshot.selectedAlgo).toBe("euclidean");
+      expect(euclideanSnapshot.pathMetrics?.algorithm).toBe("Euclidean");
+      expect(euclideanSnapshot.isPathVisible).toBe(true);
+    });
+
+    it("resets to freeform viewport mode properly", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({ cols: 40, rows: 25, domAdapter });
+
+      const testScenario: Scenario = {
+        rows: 25,
+        cols: 25,
+        robotNode: "2-2",
+        destinationNode: "5-5",
+        wallNodes: new Set(["1-1"]),
+        terrainFactors: new Map(),
+        elevations: new Map(),
+        climbingFactor: 1.5,
+        turnPenalty: 1.0,
+      };
+
+      engine.loadScenario(testScenario, { instantSolve: true });
+      expect(engine.getSnapshot().isFixedDimensions).toBe(true);
+
+      engine.resetToFreeform(50, 30, 28);
+      const snapshot = engine.getSnapshot();
+      expect(snapshot.isFixedDimensions).toBe(false);
+      expect(snapshot.loadedScenarioName).toBeNull();
+      expect(snapshot.cols).toBe(50);
+      expect(snapshot.rows).toBe(30);
+      expect(snapshot.wallNodes.size).toBe(0);
+      expect(snapshot.currentPath).toBeNull();
     });
   });
 });
