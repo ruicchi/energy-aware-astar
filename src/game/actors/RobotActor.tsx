@@ -2,30 +2,7 @@ import { memo } from "react";
 import Box from "@mui/material/Box";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import type { Heading } from "../../shared/types";
-import { THEME_CONFIG } from "../../config/simulationConfig";
-
-const getRotation = (heading: Heading | undefined): string => {
-  switch (heading) {
-    case "UP":
-      return "-90deg";
-    case "DOWN":
-      return "90deg";
-    case "LEFT":
-      return "180deg";
-    case "RIGHT":
-      return "0deg";
-    case "UP_LEFT":
-      return "-135deg";
-    case "UP_RIGHT":
-      return "-45deg";
-    case "DOWN_LEFT":
-      return "135deg";
-    case "DOWN_RIGHT":
-      return "45deg";
-    default:
-      return "0deg";
-  }
-};
+import { THEME_CONFIG, getHeadingRotation } from "../../config/simulationConfig";
 
 export interface RobotActorProps {
   robotNode: string;
@@ -71,6 +48,7 @@ export const RobotActor = memo(
 
     return (
       <Box
+        id="robot-actor"
         data-testid="robot-actor"
         onMouseDown={(e) => {
           if (isWalking) return;
@@ -101,19 +79,19 @@ export const RobotActor = memo(
           touchAction: "none",
         }}
       >
-        {robotHeading && robotHeading !== "NONE" && (
-          <ArrowForwardIcon
-            style={{
-              transform: `rotate(${getRotation(robotHeading)})`,
-              transition: "transform 0.2s ease-in-out",
-            }}
-            sx={{
-              fontSize: cellSize * 0.8,
-              color: "#ffffff",
-              pointerEvents: "none",
-            }}
-          />
-        )}
+        <ArrowForwardIcon
+          id="robot-actor-arrow"
+          style={{
+            transform: `rotate(${getHeadingRotation(robotHeading)})`,
+            transition: "transform 0.2s ease-in-out",
+            display: robotHeading && robotHeading !== "NONE" ? "block" : "none",
+          }}
+          sx={{
+            fontSize: cellSize * 0.8,
+            color: "#ffffff",
+            pointerEvents: "none",
+          }}
+        />
       </Box>
     );
   },

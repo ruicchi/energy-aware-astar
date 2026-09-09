@@ -80,14 +80,34 @@ const GameGrid = () => {
         sx={{
           width: cols * cellSize,
           height: rows * cellSize,
-          display: "grid",
-          gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
-          gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
-          backgroundColor: "#f2f2f2",
           position: "relative",
+          backgroundColor: "#f2f2f2",
           pointerEvents: isLocked ? "none" : "auto",
         }}
       >
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            display: "grid",
+            gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
+            gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
+          }}
+        >
+          <TerrainGrid
+            rows={rows}
+            cols={cols}
+            cellSize={cellSize}
+            wallNode={wallNode}
+            terrainFactors={terrainFactors}
+            terrainTypes={terrainTypes}
+            elevations={elevations}
+            showGradients={showGradients}
+            onMouseDown={handleMouseDown}
+            onMouseEnter={handleMouseEnter}
+          />
+        </Box>
+
         {isLineVisible && currentPath && (
           <svg
             style={{
@@ -110,19 +130,6 @@ const GameGrid = () => {
             />
           </svg>
         )}
-
-        <TerrainGrid
-          rows={rows}
-          cols={cols}
-          cellSize={cellSize}
-          wallNode={wallNode}
-          terrainFactors={terrainFactors}
-          terrainTypes={terrainTypes}
-          elevations={elevations}
-          showGradients={showGradients}
-          onMouseDown={handleMouseDown}
-          onMouseEnter={handleMouseEnter}
-        />
 
         <RobotActor
           robotNode={robotNode}

@@ -49,3 +49,26 @@ export const THEME_CONFIG = {
   contourArrowColor: "rgba(0, 0, 0, 0.4)",
   pathLineColor: "#fffe6a",
 } as const;
+
+export const getHeadingRotation = (heading: Heading | undefined): string => {
+  switch (heading) {
+    case "UP":
+      return "-90deg";
+    case "DOWN":
+      return "90deg";
+    case "LEFT":
+      return "180deg";
+    case "RIGHT":
+      return "0deg";
+    case "UP_LEFT":
+      return "-135deg";
+    case "UP_RIGHT":
+      return "-45deg";
+    case "DOWN_LEFT":
+      return "135deg";
+    case "DOWN_RIGHT":
+      return "45deg";
+    default:
+      return "0deg";
+  }
+};

@@ -24,6 +24,7 @@ export const DestinationActor = memo(
 
     return (
       <Box
+        id="destination-actor"
         data-testid="destination-actor"
         onMouseDown={(e) => {
           if (isWalking) return;

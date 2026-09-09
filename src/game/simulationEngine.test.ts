@@ -55,12 +55,17 @@ describe("SimulationEngine", () => {
       }
     };
 
+    const updateRobotPosition = vi.fn();
+    const updateRobotHeading = vi.fn();
+
     const domAdapter: SimulationDomAdapter = {
       getCellElement,
       clearAllSearchVisuals,
+      updateRobotPosition,
+      updateRobotHeading,
     };
 
-    return { domAdapter, domStore };
+    return { domAdapter, domStore, updateRobotPosition, updateRobotHeading };
   };
 
   it("notifies subscribers and provides immutable snapshots", () => {
@@ -339,6 +344,39 @@ describe("SimulationEngine", () => {
       expect(snapshot.hasFinishedWalking).toBe(true);
       expect(snapshot.walkFailure).not.toBeNull();
       expect(snapshot.walkFailure?.reason).toBe("ROBOT TIPPED OVER");
+    });
+
+    it("invokes direct DOM adapter updates during walk without firing intermediate notifications", () => {
+      const { domAdapter, updateRobotPosition } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "0-3",
+        domAdapter,
+      });
+
+      engine.visualize("manhattan");
+      vi.runAllTimers();
+
+      const listener = vi.fn();
+      engine.subscribe(listener);
+
+      engine.walk();
+      // 1 notification on walk start
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(engine.getSnapshot().isWalking).toBe(true);
+
+      // Advance through walking steps
+      vi.runAllTimers();
+
+      // Direct DOM position was called for traversal steps
+      expect(updateRobotPosition).toHaveBeenCalled();
+
+      // 1 additional notification on walk finish, total 2 (no intermediate re-render spam)
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(engine.getSnapshot().isWalking).toBe(false);
+      expect(engine.getSnapshot().hasFinishedWalking).toBe(true);
     });
   });
 

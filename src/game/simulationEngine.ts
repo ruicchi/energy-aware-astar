@@ -10,6 +10,7 @@ import {
   ENERGY_CONFIG,
   TERRAIN_CONFIG,
   ANIMATION_CONFIG,
+  getHeadingRotation,
 } from "../config/simulationConfig";
 import { getElevationGradient, getHeading, isTraversableSlope } from "../physics/terrainPhysics";
 import { findPath } from "../algorithms/astar";
@@ -26,6 +27,8 @@ export interface SimulationDomElement {
 export interface SimulationDomAdapter {
   getCellElement: (key: string) => SimulationDomElement | null;
   clearAllSearchVisuals: () => void;
+  updateRobotPosition?: (col: number, row: number, cellSize: number) => void;
+  updateRobotHeading?: (heading: Heading) => void;
 }
 
 export const createDefaultDomAdapter = (): SimulationDomAdapter => ({
@@ -41,6 +44,21 @@ export const createDefaultDomAdapter = (): SimulationDomAdapter => ({
       delete node.dataset.energy;
       delete node.dataset.path;
     });
+  },
+  updateRobotPosition: (col: number, row: number, cellSize: number) => {
+    if (typeof document === "undefined") return;
+    const node = document.getElementById("robot-actor");
+    if (node) {
+      node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
+    }
+  },
+  updateRobotHeading: (heading: Heading) => {
+    if (typeof document === "undefined") return;
+    const node = document.getElementById("robot-actor-arrow");
+    if (node) {
+      node.style.display = heading && heading !== "NONE" ? "block" : "none";
+      node.style.transform = `rotate(${getHeadingRotation(heading)})`;
+    }
   },
 });
 
@@ -693,6 +711,10 @@ export class SimulationEngine {
     this.hasFinishedWalking = false;
     this.walkFailure = null;
 
+    const [startR, startC] = this.robotNode.split("-").map(Number);
+    this.domAdapter.updateRobotPosition?.(startC, startR, this.cellSize);
+    this.domAdapter.updateRobotHeading?.(this.robotHeading);
+
     this.notify();
   }
 
@@ -712,6 +734,10 @@ export class SimulationEngine {
     this.hasFinishedWalking = false;
     this.walkFailure = null;
     this.walkingStep = -1;
+
+    const [startR, startC] = this.robotNode.split("-").map(Number);
+    this.domAdapter.updateRobotPosition?.(startC, startR, this.cellSize);
+    this.domAdapter.updateRobotHeading?.(this.robotHeading);
 
     const scenario = this.getScenario();
 
@@ -843,7 +869,7 @@ export class SimulationEngine {
         const rotateTimeout = setTimeout(() => {
           if (runId !== this.currentRunId) return;
           this.robotHeading = nextHeading;
-          this.notify();
+          this.domAdapter.updateRobotHeading?.(nextHeading);
         }, cumulativeDelay);
         this.activeTimeouts.push(rotateTimeout);
 
@@ -854,6 +880,7 @@ export class SimulationEngine {
       const moveTimeout = setTimeout(() => {
         if (runId !== this.currentRunId) return;
         this.walkingStep = i;
+        this.domAdapter.updateRobotPosition?.(currC, currR, this.cellSize);
 
         if (i === path.length - 1) {
           const finishTimeout = setTimeout(() => {
@@ -865,8 +892,6 @@ export class SimulationEngine {
           }, ANIMATION_CONFIG.walkStepDelayMs);
           this.activeTimeouts.push(finishTimeout);
         }
-
-        this.notify();
       }, cumulativeDelay);
 
       this.activeTimeouts.push(moveTimeout);
@@ -898,6 +923,10 @@ export class SimulationEngine {
     this.hasFinishedWalking = false;
     this.walkFailure = null;
     this.pathMetrics = null;
+
+    const [startR, startC] = this.robotNode.split("-").map(Number);
+    this.domAdapter.updateRobotPosition?.(startC, startR, this.cellSize);
+    this.domAdapter.updateRobotHeading?.(this.robotHeading);
 
     this.notify();
   }
