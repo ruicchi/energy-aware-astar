@@ -1,5 +1,5 @@
 import { Box, Typography, Button, Tooltip, Slider } from "@mui/material";
-import { TERRAIN_CONFIG } from "../../config/simulationConfig";
+import { TERRAIN_CONFIG, BRUSH_CONFIG, THEME_CONFIG } from "../../config/simulationConfig";
 import { useSimulation } from "../SimulationContext";
 
 export function TerrainBrushControls() {
@@ -130,14 +130,14 @@ export function TerrainBrushControls() {
             <Slider
               size="small"
               value={dirtBrushValue}
-              min={0.1}
-              max={5}
-              step={0.1}
+              min={BRUSH_CONFIG.dirt.min}
+              max={BRUSH_CONFIG.dirt.max}
+              step={BRUSH_CONFIG.dirt.step}
               marks={[
-                { value: 0.1, label: "0.1" },
+                { value: BRUSH_CONFIG.dirt.min, label: String(BRUSH_CONFIG.dirt.min) },
                 { value: 1, label: "1" },
                 { value: 2.5, label: "2.5" },
-                { value: 5, label: "5" },
+                { value: BRUSH_CONFIG.dirt.max, label: String(BRUSH_CONFIG.dirt.max) },
               ]}
               onChange={(_, value) => setDirtBrushValue(Number((value as number).toFixed(1)))}
               onPointerDown={(e) => e.stopPropagation()}
@@ -164,14 +164,14 @@ export function TerrainBrushControls() {
             <Slider
               size="small"
               value={waterBrushValue}
-              min={0.1}
-              max={5}
-              step={0.1}
+              min={BRUSH_CONFIG.water.min}
+              max={BRUSH_CONFIG.water.max}
+              step={BRUSH_CONFIG.water.step}
               marks={[
-                { value: 0.1, label: "0.1" },
+                { value: BRUSH_CONFIG.water.min, label: String(BRUSH_CONFIG.water.min) },
                 { value: 1, label: "1" },
                 { value: 2.5, label: "2.5" },
-                { value: 5, label: "5" },
+                { value: BRUSH_CONFIG.water.max, label: String(BRUSH_CONFIG.water.max) },
               ]}
               onChange={(_, value) => setWaterBrushValue(Number((value as number).toFixed(1)))}
               onPointerDown={(e) => e.stopPropagation()}
@@ -198,9 +198,9 @@ export function TerrainBrushControls() {
             <Slider
               size="small"
               value={elevationBrushValue}
-              min={1}
-              max={10}
-              step={1}
+              min={BRUSH_CONFIG.elevation.min}
+              max={BRUSH_CONFIG.elevation.max}
+              step={BRUSH_CONFIG.elevation.step}
               marks
               onChange={(_, value) => setElevationBrushValue(value as number)}
               onPointerDown={(e) => e.stopPropagation()}
@@ -223,7 +223,7 @@ export function TerrainBrushControls() {
       <Box
         sx={{
           mt: 1,
-          borderTop: "1px solid rgba(0, 0, 0, 0.1)",
+          borderTop: `1px solid ${THEME_CONFIG.panelHeaderBorderColor}`,
           pt: 1,
           display: "flex",
           gap: 1,
@@ -252,4 +252,4 @@ export function TerrainBrushControls() {
       </Box>
     </Box>
   );
-};
+}

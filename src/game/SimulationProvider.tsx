@@ -4,6 +4,7 @@ import { useViewport } from "../hooks/useViewport";
 import { SimulationEngine } from "./simulationEngine";
 import { SimulationContext, type SimulationContextValue } from "./SimulationContext";
 import type { AlgorithmType, BrushMode, Heading } from "../shared/types";
+import { GRID_CONFIG } from "../config/simulationConfig";
 
 interface SimulationProviderProps {
   children: ReactNode;
@@ -11,7 +12,10 @@ interface SimulationProviderProps {
 
 export function SimulationProvider({ children }: SimulationProviderProps) {
   const viewport = useViewport();
-  const cellSize = viewport.width < 600 ? 20 : 28;
+  const cellSize =
+    viewport.width < GRID_CONFIG.mobileBreakpoint
+      ? GRID_CONFIG.mobileCellSize
+      : GRID_CONFIG.defaultCellSize;
   const cols = Math.floor(viewport.width / cellSize);
   const rows = Math.floor(viewport.height / cellSize);
 

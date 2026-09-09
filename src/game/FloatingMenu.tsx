@@ -4,6 +4,7 @@ import { FloatingPanel } from "./FloatingPanel";
 import { HeuristicControls } from "./controls/HeuristicControls";
 import { HeadingControls } from "./controls/HeadingControls";
 import { MetricsModal } from "./controls/MetricsModal";
+import { UI_CONFIG } from "../config/simulationConfig";
 
 export const FloatingMenu = memo(function FloatingMenu() {
   const [isResultsOpen, setIsResultsOpen] = useState(false);
@@ -15,8 +16,14 @@ export const FloatingMenu = memo(function FloatingMenu() {
     <>
       <FloatingPanel
         title="Controls"
-        initialPosition={{ x: 20, y: 20 }}
-        width={isMobile ? (isTiny ? 160 : 180) : 200}
+        initialPosition={UI_CONFIG.initialPosition}
+        width={
+          isMobile
+            ? isTiny
+              ? UI_CONFIG.panelWidth.tiny
+              : UI_CONFIG.panelWidth.mobile
+            : UI_CONFIG.panelWidth.default
+        }
         collapsible
       >
         <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>

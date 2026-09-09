@@ -16,7 +16,7 @@ import {
   getHeading,
   isTraversableSlope,
 } from "../../physics/terrainPhysics";
-import { TERRAIN_CONFIG } from "../../config/simulationConfig";
+import { TERRAIN_CONFIG, ENERGY_CONFIG } from "../../config/simulationConfig";
 import * as MinHeap from "./MinHeap";
 
 export interface PathfindingOptions {
@@ -73,8 +73,6 @@ function octileDistance(r1: number, c1: number, r2: number, c2: number): number 
   return dx + dy + (SQRT2 - 2) * Math.min(dx, dy);
 }
 
-const S_MAX = 2;
-
 function getTurnCost(current: Heading, target: Heading, penalty: number): number {
   if (current === "NONE" || target === "NONE" || current === target) return 0;
 
@@ -118,7 +116,7 @@ function calculateEnergyHeuristic(
   scenario: Scenario,
 ): number {
   const distance = Math.hypot(row - destRow, col - destCol);
-  const hTrans = distance / S_MAX;
+  const hTrans = distance / ENERGY_CONFIG.maxVelocityDivisor;
   const minAngle = getMinAngleToDestination(heading, row, col, destRow, destCol);
   const hRot = scenario.turnPenalty * minAngle;
 
@@ -202,9 +200,12 @@ function getEnergyCostBreakdown(
   const slopeDegrees = getSlopeDegrees(current, target, scenario);
   let gradientPenaltyMultiplier = 1.0;
 
-  // Apply a massive penalty for slopes over 30 degrees to simulate real-world vehicle limits
+  // Apply a massive penalty for slopes over excessive threshold to simulate real-world vehicle limits
   if (elevationDelta > 0) {
-    gradientPenaltyMultiplier = slopeDegrees <= 30 ? scenario.climbingFactor : 20.0;
+    gradientPenaltyMultiplier =
+      slopeDegrees <= ENERGY_CONFIG.excessiveSlopeThreshold
+        ? scenario.climbingFactor
+        : ENERGY_CONFIG.excessiveSlopePenaltyMultiplier;
   }
 
   const rawTurnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty);
@@ -234,11 +235,8 @@ function getEnergyCostBreakdown(
   const { roll, pitch } = getPosture(target.row, target.col, target.heading, scenario);
 
   // Asymmetric Risk: Roll (lateral) is more dangerous than Pitch (longitudinal)
-  const kRoll = 3.0;
-  const kPitch = 1.0;
+  const { kRoll, kPitch, riskWeight } = ENERGY_CONFIG.stability;
   const riskFactor = Math.hypot(roll * kRoll, pitch * kPitch);
-
-  const riskWeight = 2.0;
   const stabilityPenalty = subtotal * riskWeight * riskFactor;
 
   const total = subtotal + stabilityPenalty;

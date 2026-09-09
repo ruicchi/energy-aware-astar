@@ -78,7 +78,7 @@ export function getElevationGradient(
   const zy = (zB + INV_SQRT2 * (zBL + zBR) - (zT + INV_SQRT2 * (zTL + zTR))) / weight;
 
   const magnitude = Math.sqrt(zx * zx + zy * zy);
-  const angle = magnitude > 0.05 ? Math.atan2(zy, zx) : 0;
+  const angle = magnitude > TERRAIN_CONFIG.minGradientMagnitude ? Math.atan2(zy, zx) : 0;
   const isUnstable = magnitude > MAX_STABLE_GRADIENT;
 
   return { zx, zy, magnitude, angle, isUnstable };
@@ -101,7 +101,7 @@ export function computeGradientField(
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const grad = getElevationGradient(r, c, elevations);
-      if (grad.magnitude > 0.05 || grad.isUnstable) {
+      if (grad.magnitude > TERRAIN_CONFIG.minGradientMagnitude || grad.isUnstable) {
         field.set(`${r}-${c}`, {
           angle: grad.angle,
           magnitude: grad.magnitude,

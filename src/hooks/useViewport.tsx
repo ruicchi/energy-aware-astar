@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { GRID_CONFIG } from "../config/simulationConfig";
 
 /**
  * Custom hook that tracks the current window viewport dimensions.
- * Implementation includes a 150ms debounce to prevent performance bottlenecks
+ * Implementation includes a debounce to prevent performance bottlenecks
  * when resizing the window, which is especially important for grid-based layouts.
  *
  * @returns An object containing the current `width` and `height` of the window.
@@ -26,8 +27,8 @@ export function useViewport() {
           width: window.innerWidth,
           height: window.innerHeight,
         });
-      }, 150);
-    };
+      }, GRID_CONFIG.resizeDebounceMs);
+    }
 
     window.addEventListener("resize", onResize);
 

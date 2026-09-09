@@ -1,5 +1,6 @@
 import { Box, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import { OpenInNew } from "@mui/icons-material";
+import { THEME_CONFIG } from "../../config/simulationConfig";
 import { useSimulation } from "../SimulationContext";
 
 interface HeuristicControlsProps {
@@ -195,8 +196,8 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
               sx={{
                 mt: 1.5,
                 p: 1,
-                backgroundColor: "rgba(244, 67, 54, 0.15)",
-                border: "1px solid #f44336",
+                backgroundColor: THEME_CONFIG.failureBackgroundColor,
+                border: `1px solid ${THEME_CONFIG.failureBorderColor}`,
                 borderRadius: 1,
                 display: "flex",
                 flexDirection: "column",
@@ -218,4 +219,4 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
       )}
     </Box>
   );
-};
+}

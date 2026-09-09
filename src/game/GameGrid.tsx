@@ -7,7 +7,7 @@ import { useSimulation } from "./SimulationContext";
 import { TerrainGrid } from "./TerrainGrid";
 import { RobotActor } from "./actors/RobotActor";
 import { DestinationActor } from "./actors/DestinationActor";
-import { THEME_CONFIG } from "../config/simulationConfig";
+import { THEME_CONFIG, UI_CONFIG } from "../config/simulationConfig";
 
 export default function GameGrid() {
   const {
@@ -83,7 +83,7 @@ export default function GameGrid() {
           width: cols * cellSize,
           height: rows * cellSize,
           position: "relative",
-          backgroundColor: "#f2f2f2",
+          backgroundColor: THEME_CONFIG.gridBackgroundColor,
           pointerEvents: isLocked ? "none" : "auto",
         }}
       >
@@ -119,7 +119,7 @@ export default function GameGrid() {
               width: cols * cellSize,
               height: rows * cellSize,
               pointerEvents: "none",
-              zIndex: 5,
+              zIndex: UI_CONFIG.zIndex.polyline,
             }}
           >
             <polyline

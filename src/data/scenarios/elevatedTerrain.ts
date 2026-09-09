@@ -18,7 +18,7 @@ function createElevatedMap(): Map<string, number> {
     }
   }
   return map;
-};
+}
 
 /**
  * Scenario 2: Steep Ridge / Elevation Hill
@@ -37,7 +37,7 @@ export const elevatedTerrainScenario: Scenario = {
   elevations: createElevatedMap(),
   climbingFactor: ENERGY_CONFIG.climbingFactor,
   turnPenalty: ENERGY_CONFIG.turnPenalty,
-  maxTraversableSlope: 30, // Slopes > 30 degrees are deemed untraversable
+  maxTraversableSlope: ENERGY_CONFIG.excessiveSlopeThreshold, // Slopes > 30 degrees are deemed untraversable
   robotPhysics: VEHICLE_CONFIG,
 };
 

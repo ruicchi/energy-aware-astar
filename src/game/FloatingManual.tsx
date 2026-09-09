@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { FloatingPanel } from "./FloatingPanel";
+import { UI_CONFIG } from "../config/simulationConfig";
 
 export const FloatingManual = memo(function FloatingManual() {
   const theme = useTheme();
@@ -10,10 +11,10 @@ export const FloatingManual = memo(function FloatingManual() {
     <FloatingPanel
       title="Manual"
       initialPosition={{
-        x: isMobile ? 20 : 235,
-        y: 20,
+        x: isMobile ? UI_CONFIG.initialPosition.x : 235,
+        y: UI_CONFIG.initialPosition.y,
       }}
-      width={isMobile ? "calc(100vw - 40px)" : 580}
+      width={isMobile ? "calc(100vw - 40px)" : UI_CONFIG.panelWidth.manual}
       maxWidth="calc(100vw - 32px)"
       collapsible
     >

@@ -93,7 +93,7 @@ function createComplexMap() {
   walls.forEach((w) => wallNodes.add(w));
 
   return { elevations, terrainFactors, terrainTypes, wallNodes };
-};
+}
 
 const complexData = createComplexMap();
 
@@ -109,7 +109,7 @@ export const mixedTerrainScenario: Scenario = {
   elevations: complexData.elevations,
   climbingFactor: ENERGY_CONFIG.climbingFactor,
   turnPenalty: ENERGY_CONFIG.turnPenalty,
-  maxTraversableSlope: 30,
+  maxTraversableSlope: ENERGY_CONFIG.excessiveSlopeThreshold,
   robotPhysics: VEHICLE_CONFIG,
 };
 

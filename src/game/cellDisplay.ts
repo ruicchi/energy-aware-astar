@@ -63,14 +63,14 @@ export function resolveCellDisplayState({
   if (
     showGradients &&
     gradient &&
-    gradient.magnitude > 0.1 &&
+    gradient.magnitude > TERRAIN_CONFIG.arrowDisplayThreshold &&
     !isRobot &&
     !isDestination &&
     !isWall
   ) {
     gradientArrow = {
       rotationDeg: gradient.angle * (180 / Math.PI) + 90,
-      opacity: Math.min(1, gradient.magnitude / 2),
+      opacity: Math.min(1, gradient.magnitude / TERRAIN_CONFIG.arrowOpacityDivisor),
       isUnstable,
     };
   }

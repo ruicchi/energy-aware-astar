@@ -2,8 +2,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import NorthIcon from "@mui/icons-material/North";
 import Box from "@mui/material/Box";
 import { memo } from "react";
-import type { Heading } from "../shared/types";
-import { THEME_CONFIG } from "../config/simulationConfig";
+import { THEME_CONFIG, getHeadingRotation } from "../config/simulationConfig";
 import { areCellDisplayPropsEqual, type CellDisplayState } from "./cellDisplay";
 
 export type { CellDisplayState, GradientArrowDisplay } from "./cellDisplay";
@@ -16,29 +15,6 @@ export interface MemoizedCellProps {
   displayState: CellDisplayState;
   onMouseDown: (key: string) => void;
   onMouseEnter: (key: string) => void;
-}
-
-function getRotation(heading: Heading | undefined): string {
-  switch (heading) {
-    case "UP":
-      return "-90deg";
-    case "DOWN":
-      return "90deg";
-    case "LEFT":
-      return "180deg";
-    case "RIGHT":
-      return "0deg";
-    case "UP_LEFT":
-      return "-135deg";
-    case "UP_RIGHT":
-      return "-45deg";
-    case "DOWN_LEFT":
-      return "135deg";
-    case "DOWN_RIGHT":
-      return "45deg";
-    default:
-      return "0deg";
-  }
 }
 
 //* React.memo prevents this cell from re-rendering unless its presentation properties change
@@ -72,10 +48,10 @@ export const MemoizedCell = memo(
           width: cellSize,
           height: cellSize,
           boxSizing: "border-box",
-          borderRight: "1px solid #b8b8b8",
-          borderBottom: "1px solid #b8b8b8",
-          borderTop: row === 0 ? "1px solid #b8b8b8" : "none",
-          borderLeft: col === 0 ? "1px solid #b8b8b8" : "none",
+          borderRight: `1px solid ${THEME_CONFIG.cellBorderColor}`,
+          borderBottom: `1px solid ${THEME_CONFIG.cellBorderColor}`,
+          borderTop: row === 0 ? `1px solid ${THEME_CONFIG.cellBorderColor}` : "none",
+          borderLeft: col === 0 ? `1px solid ${THEME_CONFIG.cellBorderColor}` : "none",
           backgroundColor: bgColor,
           cursor: "pointer",
           display: "flex",
@@ -90,7 +66,7 @@ export const MemoizedCell = memo(
           <ArrowForwardIcon
             sx={{
               fontSize: cellSize * 0.8,
-              transform: `rotate(${getRotation(robotHeading)})`,
+              transform: `rotate(${getHeadingRotation(robotHeading)})`,
               transition: "transform 0.2s ease-in-out",
               pointerEvents: "none",
             }}

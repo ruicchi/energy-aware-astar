@@ -10,6 +10,7 @@ import {
   type Theme,
 } from "@mui/material";
 import { ExpandMore, ExpandLess, Close } from "@mui/icons-material";
+import { UI_CONFIG, THEME_CONFIG } from "../config/simulationConfig";
 
 export interface FloatingPanelProps {
   title: string;
@@ -35,11 +36,11 @@ export interface FloatingPanelProps {
  */
 export function FloatingPanel({
   title,
-  initialPosition = { x: 20, y: 20 },
+  initialPosition = UI_CONFIG.initialPosition,
   width,
   maxWidth,
-  zIndex = 1000,
-  elevation = 4,
+  zIndex = UI_CONFIG.zIndex.panels,
+  elevation = UI_CONFIG.elevation.panel,
   collapsible = false,
   defaultExpanded = true,
   onClose,
@@ -68,15 +69,15 @@ export function FloatingPanel({
 
   function handlePointerMove(e: React.PointerEvent) {
     if (!isDragging) return;
-    const maxX = typeof window !== "undefined" ? window.innerWidth - 60 : 1000;
-    const maxY = typeof window !== "undefined" ? window.innerHeight - 50 : 1000;
+    const maxX = typeof window !== "undefined" ? window.innerWidth - UI_CONFIG.dragBounds.paddingX : 1000;
+    const maxY = typeof window !== "undefined" ? window.innerHeight - UI_CONFIG.dragBounds.paddingY : 1000;
 
     const rawX = e.clientX - dragStart.current.x;
     const rawY = e.clientY - dragStart.current.y;
 
     setPosition({
-      x: Math.max(10, Math.min(maxX, rawX)),
-      y: Math.max(10, Math.min(maxY, rawY)),
+      x: Math.max(UI_CONFIG.dragBounds.minX, Math.min(maxX, rawX)),
+      y: Math.max(UI_CONFIG.dragBounds.minY, Math.min(maxY, rawY)),
     });
   }
 
@@ -100,7 +101,7 @@ export function FloatingPanel({
         top: position.y,
         left: position.x,
         zIndex,
-        backgroundColor: "rgba(255, 255, 255, 0.4)",
+        backgroundColor: THEME_CONFIG.panelBackgroundColor,
         borderRadius: 2,
         width,
         maxWidth,
@@ -116,7 +117,7 @@ export function FloatingPanel({
           justifyContent: "space-between",
           alignItems: "center",
           p: 1.5,
-          borderBottom: !collapsible || isExpanded ? "1px solid rgba(0, 0, 0, 0.1)" : "none",
+          borderBottom: !collapsible || isExpanded ? `1px solid ${THEME_CONFIG.panelHeaderBorderColor}` : "none",
         }}
       >
         <Typography variant="subtitle1" fontWeight="bold">
@@ -154,4 +155,4 @@ export function FloatingPanel({
       )}
     </Paper>
   );
-};
+}

@@ -11,6 +11,7 @@ import {
   Block,
 } from "@mui/icons-material";
 import type { Heading } from "../../shared/types";
+import { THEME_CONFIG } from "../../config/simulationConfig";
 import { useSimulation } from "../SimulationContext";
 
 const HEADINGS: Heading[] = [
@@ -45,7 +46,7 @@ export function HeadingControls() {
     <Box
       sx={{
         mt: 1,
-        borderTop: "1px solid rgba(0,0,0,0.1)",
+        borderTop: `1px solid ${THEME_CONFIG.panelHeaderBorderColor}`,
         pt: 1,
         opacity: !isEnergyAware ? 0.5 : 1,
         pointerEvents: !isEnergyAware ? "none" : "auto",
@@ -81,4 +82,4 @@ export function HeadingControls() {
       </Box>
     </Box>
   );
-};
+}

@@ -2,7 +2,7 @@ import { memo } from "react";
 import Box from "@mui/material/Box";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import type { Heading } from "../../shared/types";
-import { THEME_CONFIG, getHeadingRotation } from "../../config/simulationConfig";
+import { THEME_CONFIG, UI_CONFIG, getHeadingRotation } from "../../config/simulationConfig";
 
 export interface RobotActorProps {
   robotNode: string;
@@ -67,14 +67,14 @@ export const RobotActor = memo(
           width: cellSize,
           height: cellSize,
           backgroundColor: THEME_CONFIG.robotColor,
-          zIndex: 10,
+          zIndex: UI_CONFIG.zIndex.actors,
           pointerEvents: isDragging || isWalking ? "none" : "auto",
           cursor: isDragging ? "grabbing" : "grab",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           boxSizing: "border-box",
-          border: "1px solid rgba(0, 0, 0, 0.2)",
+          border: `1px solid ${THEME_CONFIG.actorBorderColor}`,
           userSelect: "none",
           touchAction: "none",
         }}

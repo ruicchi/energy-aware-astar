@@ -1,6 +1,7 @@
 import { Box, Typography, useTheme, useMediaQuery } from "@mui/material";
 import { FloatingPanel } from "../FloatingPanel";
 import { useSimulation } from "../SimulationContext";
+import { UI_CONFIG, THEME_CONFIG } from "../../config/simulationConfig";
 
 interface MetricsModalProps {
   onClose: () => void;
@@ -21,12 +22,12 @@ export function MetricsModal({ onClose }: MetricsModalProps) {
     <FloatingPanel
       title="Calculation"
       initialPosition={{
-        x: isMobile ? 20 : 240,
+        x: isMobile ? UI_CONFIG.initialPosition.x : 240,
         y: 240,
       }}
-      zIndex={1100}
-      elevation={6}
-      width={isMobile ? 220 : 280}
+      zIndex={UI_CONFIG.zIndex.modal}
+      elevation={UI_CONFIG.elevation.modal}
+      width={isMobile ? UI_CONFIG.panelWidth.metricsMobile : UI_CONFIG.panelWidth.metrics}
       maxWidth="calc(100vw - 24px)"
       onClose={onClose}
     >
@@ -54,7 +55,7 @@ export function MetricsModal({ onClose }: MetricsModalProps) {
           <Typography variant="body2">{pathMetrics.energy.toFixed(2)} units</Typography>
         </Box>
 
-        <Box sx={{ borderTop: "1px solid rgba(0,0,0,0.1)", pt: 1 }}>
+        <Box sx={{ borderTop: `1px solid ${THEME_CONFIG.panelHeaderBorderColor}`, pt: 1 }}>
           <Typography variant="caption" color="textSecondary" display="block">
             Energy / distance
           </Typography>
@@ -64,7 +65,7 @@ export function MetricsModal({ onClose }: MetricsModalProps) {
         </Box>
 
         {energyBreakdown && (
-          <Box sx={{ borderTop: "1px solid rgba(0,0,0,0.1)", pt: 1 }}>
+          <Box sx={{ borderTop: `1px solid ${THEME_CONFIG.panelHeaderBorderColor}`, pt: 1 }}>
             <Typography variant="caption" color="textSecondary" display="block">
               Energy Breakdown
             </Typography>
@@ -131,7 +132,7 @@ export function MetricsModal({ onClose }: MetricsModalProps) {
                   display: "flex",
                   justifyContent: "space-between",
                   gap: 1,
-                  borderTop: "1px dashed rgba(0,0,0,0.1)",
+                  borderTop: `1px dashed ${THEME_CONFIG.panelHeaderBorderColor}`,
                   mt: 0.5,
                   pt: 0.5,
                 }}
@@ -147,4 +148,4 @@ export function MetricsModal({ onClose }: MetricsModalProps) {
       </Box>
     </FloatingPanel>
   );
-};
+}

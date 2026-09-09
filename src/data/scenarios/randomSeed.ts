@@ -1,5 +1,5 @@
 import type { Scenario, Heading } from "../../shared/types";
-import { VEHICLE_CONFIG, ENERGY_CONFIG } from "../../config/simulationConfig";
+import { VEHICLE_CONFIG, ENERGY_CONFIG, PROCEDURAL_CONFIG } from "../../config/simulationConfig";
 
 /**
  * Fast, deterministic 32-bit pseudo-random number generator (Mulberry32).
@@ -32,14 +32,14 @@ export interface ProceduralScenarioOptions {
 export function generateProceduralScenario(options: ProceduralScenarioOptions): Scenario {
   const {
     seed,
-    rows = 25,
-    cols = 25,
-    startNode = "2-2",
+    rows = PROCEDURAL_CONFIG.defaultRows,
+    cols = PROCEDURAL_CONFIG.defaultCols,
+    startNode = PROCEDURAL_CONFIG.defaultStartNode,
     destinationNode = `${rows - 3}-${cols - 3}`,
-    initialHeading = "DOWN_RIGHT",
-    numHills = 3,
-    numMudPatches = 3,
-    obstacleDensity = 0.05,
+    initialHeading = PROCEDURAL_CONFIG.defaultHeading,
+    numHills = PROCEDURAL_CONFIG.defaultNumHills,
+    numMudPatches = PROCEDURAL_CONFIG.defaultNumMudPatches,
+    obstacleDensity = PROCEDURAL_CONFIG.defaultObstacleDensity,
   } = options;
 
   const rng = createRng(seed);
@@ -52,7 +52,11 @@ export function generateProceduralScenario(options: ProceduralScenarioOptions): 
     const dDest = Math.hypot(r - destR, c - destC);
     // Keep start/goal areas and outer perimeter clear for a guaranteed lowland bypass route
     const isPerimeter = r <= 1 || r >= rows - 2 || c <= 1 || c >= cols - 2;
-    return dStart <= 2.5 || dDest <= 2.5 || isPerimeter;
+    return (
+      dStart <= PROCEDURAL_CONFIG.protectedRadius ||
+      dDest <= PROCEDURAL_CONFIG.protectedRadius ||
+      isPerimeter
+    );
   }
 
   // 1. Generate Hills (Gaussian drop-off)
@@ -61,8 +65,12 @@ export function generateProceduralScenario(options: ProceduralScenarioOptions): 
     const centerR = Math.floor(5 + rng() * (rows - 10));
     const centerC = Math.floor(5 + rng() * (cols - 10));
 
-    const peakHeight = Math.floor(3 + rng() * 5); // 3 to 7
-    const radius = 2 + rng() * 3; // 2 to 5
+    const peakHeight = Math.floor(
+      PROCEDURAL_CONFIG.hills.minPeakHeight +
+        rng() * PROCEDURAL_CONFIG.hills.peakHeightVariance,
+    ); // 3 to 7
+    const radius =
+      PROCEDURAL_CONFIG.hills.minRadius + rng() * PROCEDURAL_CONFIG.hills.radiusVariance; // 2 to 5
 
     const minR = Math.max(0, Math.floor(centerR - radius * 1.5));
     const maxR = Math.min(rows - 1, Math.ceil(centerR + radius * 1.5));
@@ -91,9 +99,14 @@ export function generateProceduralScenario(options: ProceduralScenarioOptions): 
   for (let i = 0; i < numMudPatches; i++) {
     const centerR = Math.floor(3 + rng() * (rows - 6));
     const centerC = Math.floor(3 + rng() * (cols - 6));
-    const radius = 1.5 + rng() * 2.5;
-    const isWater = rng() > 0.6;
-    const factor = isWater ? 6.0 + rng() * 3.0 : 2.5 + rng() * 2.5;
+    const radius =
+      PROCEDURAL_CONFIG.mud.minRadius + rng() * PROCEDURAL_CONFIG.mud.radiusVariance;
+    const isWater = rng() > 1 - PROCEDURAL_CONFIG.waterProbability;
+    const factor = isWater
+      ? PROCEDURAL_CONFIG.mud.waterFactorBase +
+        rng() * PROCEDURAL_CONFIG.mud.waterFactorVariance
+      : PROCEDURAL_CONFIG.mud.dirtFactorBase +
+        rng() * PROCEDURAL_CONFIG.mud.dirtFactorVariance;
     const type = isWater ? "water" : "dirt";
 
     for (let r = Math.max(0, Math.floor(centerR - radius)); r <= Math.min(rows - 1, Math.ceil(centerR + radius)); r++) {
@@ -131,7 +144,7 @@ export function generateProceduralScenario(options: ProceduralScenarioOptions): 
     elevations,
     climbingFactor: ENERGY_CONFIG.climbingFactor,
     turnPenalty: ENERGY_CONFIG.turnPenalty,
-    maxTraversableSlope: 30,
+    maxTraversableSlope: PROCEDURAL_CONFIG.maxTraversableSlope,
     robotPhysics: VEHICLE_CONFIG,
   };
-};
+}

@@ -10,6 +10,8 @@ import {
   ENERGY_CONFIG,
   TERRAIN_CONFIG,
   ANIMATION_CONFIG,
+  GRID_CONFIG,
+  BRUSH_CONFIG,
   getHeadingRotation,
 } from "../config/simulationConfig";
 import { getElevationGradient, getHeading, isTraversableSlope } from "../physics/terrainPhysics";
@@ -169,9 +171,9 @@ export class SimulationEngine {
   private destinationNode: string;
 
   private activeBrush: BrushMode = "wall";
-  private elevationBrushValue: number = 5;
-  private dirtBrushValue: number = TERRAIN_CONFIG.types.dirt.cost;
-  private waterBrushValue: number = TERRAIN_CONFIG.types.water.cost;
+  private elevationBrushValue: number = BRUSH_CONFIG.elevation.defaultValue;
+  private dirtBrushValue: number = BRUSH_CONFIG.dirt.defaultValue;
+  private waterBrushValue: number = BRUSH_CONFIG.water.defaultValue;
   private showGradients: boolean = false;
   private robotHeading: Heading = VEHICLE_CONFIG.defaultHeading;
   private selectedAlgo: AlgorithmType = "energyAware";
@@ -205,9 +207,9 @@ export class SimulationEngine {
   private cachedSnapshot: SimulationState | null = null;
 
   constructor(options: SimulationEngineOptions = {}) {
-    this.cols = options.cols ?? 40;
-    this.rows = options.rows ?? 25;
-    this.cellSize = options.cellSize ?? 28;
+    this.cols = options.cols ?? GRID_CONFIG.defaultCols;
+    this.rows = options.rows ?? GRID_CONFIG.defaultRows;
+    this.cellSize = options.cellSize ?? GRID_CONFIG.defaultCellSize;
 
     const defaultRobotCol = Math.floor(this.cols / 4);
     const defaultDestCol = Math.floor((this.cols / 4) * 3);

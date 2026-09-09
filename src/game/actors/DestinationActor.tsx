@@ -1,6 +1,6 @@
 import { memo } from "react";
 import Box from "@mui/material/Box";
-import { THEME_CONFIG } from "../../config/simulationConfig";
+import { THEME_CONFIG, UI_CONFIG } from "../../config/simulationConfig";
 
 export interface DestinationActorProps {
   destinationNode: string;
@@ -41,14 +41,14 @@ export const DestinationActor = memo(
           width: cellSize,
           height: cellSize,
           backgroundColor: THEME_CONFIG.destinationColor,
-          zIndex: 10,
+          zIndex: UI_CONFIG.zIndex.actors,
           pointerEvents: isDragging || isWalking ? "none" : "auto",
           cursor: isDragging ? "grabbing" : "grab",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           boxSizing: "border-box",
-          border: "1px solid rgba(0, 0, 0, 0.2)",
+          border: `1px solid ${THEME_CONFIG.actorBorderColor}`,
           userSelect: "none",
           touchAction: "none",
         }}
