@@ -47,3 +47,15 @@ _Avoid_: GridState, CanvasBuffer, WallManager
 **Simulation Configuration**:
 The consolidated configuration module defining physical vehicle dimensions, terrain parameters, energy weights, animation timings, and visualization theme colors.
 _Avoid_: Constants, GlobalSettings, AppConfig
+
+**Benchmark Engine**:
+The deep module executing algorithm comparison suites across deterministic and Monte Carlo procedural scenarios to capture raw trajectory and safety telemetry.
+_Avoid_: BenchmarkRunner, TestHarness, PerfTest
+
+**Statistical Analysis**:
+The mathematical module evaluating benchmark distributions, computing sample variances, normal cumulative distributions, paired two-tailed $t$-tests, and relative energy conservation metrics.
+_Avoid_: MathHelpers, StatsUtils, AnalysisService
+
+**Benchmark Reporters**:
+The presentation adapters serializing benchmark telemetry and statistical summaries into structured CSV records and LaTeX `booktabs` tables.
+_Avoid_: TableFormatters, Exporters, LatexGenerators
