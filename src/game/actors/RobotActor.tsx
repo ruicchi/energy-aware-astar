@@ -17,7 +17,7 @@ export interface RobotActorProps {
 }
 
 export const RobotActor = memo(
-  ({
+  function RobotActor({
     robotNode,
     cellSize,
     robotHeading,
@@ -27,7 +27,7 @@ export const RobotActor = memo(
     walkingStep,
     currentPath,
     onMouseDown,
-  }: RobotActorProps) => {
+  }: RobotActorProps) {
     let row = 0;
     let col = 0;
 

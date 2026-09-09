@@ -37,7 +37,7 @@ const ICON_MAP: Record<Heading, React.ReactNode> = {
   NONE: <Block fontSize="small" />,
 };
 
-export const HeadingControls = () => {
+export function HeadingControls() {
   const { robotHeading, setRobotHeading, selectedAlgo } = useSimulation();
   const isEnergyAware = selectedAlgo === "energyAware";
 

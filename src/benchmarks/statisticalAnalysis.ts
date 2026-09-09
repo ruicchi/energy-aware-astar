@@ -20,33 +20,33 @@ export interface StatisticalSummary {
 /**
  * Calculates mean and sample standard deviation.
  */
-export const calcStats = (values: number[]): { mean: number; std: number } => {
+export function calcStats(values: number[]): { mean: number; std: number } {
   if (values.length === 0) return { mean: 0, std: 0 };
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   if (values.length === 1) return { mean, std: 0 };
   const variance =
     values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (values.length - 1);
   return { mean, std: Math.sqrt(variance) };
-};
+}
 
 /**
  * Normal CDF approximation (for large sample two-tailed p-value calculation).
  */
-export const standardNormalCdf = (z: number): number => {
+export function standardNormalCdf(z: number): number {
   const t = 1 / (1 + 0.2316419 * Math.abs(z));
   const d = 0.3989423 * Math.exp((-z * z) / 2);
   const prob =
     d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
   return z > 0 ? 1 - prob : prob;
-};
+}
 
 /**
  * Performs paired two-tailed t-test between two arrays of paired samples.
  */
-export const calculatePairedTTest = (
+export function calculatePairedTTest(
   baseline: number[],
   energyAware: number[],
-): { tStat: number; pValue: number } => {
+): { tStat: number; pValue: number } {
   const n = baseline.length;
   if (n < 2) return { tStat: 0, pValue: 1 };
 
@@ -60,14 +60,14 @@ export const calculatePairedTTest = (
   const pValue = 2 * (1 - standardNormalCdf(Math.abs(tStat)));
 
   return { tStat, pValue };
-};
+}
 
 /**
  * Computes complete statistical summary across Monte Carlo runs.
  */
-export const analyzeMonteCarloResults = (
+export function analyzeMonteCarloResults(
   results: AlgorithmBenchmarkResult[],
-): Map<AlgorithmType, StatisticalSummary> => {
+): Map<AlgorithmType, StatisticalSummary> {
   const summaryMap = new Map<AlgorithmType, StatisticalSummary>();
 
   const eaResults = results.filter((r) => r.algorithm === "energyAware");

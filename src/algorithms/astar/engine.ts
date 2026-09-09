@@ -55,24 +55,27 @@ const HEADING_ORDER: Record<Exclude<Heading, "NONE">, number> = {
   UP_LEFT: 7,
 };
 
-const manhattanDistance = (r1: number, c1: number, r2: number, c2: number) =>
-  Math.abs(r1 - r2) + Math.abs(c1 - c2);
+function manhattanDistance(r1: number, c1: number, r2: number, c2: number): number {
+  return Math.abs(r1 - r2) + Math.abs(c1 - c2);
+}
 
-const euclideanDistance = (r1: number, c1: number, r2: number, c2: number) =>
-  Math.hypot(r1 - r2, c1 - c2);
+function euclideanDistance(r1: number, c1: number, r2: number, c2: number): number {
+  return Math.hypot(r1 - r2, c1 - c2);
+}
 
-const chebyshevDistance = (r1: number, c1: number, r2: number, c2: number) =>
-  Math.max(Math.abs(r1 - r2), Math.abs(c1 - c2));
+function chebyshevDistance(r1: number, c1: number, r2: number, c2: number): number {
+  return Math.max(Math.abs(r1 - r2), Math.abs(c1 - c2));
+}
 
-const octileDistance = (r1: number, c1: number, r2: number, c2: number) => {
+function octileDistance(r1: number, c1: number, r2: number, c2: number): number {
   const dx = Math.abs(r1 - r2);
   const dy = Math.abs(c1 - c2);
   return dx + dy + (SQRT2 - 2) * Math.min(dx, dy);
-};
+}
 
 const S_MAX = 2;
 
-const getTurnCost = (current: Heading, target: Heading, penalty: number): number => {
+function getTurnCost(current: Heading, target: Heading, penalty: number): number {
   if (current === "NONE" || target === "NONE" || current === target) return 0;
 
   const currentIndex = HEADING_ORDER[current];
@@ -84,15 +87,15 @@ const getTurnCost = (current: Heading, target: Heading, penalty: number): number
 
   const radians = diff * (Math.PI / 4);
   return radians * penalty;
-};
+}
 
-const getMinAngleToDestination = (
+function getMinAngleToDestination(
   currentHeading: Heading,
   currentRow: number,
   currentCol: number,
   destRow: number,
   destCol: number,
-): number => {
+): number {
   if (currentHeading === "NONE") return 0;
 
   const currentAngle = HEADING_ANGLES[currentHeading as Exclude<Heading, "NONE">];
@@ -104,16 +107,16 @@ const getMinAngleToDestination = (
   let diff = Math.abs(currentAngle - destAngle);
   if (diff > Math.PI) diff = 2 * Math.PI - diff;
   return diff;
-};
+}
 
-const calculateEnergyHeuristic = (
+function calculateEnergyHeuristic(
   row: number,
   col: number,
   heading: Heading,
   destRow: number,
   destCol: number,
   scenario: Scenario,
-): number => {
+): number {
   const distance = Math.hypot(row - destRow, col - destCol);
   const hTrans = distance / S_MAX;
   const minAngle = getMinAngleToDestination(heading, row, col, destRow, destCol);
@@ -125,18 +128,18 @@ const calculateEnergyHeuristic = (
   const hElev = elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : 0;
 
   return hTrans + hRot + hElev;
-};
+}
 
 type TerrainPenaltyBreakdown = Pick<
   EnergyBreakdown,
   "dirtPenalty" | "waterPenalty" | "otherTerrainPenalty" | "total"
 >;
 
-const getTerrainPenaltyBreakdown = (
+function getTerrainPenaltyBreakdown(
   terrainFactor: number,
   distanceBasis: number,
   terrainType?: "dirt" | "water",
-): TerrainPenaltyBreakdown => {
+): TerrainPenaltyBreakdown {
   const terrainPenalty = distanceBasis * terrainFactor;
   let dirtPenalty = 0;
   let waterPenalty = 0;
@@ -160,23 +163,25 @@ const getTerrainPenaltyBreakdown = (
     otherTerrainPenalty,
     total: dirtPenalty + waterPenalty + otherTerrainPenalty,
   };
-};
+}
 
-const addTerrainPenaltyBreakdown = (
+function addTerrainPenaltyBreakdown(
   current: TerrainPenaltyBreakdown,
   next: TerrainPenaltyBreakdown,
-): TerrainPenaltyBreakdown => ({
-  dirtPenalty: current.dirtPenalty + next.dirtPenalty,
-  waterPenalty: current.waterPenalty + next.waterPenalty,
-  otherTerrainPenalty: current.otherTerrainPenalty + next.otherTerrainPenalty,
-  total: current.total + next.total,
-});
+): TerrainPenaltyBreakdown {
+  return {
+    dirtPenalty: current.dirtPenalty + next.dirtPenalty,
+    waterPenalty: current.waterPenalty + next.waterPenalty,
+    otherTerrainPenalty: current.otherTerrainPenalty + next.otherTerrainPenalty,
+    total: current.total + next.total,
+  };
+}
 
-const getEnergyCostBreakdown = (
+function getEnergyCostBreakdown(
   current: EnergyNode,
   target: { row: number; col: number; heading: Heading },
   scenario: Scenario,
-): EnergyBreakdown => {
+): EnergyBreakdown {
   const targetKey = `${target.row}-${target.col}`;
   const currentKey = `${current.row}-${current.col}`;
 
@@ -251,45 +256,49 @@ const getEnergyCostBreakdown = (
     total,
     nodesEvaluated: 0,
   };
-};
+}
 
-const getEnergyCost = (
+function getEnergyCost(
   current: EnergyNode,
   target: { row: number; col: number; heading: Heading },
   scenario: Scenario,
-): number => {
+): number {
   return getEnergyCostBreakdown(current, target, scenario).total;
-};
+}
 
-const createEmptyEnergyBreakdown = (): EnergyBreakdown => ({
-  baseMovement: 0,
-  straightMovement: 0,
-  diagonalMovement: 0,
-  dirtPenalty: 0,
-  waterPenalty: 0,
-  otherTerrainPenalty: 0,
-  climbingCost: 0,
-  turnCost: 0,
-  stabilityPenalty: 0,
-  total: 0,
-  nodesEvaluated: 0,
-});
+function createEmptyEnergyBreakdown(): EnergyBreakdown {
+  return {
+    baseMovement: 0,
+    straightMovement: 0,
+    diagonalMovement: 0,
+    dirtPenalty: 0,
+    waterPenalty: 0,
+    otherTerrainPenalty: 0,
+    climbingCost: 0,
+    turnCost: 0,
+    stabilityPenalty: 0,
+    total: 0,
+    nodesEvaluated: 0,
+  };
+}
 
-const addEnergyBreakdown = (total: EnergyBreakdown, step: EnergyBreakdown): EnergyBreakdown => ({
-  baseMovement: total.baseMovement + step.baseMovement,
-  straightMovement: total.straightMovement + step.straightMovement,
-  diagonalMovement: total.diagonalMovement + step.diagonalMovement,
-  dirtPenalty: total.dirtPenalty + step.dirtPenalty,
-  waterPenalty: total.waterPenalty + step.waterPenalty,
-  otherTerrainPenalty: total.otherTerrainPenalty + step.otherTerrainPenalty,
-  climbingCost: total.climbingCost + step.climbingCost,
-  turnCost: total.turnCost + step.turnCost,
-  stabilityPenalty: total.stabilityPenalty + step.stabilityPenalty,
-  total: total.total + step.total,
-  nodesEvaluated: total.nodesEvaluated + step.nodesEvaluated,
-});
+function addEnergyBreakdown(total: EnergyBreakdown, step: EnergyBreakdown): EnergyBreakdown {
+  return {
+    baseMovement: total.baseMovement + step.baseMovement,
+    straightMovement: total.straightMovement + step.straightMovement,
+    diagonalMovement: total.diagonalMovement + step.diagonalMovement,
+    dirtPenalty: total.dirtPenalty + step.dirtPenalty,
+    waterPenalty: total.waterPenalty + step.waterPenalty,
+    otherTerrainPenalty: total.otherTerrainPenalty + step.otherTerrainPenalty,
+    climbingCost: total.climbingCost + step.climbingCost,
+    turnCost: total.turnCost + step.turnCost,
+    stabilityPenalty: total.stabilityPenalty + step.stabilityPenalty,
+    total: total.total + step.total,
+    nodesEvaluated: total.nodesEvaluated + step.nodesEvaluated,
+  };
+}
 
-const getPathEnergyBreakdown = (endNode: EnergyNode, scenario: Scenario): EnergyBreakdown => {
+function getPathEnergyBreakdown(endNode: EnergyNode, scenario: Scenario): EnergyBreakdown {
   const steps: EnergyNode[] = [];
   let temp: EnergyNode | null = endNode;
 
@@ -323,14 +332,14 @@ const getPathEnergyBreakdown = (endNode: EnergyNode, scenario: Scenario): Energy
   }
 
   return total;
-};
+}
 
-const compilePathfindingResult = (
+function compilePathfindingResult(
   current: EnergyNode,
   scenario: Scenario,
   nodesEvaluated: number,
   visitedNodesInOrder: VisitedNode[],
-): PathfindingResult => {
+): PathfindingResult {
   const shortestPath: string[] = [];
   let totalDistance = 0;
   let temp: EnergyNode | null = current;
@@ -355,7 +364,7 @@ const compilePathfindingResult = (
     totalDistance,
     energyBreakdown,
   };
-};
+}
 
 interface SearchPolicy {
   neighbors: { dr: number; dc: number; heading: Heading }[];
@@ -383,33 +392,35 @@ interface SearchPolicy {
   ) => number;
 }
 
-const createEnergyAwarePolicy = (scenario: Scenario): SearchPolicy => ({
-  neighbors: NEIGHBORS_8,
-  getStateKey: (row, col, heading) => `${row}-${col}-${heading}`,
-  resolveHeading: (neighborHeading) => neighborHeading,
-  isMoveBlocked: (current, nr, nc, neighborHeading, cellKey, stateKey, closedSet) => {
-    if (nr < 0 || nr >= scenario.rows || nc < 0 || nc >= scenario.cols) return true;
-    if (scenario.wallNodes.has(cellKey)) return true;
-    if (closedSet.has(stateKey)) return true;
-    if (neighborHeading.includes("_")) {
-      const cardinal1 = `${current.row + (nr - current.row)}-${current.col}`;
-      const cardinal2 = `${current.row}-${current.col + (nc - current.col)}`;
-      if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) return true;
-    }
-    if (!isTraversableSlope(current, { row: nr, col: nc, heading: neighborHeading }, scenario)) {
-      return true;
-    }
-    return false;
-  },
-  computeStepCost: (current, target) => getEnergyCost(current, target, scenario),
-  computeHeuristic: (row, col, heading, destRow, destCol) =>
-    calculateEnergyHeuristic(row, col, heading, destRow, destCol, scenario),
-});
+function createEnergyAwarePolicy(scenario: Scenario): SearchPolicy {
+  return {
+    neighbors: NEIGHBORS_8,
+    getStateKey: (row, col, heading) => `${row}-${col}-${heading}`,
+    resolveHeading: (neighborHeading) => neighborHeading,
+    isMoveBlocked: (current, nr, nc, neighborHeading, cellKey, stateKey, closedSet) => {
+      if (nr < 0 || nr >= scenario.rows || nc < 0 || nc >= scenario.cols) return true;
+      if (scenario.wallNodes.has(cellKey)) return true;
+      if (closedSet.has(stateKey)) return true;
+      if (neighborHeading.includes("_")) {
+        const cardinal1 = `${current.row + (nr - current.row)}-${current.col}`;
+        const cardinal2 = `${current.row}-${current.col + (nc - current.col)}`;
+        if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) return true;
+      }
+      if (!isTraversableSlope(current, { row: nr, col: nc, heading: neighborHeading }, scenario)) {
+        return true;
+      }
+      return false;
+    },
+    computeStepCost: (current, target) => getEnergyCost(current, target, scenario),
+    computeHeuristic: (row, col, heading, destRow, destCol) =>
+      calculateEnergyHeuristic(row, col, heading, destRow, destCol, scenario),
+  };
+}
 
-const createStandardPolicy = (
+function createStandardPolicy(
   scenario: Scenario,
   algorithm: "manhattan" | "euclidean" | "octile" | "chebyshev",
-): SearchPolicy => {
+): SearchPolicy {
   let hFunc = manhattanDistance;
   let neighbors = NEIGHBORS_4;
 
@@ -451,7 +462,7 @@ const createStandardPolicy = (
     computeStepCost: (_current, target) => getStepDistance(target.heading),
     computeHeuristic: (row, col, _heading, destRow, destCol) => hFunc(row, col, destRow, destCol),
   };
-};
+}
 
 /**
  * Executes pathfinding on the provided scenario according to the selected search policy.
@@ -462,7 +473,7 @@ const createStandardPolicy = (
  * @param options - Configurable search options, including algorithm type
  * @returns Complete pathfinding result with animation visits and energy breakdown
  */
-export const findPath = (scenario: Scenario, options?: PathfindingOptions): PathfindingResult => {
+export function findPath(scenario: Scenario, options?: PathfindingOptions): PathfindingResult {
   const algorithm = options?.algorithm ?? "energyAware";
   const policy =
     algorithm === "energyAware"
@@ -480,14 +491,14 @@ export const findPath = (scenario: Scenario, options?: PathfindingOptions): Path
   const openedCells = new Set<string>();
   const closedCells = new Set<string>();
 
-  const recordVisit = (key: string, type: "open" | "closed") => {
+  function recordVisit(key: string, type: "open" | "closed"): void {
     const isSpecial = key === scenario.robotNode || key === scenario.destinationNode;
     const targetSet = type === "open" ? openedCells : closedCells;
     if (!isSpecial && !targetSet.has(key)) {
       visitedNodesInOrder.push({ key, type });
       targetSet.add(key);
     }
-  };
+  }
 
   const startKey = policy.getStateKey(startRow, startCol, scenario.initialHeading);
   const startNode: EnergyNode = {

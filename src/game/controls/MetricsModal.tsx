@@ -6,7 +6,7 @@ interface MetricsModalProps {
   onClose: () => void;
 }
 
-export const MetricsModal = ({ onClose }: MetricsModalProps) => {
+export function MetricsModal({ onClose }: MetricsModalProps) {
   const { pathMetrics } = useSimulation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));

@@ -31,36 +31,38 @@ export interface SimulationDomAdapter {
   updateRobotHeading?: (heading: Heading) => void;
 }
 
-export const createDefaultDomAdapter = (): SimulationDomAdapter => ({
-  getCellElement: (key: string) => {
-    if (typeof document === "undefined") return null;
-    return document.getElementById(`cell-${key}`) as unknown as SimulationDomElement | null;
-  },
-  clearAllSearchVisuals: () => {
-    if (typeof document === "undefined") return;
-    document.querySelectorAll("[data-manhattan], [data-energy], [data-path]").forEach((el) => {
-      const node = el as HTMLElement;
-      delete node.dataset.manhattan;
-      delete node.dataset.energy;
-      delete node.dataset.path;
-    });
-  },
-  updateRobotPosition: (col: number, row: number, cellSize: number) => {
-    if (typeof document === "undefined") return;
-    const node = document.getElementById("robot-actor");
-    if (node) {
-      node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
-    }
-  },
-  updateRobotHeading: (heading: Heading) => {
-    if (typeof document === "undefined") return;
-    const node = document.getElementById("robot-actor-arrow");
-    if (node) {
-      node.style.display = heading && heading !== "NONE" ? "block" : "none";
-      node.style.transform = `rotate(${getHeadingRotation(heading)})`;
-    }
-  },
-});
+export function createDefaultDomAdapter(): SimulationDomAdapter {
+  return {
+    getCellElement(key: string) {
+      if (typeof document === "undefined") return null;
+      return document.getElementById(`cell-${key}`) as unknown as SimulationDomElement | null;
+    },
+    clearAllSearchVisuals() {
+      if (typeof document === "undefined") return;
+      document.querySelectorAll("[data-manhattan], [data-energy], [data-path]").forEach((el) => {
+        const node = el as HTMLElement;
+        delete node.dataset.manhattan;
+        delete node.dataset.energy;
+        delete node.dataset.path;
+      });
+    },
+    updateRobotPosition(col: number, row: number, cellSize: number) {
+      if (typeof document === "undefined") return;
+      const node = document.getElementById("robot-actor");
+      if (node) {
+        node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
+      }
+    },
+    updateRobotHeading(heading: Heading) {
+      if (typeof document === "undefined") return;
+      const node = document.getElementById("robot-actor-arrow");
+      if (node) {
+        node.style.display = heading && heading !== "NONE" ? "block" : "none";
+        node.style.transform = `rotate(${getHeadingRotation(heading)})`;
+      }
+    },
+  };
+}
 
 export interface SimulationState {
   // Dimensions
@@ -140,10 +142,10 @@ interface ActiveStrokeSession {
   };
 }
 
-const parseCoordinates = (key: string): [number, number] => {
+function parseCoordinates(key: string): [number, number] {
   const parts = key.split("-");
   return [Number(parts[0]), Number(parts[1])];
-};
+}
 
 /**
  * The deep SimulationEngine module.
@@ -220,18 +222,21 @@ export class SimulationEngine {
     this.robotHeading = options.initialHeading ?? VEHICLE_CONFIG.defaultHeading;
     this.selectedAlgo = options.initialAlgo ?? "energyAware";
     this.domAdapter = options.domAdapter ?? createDefaultDomAdapter();
+
+    this.subscribe = this.subscribe.bind(this);
+    this.getSnapshot = this.getSnapshot.bind(this);
   }
 
   // --- External Store Subscription Interface ---
 
-  public subscribe = (listener: () => void): (() => void) => {
+  public subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
     };
-  };
+  }
 
-  public getSnapshot = (): SimulationState => {
+  public getSnapshot(): SimulationState {
     if (this.cachedSnapshot) return this.cachedSnapshot;
 
     this.cachedSnapshot = {

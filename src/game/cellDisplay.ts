@@ -29,7 +29,7 @@ export interface ResolveCellDisplayParams {
   showGradients?: boolean;
 }
 
-export const resolveCellDisplayState = ({
+export function resolveCellDisplayState({
   isWall,
   isRobot,
   isDestination,
@@ -39,7 +39,7 @@ export const resolveCellDisplayState = ({
   robotHeading,
   gradient,
   showGradients,
-}: ResolveCellDisplayParams): CellDisplayState => {
+}: ResolveCellDisplayParams): CellDisplayState {
   const isUnstable = gradient?.isUnstable ?? false;
 
   let bgColor = "transparent";
@@ -89,17 +89,17 @@ export const resolveCellDisplayState = ({
     elevationLabel,
     gradientArrow,
   };
-};
+}
 
 export interface CellComparisonProps {
   cellSize: number;
   displayState: CellDisplayState;
 }
 
-export const areCellDisplayPropsEqual = (
+export function areCellDisplayPropsEqual(
   prevProps: CellComparisonProps,
   nextProps: CellComparisonProps,
-): boolean => {
+): boolean {
   if (prevProps.cellSize !== nextProps.cellSize) {
     return false;
   }

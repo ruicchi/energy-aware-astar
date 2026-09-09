@@ -12,21 +12,23 @@ import {
 import type { Scenario } from "../shared/types"
 import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../config/simulationConfig"
 
-const createScenario = (overrides: Partial<Scenario> = {}): Scenario => ({
-  rows: 10,
-  cols: 10,
-  robotNode: "0-0",
-  destinationNode: "0-5",
-  wallNodes: new Set(),
-  terrainFactors: new Map(),
-  elevations: new Map(),
-  climbingFactor: ENERGY_CONFIG.climbingFactor,
-  turnPenalty: ENERGY_CONFIG.turnPenalty,
-  maxTraversableSlope: TERRAIN_CONFIG.defaultMaxTraversableSlope,
-  initialHeading: VEHICLE_CONFIG.defaultHeading,
-  robotPhysics: VEHICLE_CONFIG,
-  ...overrides,
-})
+function createScenario(overrides: Partial<Scenario> = {}): Scenario {
+  return {
+    rows: 10,
+    cols: 10,
+    robotNode: "0-0",
+    destinationNode: "0-5",
+    wallNodes: new Set(),
+    terrainFactors: new Map(),
+    elevations: new Map(),
+    climbingFactor: ENERGY_CONFIG.climbingFactor,
+    turnPenalty: ENERGY_CONFIG.turnPenalty,
+    maxTraversableSlope: TERRAIN_CONFIG.defaultMaxTraversableSlope,
+    initialHeading: VEHICLE_CONFIG.defaultHeading,
+    robotPhysics: VEHICLE_CONFIG,
+    ...overrides,
+  };
+}
 
 describe("Terrain Physics", () => {
   describe("Kinematics & Direction", () => {

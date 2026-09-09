@@ -2,7 +2,7 @@ import { Box, Typography, Button, Tooltip, Slider } from "@mui/material";
 import { TERRAIN_CONFIG } from "../../config/simulationConfig";
 import { useSimulation } from "../SimulationContext";
 
-export const TerrainBrushControls = () => {
+export function TerrainBrushControls() {
   const {
     activeBrush,
     setActiveBrush,

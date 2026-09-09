@@ -11,13 +11,13 @@ export interface DestinationActorProps {
 }
 
 export const DestinationActor = memo(
-  ({
+  function DestinationActor({
     destinationNode,
     cellSize,
     isDragging,
     isWalking,
     onMouseDown,
-  }: DestinationActorProps) => {
+  }: DestinationActorProps) {
     const parts = destinationNode.split("-");
     const row = Number(parts[0]);
     const col = Number(parts[1]);

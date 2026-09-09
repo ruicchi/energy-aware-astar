@@ -6,7 +6,7 @@ interface HeuristicControlsProps {
   onOpenResults: () => void;
 }
 
-export const HeuristicControls = ({ onOpenResults }: HeuristicControlsProps) => {
+export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
   const {
     selectedAlgo,
     handleSelectAlgo,

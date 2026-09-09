@@ -4,7 +4,7 @@ import { VEHICLE_CONFIG, ENERGY_CONFIG } from "../../config/simulationConfig";
 /**
  * Generates a ridge/hill elevation map centered at the diagonal.
  */
-const createElevatedMap = (): Map<string, number> => {
+function createElevatedMap(): Map<string, number> {
   const map = new Map<string, number>();
   // Mountain peak centered around (12, 12)
   for (let r = 7; r <= 17; r++) {

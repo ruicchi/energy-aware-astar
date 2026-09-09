@@ -5,9 +5,9 @@ import type { StatisticalSummary } from "../statisticalAnalysis";
 /**
  * Formats deterministic case studies into a LaTeX booktabs table for Chapter 4.
  */
-export const generateDeterministicLatexTable = (
+export function generateDeterministicLatexTable(
   results: AlgorithmBenchmarkResult[],
-): string => {
+): string {
   let latex = `\\begin{table*}[t]
 \\centering
 \\caption{Performance Comparison of Path-Planning Algorithms across Deterministic Benchmark Scenarios}
@@ -43,9 +43,9 @@ export const generateDeterministicLatexTable = (
 /**
  * Formats Monte Carlo statistical summary into a LaTeX table for Chapter 4.
  */
-export const generateMonteCarloLatexTable = (
+export function generateMonteCarloLatexTable(
   summaryMap: Map<AlgorithmType, StatisticalSummary>,
-): string => {
+): string {
   let latex = `\\begin{table*}[t]
 \\centering
 \\caption{Monte Carlo Statistical Evaluation ($N = 50$ Random Topographic Trials)}
@@ -87,9 +87,9 @@ export const generateMonteCarloLatexTable = (
 /**
  * Generates an energy breakdown LaTeX table.
  */
-export const generateEnergyBreakdownLatexTable = (
+export function generateEnergyBreakdownLatexTable(
   results: AlgorithmBenchmarkResult[],
-): string => {
+): string {
   let latex = `\\begin{table*}[t]
 \\centering
 \\caption{Component-Wise Energy Breakdown across Tested Heuristics (Scenario: Mixed Terrain)}

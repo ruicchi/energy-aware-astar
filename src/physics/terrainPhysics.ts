@@ -18,19 +18,19 @@ export const HEADING_ANGLES: Record<Exclude<Heading, "NONE">, number> = {
   DOWN_LEFT: (3 * Math.PI) / 4,
 };
 
-export const getStepDistance = (heading: Heading): number => {
+export function getStepDistance(heading: Heading): number {
   return heading.includes("_") ? SQRT2 : 1.0;
-};
+}
 
-const parseCoord = (coordStr: string): { row: number; col: number } => {
+function parseCoord(coordStr: string): { row: number; col: number } {
   const [row, col] = coordStr.split("-").map(Number);
   return { row, col };
-};
+}
 
-export const getHeading = (
+export function getHeading(
   from: { row: number; col: number } | string,
   to: { row: number; col: number } | string,
-): Heading => {
+): Heading {
   const fromCoord = typeof from === "string" ? parseCoord(from) : from;
   const toCoord = typeof to === "string" ? parseCoord(to) : to;
   const dr = toCoord.row - fromCoord.row;
@@ -45,7 +45,7 @@ export const getHeading = (
   if (dr === 1 && dc === -1) return "DOWN_LEFT";
   if (dr === 1 && dc === 1) return "DOWN_RIGHT";
   return "NONE";
-};
+}
 
 export interface ElevationGradient {
   zx: number;
@@ -55,13 +55,14 @@ export interface ElevationGradient {
   isUnstable: boolean;
 }
 
-export const getElevationGradient = (
+export function getElevationGradient(
   row: number,
   col: number,
   elevations: Map<string, number>,
-): ElevationGradient => {
-  const getElevation = (r: number, c: number) =>
-    (elevations.get(`${r}-${c}`) || 0) * ELEVATION_SCALE;
+): ElevationGradient {
+  function getElevation(r: number, c: number) {
+    return (elevations.get(`${r}-${c}`) || 0) * ELEVATION_SCALE;
+  }
 
   const zTL = getElevation(row - 1, col - 1);
   const zT = getElevation(row - 1, col);
@@ -81,7 +82,7 @@ export const getElevationGradient = (
   const isUnstable = magnitude > MAX_STABLE_GRADIENT;
 
   return { zx, zy, magnitude, angle, isUnstable };
-};
+}
 
 export interface GradientFieldEntry {
   angle: number;
@@ -89,11 +90,11 @@ export interface GradientFieldEntry {
   isUnstable: boolean;
 }
 
-export const computeGradientField = (
+export function computeGradientField(
   rows: number,
   cols: number,
   elevations: Map<string, number>,
-): Map<string, GradientFieldEntry> => {
+): Map<string, GradientFieldEntry> {
   const field = new Map<string, GradientFieldEntry>();
   if (!elevations || elevations.size === 0) return field;
 
@@ -110,18 +111,20 @@ export const computeGradientField = (
     }
   }
   return field;
-};
+}
 
-const resolveElevations = (
+function resolveElevations(
   source: Map<string, number> | { elevations: Map<string, number> },
-): Map<string, number> => (source instanceof Map ? source : source.elevations);
+): Map<string, number> {
+  return source instanceof Map ? source : source.elevations;
+}
 
-export const getPosture = (
+export function getPosture(
   row: number,
   col: number,
   heading: Heading,
   source: Map<string, number> | { elevations: Map<string, number> },
-): { roll: number; pitch: number } => {
+): { roll: number; pitch: number } {
   if (heading === "NONE") return { roll: 0, pitch: 0 };
 
   const psi = HEADING_ANGLES[heading as Exclude<Heading, "NONE">];
@@ -132,20 +135,22 @@ export const getPosture = (
   const roll = Math.atan(zy * Math.cos(psi) - zx * Math.sin(psi));
 
   return { roll, pitch };
-};
+}
 
-export const getGradientMagnitude = (
+export function getGradientMagnitude(
   row: number,
   col: number,
   elevations: Map<string, number>,
-): number => getElevationGradient(row, col, elevations).magnitude;
+): number {
+  return getElevationGradient(row, col, elevations).magnitude;
+}
 
-export const isStablePosture = (
+export function isStablePosture(
   row: number,
   col: number,
   heading: Heading,
   scenario: Scenario,
-): boolean => {
+): boolean {
   if (!scenario.robotPhysics) return true;
 
   const { roll, pitch } = getPosture(row, col, heading, scenario.elevations);
@@ -161,27 +166,27 @@ export const isStablePosture = (
     Math.abs(xProj) <= halfLength - stabilityMargin &&
     Math.abs(yProj) <= halfWidth - stabilityMargin
   );
-};
+}
 
-export const getSlopeDegrees = (
+export function getSlopeDegrees(
   current: { row: number; col: number },
   target: { row: number; col: number; heading: Heading },
   source: Map<string, number> | { elevations: Map<string, number> },
-): number => {
+): number {
   const elevations = resolveElevations(source);
   const currentElevation = (elevations.get(`${current.row}-${current.col}`) || 0) * ELEVATION_SCALE;
   const targetElevation = (elevations.get(`${target.row}-${target.col}`) || 0) * ELEVATION_SCALE;
   const elevationDelta = targetElevation - currentElevation;
 
   return Math.atan(Math.abs(elevationDelta) / getStepDistance(target.heading)) * (180 / Math.PI);
-};
+}
 
-export const isTraversableSlope = (
+export function isTraversableSlope(
   current: { row: number; col: number },
   target: { row: number; col: number; heading: Heading },
   scenario: Scenario,
   ignoreStability = false,
-): boolean => {
+): boolean {
   const maxTraversableSlope = scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE;
   const slopeDegrees = getSlopeDegrees(current, target, scenario.elevations);
   if (slopeDegrees > maxTraversableSlope) return false;
@@ -192,7 +197,7 @@ export const isTraversableSlope = (
   if (isUnstable) return false;
 
   return isStablePosture(target.row, target.col, target.heading, scenario);
-};
+}
 
 export interface PathSafetyResult {
   isSafe: boolean;
@@ -205,10 +210,10 @@ export interface PathSafetyResult {
  * Validates whether an entire path can be safely traversed by the robot
  * under physical constraints (slope limits, gradient stability, roll/pitch tipping).
  */
-export const evaluatePathSafety = (
+export function evaluatePathSafety(
   path: string[],
   scenario: Scenario,
-): PathSafetyResult => {
+): PathSafetyResult {
   if (!path || path.length === 0) {
     return { isSafe: false, failureReason: "NO_PATH_FOUND", maxSlopeEncountered: 0 };
   }
@@ -259,5 +264,5 @@ export const evaluatePathSafety = (
   }
 
   return { isSafe: true, maxSlopeEncountered };
-};
+}
 

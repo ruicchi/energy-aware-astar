@@ -17,7 +17,7 @@ export interface TerrainGridProps {
 }
 
 export const TerrainGrid = memo(
-  ({
+  function TerrainGrid({
     rows,
     cols,
     cellSize,
@@ -28,7 +28,7 @@ export const TerrainGrid = memo(
     showGradients,
     onMouseDown,
     onMouseEnter,
-  }: TerrainGridProps) => {
+  }: TerrainGridProps) {
     const cells = useMemo(() => {
       return Array.from({ length: rows * cols }, (_, index) => {
         const row = Math.floor(index / cols);

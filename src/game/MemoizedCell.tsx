@@ -18,7 +18,7 @@ export interface MemoizedCellProps {
   onMouseEnter: (key: string) => void;
 }
 
-const getRotation = (heading: Heading | undefined) => {
+function getRotation(heading: Heading | undefined): string {
   switch (heading) {
     case "UP":
       return "-90deg";
@@ -39,11 +39,11 @@ const getRotation = (heading: Heading | undefined) => {
     default:
       return "0deg";
   }
-};
+}
 
 //* React.memo prevents this cell from re-rendering unless its presentation properties change
 export const MemoizedCell = memo(
-  ({
+  function MemoizedCell({
     cellKey,
     cellSize,
     row,
@@ -51,7 +51,7 @@ export const MemoizedCell = memo(
     displayState,
     onMouseDown,
     onMouseEnter,
-  }: MemoizedCellProps) => {
+  }: MemoizedCellProps) {
     const {
       bgColor,
       isWall,

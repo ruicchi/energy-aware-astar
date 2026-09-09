@@ -40,7 +40,7 @@ export interface SimulationContextValue extends SimulationState {
 
 export const SimulationContext = createContext<SimulationContextValue | null>(null);
 
-export const useSimulation = (): SimulationContextValue => {
+export function useSimulation(): SimulationContextValue {
   const ctx = useContext(SimulationContext);
   if (!ctx) {
     throw new Error("useSimulation must be used within a SimulationProvider");

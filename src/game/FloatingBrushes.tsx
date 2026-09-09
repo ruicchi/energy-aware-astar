@@ -3,7 +3,7 @@ import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { FloatingPanel } from "./FloatingPanel";
 import { TerrainBrushControls } from "./controls/TerrainBrushControls";
 
-export const FloatingBrushes = memo(() => {
+export const FloatingBrushes = memo(function FloatingBrushes() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTiny = useMediaQuery("(max-width:400px)");

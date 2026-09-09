@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { FloatingPanel } from "./FloatingPanel";
 
-export const FloatingManual = memo(() => {
+export const FloatingManual = memo(function FloatingManual() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 

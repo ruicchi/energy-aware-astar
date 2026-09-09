@@ -36,11 +36,11 @@ export const ALGORITHM_LABELS: Record<AlgorithmType, string> = {
 /**
  * Executes a single algorithm on a scenario and collects full telemetry.
  */
-export const runAlgorithmBenchmark = (
+export function runAlgorithmBenchmark(
   scenarioName: string,
   scenario: Scenario,
   algorithm: AlgorithmType,
-): AlgorithmBenchmarkResult => {
+): AlgorithmBenchmarkResult {
   const startTime = performance.now();
   const pathResult = findPath(scenario, { algorithm });
   const endTime = performance.now();
@@ -63,17 +63,17 @@ export const runAlgorithmBenchmark = (
     maxSlope: parseFloat(safety.maxSlopeEncountered.toFixed(1)),
     energyBreakdown: pathResult.energyBreakdown,
   };
-};
+}
 
 /**
  * Runs all 5 algorithms on a single scenario.
  */
-export const runScenarioSuite = (
+export function runScenarioSuite(
   scenarioName: string,
   scenario: Scenario,
-): AlgorithmBenchmarkResult[] => {
+): AlgorithmBenchmarkResult[] {
   return ALGORITHMS.map((algo) => runAlgorithmBenchmark(scenarioName, scenario, algo));
-};
+}
 
 // Re-export statistical analysis and publication reporters for backwards compatibility
 export {

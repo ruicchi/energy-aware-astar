@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
  *
  * @returns An object containing the current `width` and `height` of the window.
  */
-export const useViewport = () => {
+export function useViewport() {
   const [viewport, setViewport] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -19,7 +19,7 @@ export const useViewport = () => {
     /**
      * Updates the viewport state with a debounce.
      */
-    const onResize = () => {
+    function onResize() {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         setViewport({

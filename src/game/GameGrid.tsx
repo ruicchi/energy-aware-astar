@@ -9,7 +9,7 @@ import { RobotActor } from "./actors/RobotActor";
 import { DestinationActor } from "./actors/DestinationActor";
 import { THEME_CONFIG } from "../config/simulationConfig";
 
-const GameGrid = () => {
+export default function GameGrid() {
   const {
     cols,
     rows,
@@ -155,6 +155,4 @@ const GameGrid = () => {
       </Box>
     </Box>
   );
-};
-
-export default GameGrid;
+}

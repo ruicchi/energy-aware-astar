@@ -4,10 +4,10 @@ import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../../config/simu
 /**
  * Creates a high-friction mud and water zone across the center diagonal.
  */
-const createFrictionMap = (): {
+function createFrictionMap(): {
   terrainFactors: Map<string, number>;
   terrainTypes: Map<string, "dirt" | "water">;
-} => {
+} {
   const terrainFactors = new Map<string, number>();
   const terrainTypes = new Map<string, "dirt" | "water">();
 
@@ -26,7 +26,7 @@ const createFrictionMap = (): {
   }
 
   return { terrainFactors, terrainTypes };
-};
+}
 
 const frictionData = createFrictionMap();
 
@@ -54,7 +54,7 @@ export const frictionTerrainScenario: Scenario = {
  * Scenario 4: Complex Multi-Hazard Environment
  * Combines elevation hills, mud patches, and wall barriers in a realistic map.
  */
-const createComplexMap = () => {
+function createComplexMap() {
   const elevations = new Map<string, number>();
   const terrainFactors = new Map<string, number>();
   const terrainTypes = new Map<string, "dirt" | "water">();

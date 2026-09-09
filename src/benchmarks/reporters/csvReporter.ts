@@ -3,7 +3,7 @@ import type { AlgorithmBenchmarkResult } from "../benchmarkEngine";
 /**
  * Converts benchmark results into CSV formatted string.
  */
-export const exportToCsv = (results: AlgorithmBenchmarkResult[]): string => {
+export function exportToCsv(results: AlgorithmBenchmarkResult[]): string {
   const headers = [
     "Scenario",
     "Algorithm",

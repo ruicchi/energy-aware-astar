@@ -3,18 +3,23 @@ import { findPath, type PathfindingOptions } from "./engine"
 
 export { findPath, type PathfindingOptions }
 
-export const runAStarEnergyAware = (scenario: Scenario) =>
-  findPath(scenario, { algorithm: "energyAware" })
+export function runAStarEnergyAware(scenario: Scenario) {
+  return findPath(scenario, { algorithm: "energyAware" });
+}
 
-export const runAStarManhattan = (scenario: Scenario) =>
-  findPath(scenario, { algorithm: "manhattan" })
+export function runAStarManhattan(scenario: Scenario) {
+  return findPath(scenario, { algorithm: "manhattan" });
+}
 
-export const runAStarEuclidean = (scenario: Scenario) =>
-  findPath(scenario, { algorithm: "euclidean" })
+export function runAStarEuclidean(scenario: Scenario) {
+  return findPath(scenario, { algorithm: "euclidean" });
+}
 
-export const runAStarOctile = (scenario: Scenario) =>
-  findPath(scenario, { algorithm: "octile" })
+export function runAStarOctile(scenario: Scenario) {
+  return findPath(scenario, { algorithm: "octile" });
+}
 
-export const runAStarChebyshev = (scenario: Scenario) =>
-  findPath(scenario, { algorithm: "chebyshev" })
+export function runAStarChebyshev(scenario: Scenario) {
+  return findPath(scenario, { algorithm: "chebyshev" });
+}
 

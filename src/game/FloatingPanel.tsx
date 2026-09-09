@@ -33,7 +33,7 @@ export interface FloatingPanelProps {
  * - Close button invoking onClose callback
  * - Consistent semi-transparent card chrome
  */
-export const FloatingPanel = ({
+export function FloatingPanel({
   title,
   initialPosition = { x: 20, y: 20 },
   width,
@@ -45,14 +45,14 @@ export const FloatingPanel = ({
   onClose,
   children,
   sx,
-}: FloatingPanelProps) => {
+}: FloatingPanelProps) {
   const [position, setPosition] = useState(initialPosition);
   const [isDragging, setIsDragging] = useState(false);
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   const dragStart = useRef({ x: 0, y: 0 });
 
-  const handlePointerDown = (e: React.PointerEvent) => {
+  function handlePointerDown(e: React.PointerEvent) {
     const target = e.target as HTMLElement;
     if (target.closest("button") || target.closest(".MuiSlider-root") || target.closest("input")) {
       return;
@@ -64,9 +64,9 @@ export const FloatingPanel = ({
       y: e.clientY - position.y,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
-  };
+  }
 
-  const handlePointerMove = (e: React.PointerEvent) => {
+  function handlePointerMove(e: React.PointerEvent) {
     if (!isDragging) return;
     const maxX = typeof window !== "undefined" ? window.innerWidth - 60 : 1000;
     const maxY = typeof window !== "undefined" ? window.innerHeight - 50 : 1000;
@@ -78,16 +78,16 @@ export const FloatingPanel = ({
       x: Math.max(10, Math.min(maxX, rawX)),
       y: Math.max(10, Math.min(maxY, rawY)),
     });
-  };
+  }
 
-  const handlePointerUp = (e: React.PointerEvent) => {
+  function handlePointerUp(e: React.PointerEvent) {
     setIsDragging(false);
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {
       // Ignore if pointer capture already released
     }
-  };
+  }
 
   return (
     <Paper

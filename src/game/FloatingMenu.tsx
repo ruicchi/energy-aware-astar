@@ -5,7 +5,7 @@ import { HeuristicControls } from "./controls/HeuristicControls";
 import { HeadingControls } from "./controls/HeadingControls";
 import { MetricsModal } from "./controls/MetricsModal";
 
-export const FloatingMenu = memo(() => {
+export const FloatingMenu = memo(function FloatingMenu() {
   const [isResultsOpen, setIsResultsOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));

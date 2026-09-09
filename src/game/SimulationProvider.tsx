@@ -9,7 +9,7 @@ interface SimulationProviderProps {
   children: ReactNode;
 }
 
-export const SimulationProvider = ({ children }: SimulationProviderProps) => {
+export function SimulationProvider({ children }: SimulationProviderProps) {
   const viewport = useViewport();
   const cellSize = viewport.width < 600 ? 20 : 28;
   const cols = Math.floor(viewport.width / cellSize);

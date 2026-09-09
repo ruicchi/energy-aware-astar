@@ -51,31 +51,37 @@ describe("Statistical Analysis", () => {
 
   describe("analyzeMonteCarloResults", () => {
     it("aggregates benchmark results across algorithms and calculates relative savings", () => {
-      const createDummyResult = (
+      function createDummyResult(
         scenarioName: string,
         algorithm: "energyAware" | "manhattan",
         totalEnergy: number,
-      ): AlgorithmBenchmarkResult => ({
-        scenarioName,
-        algorithm,
-        pathFound: true,
-        pathLength: 10,
-        totalDistance: 10,
-        totalEnergy,
-        nodesEvaluated: 50,
-        executionTimeMs: 1.5,
-        isSafe: true,
-        maxSlope: 5,
-        energyBreakdown: {
-          baseMovement: totalEnergy * 0.5,
-          climbingCost: totalEnergy * 0.3,
-          turnCost: totalEnergy * 0.2,
-          dirtPenalty: 0,
-          waterPenalty: 0,
-          stabilityPenalty: 0,
+      ): AlgorithmBenchmarkResult {
+        return {
+          scenarioName,
+          algorithm,
+          pathFound: true,
+          pathLength: 10,
+          totalDistance: 10,
+          totalEnergy,
           nodesEvaluated: 50,
-        },
-      });
+          executionTimeMs: 1.5,
+          isSafe: true,
+          maxSlope: 5,
+          energyBreakdown: {
+            baseMovement: totalEnergy * 0.5,
+            straightMovement: totalEnergy * 0.5,
+            diagonalMovement: 0,
+            dirtPenalty: 0,
+            waterPenalty: 0,
+            otherTerrainPenalty: 0,
+            climbingCost: totalEnergy * 0.3,
+            turnCost: totalEnergy * 0.2,
+            stabilityPenalty: 0,
+            total: totalEnergy,
+            nodesEvaluated: 50,
+          },
+        };
+      }
 
       const results: AlgorithmBenchmarkResult[] = [
         createDummyResult("scen1", "energyAware", 80),

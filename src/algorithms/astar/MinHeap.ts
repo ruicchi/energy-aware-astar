@@ -1,11 +1,11 @@
 import { type EnergyNode } from "../../shared/types";
 
-export const push = (heap: EnergyNode[], node: EnergyNode) => {
+export function push(heap: EnergyNode[], node: EnergyNode): void {
   heap.push(node);
   bubbleUp(heap);
-};
+}
 
-export const pop = (heap: EnergyNode[]): EnergyNode | undefined => {
+export function pop(heap: EnergyNode[]): EnergyNode | undefined {
   if (heap.length === 0) return undefined;
   const top = heap[0];
   const bottom = heap.pop()!;
@@ -14,17 +14,17 @@ export const pop = (heap: EnergyNode[]): EnergyNode | undefined => {
     bubbleDown(heap);
   }
   return top;
-};
+}
 
-const shouldSwap = (heap: EnergyNode[], childIndex: number, parentIndex: number): boolean => {
+function shouldSwap(heap: EnergyNode[], childIndex: number, parentIndex: number): boolean {
   const child = heap[childIndex];
   const parent = heap[parentIndex];
   if (child.f < parent.f) return true;
   if (child.f === parent.f) return child.h < parent.h;
   return false;
-};
+}
 
-const bubbleUp = (heap: EnergyNode[]) => {
+function bubbleUp(heap: EnergyNode[]): void {
   let index = heap.length - 1;
   while (index > 0) {
     const parentIndex = Math.floor((index - 1) / 2);
@@ -32,9 +32,9 @@ const bubbleUp = (heap: EnergyNode[]) => {
     [heap[index], heap[parentIndex]] = [heap[parentIndex], heap[index]];
     index = parentIndex;
   }
-};
+}
 
-const bubbleDown = (heap: EnergyNode[]) => {
+function bubbleDown(heap: EnergyNode[]): void {
   let index = 0;
   while (true) {
     let smallest = index;
@@ -48,4 +48,4 @@ const bubbleDown = (heap: EnergyNode[]) => {
     [heap[index], heap[smallest]] = [heap[smallest], heap[index]];
     index = smallest;
   }
-};
+}

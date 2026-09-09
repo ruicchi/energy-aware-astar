@@ -4,7 +4,7 @@ import { VEHICLE_CONFIG, ENERGY_CONFIG } from "../../config/simulationConfig";
 /**
  * Fast, deterministic 32-bit pseudo-random number generator (Mulberry32).
  */
-export const createRng = (seed: number) => {
+export function createRng(seed: number): () => number {
   let s = seed >>> 0;
   return () => {
     s = (s + 0x6d2b79f5) >>> 0;
@@ -12,7 +12,7 @@ export const createRng = (seed: number) => {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-};
+}
 
 export interface ProceduralScenarioOptions {
   seed: number;
@@ -29,7 +29,7 @@ export interface ProceduralScenarioOptions {
 /**
  * Procedurally generates a reproducible test scenario from an integer seed.
  */
-export const generateProceduralScenario = (options: ProceduralScenarioOptions): Scenario => {
+export function generateProceduralScenario(options: ProceduralScenarioOptions): Scenario {
   const {
     seed,
     rows = 25,
@@ -47,13 +47,13 @@ export const generateProceduralScenario = (options: ProceduralScenarioOptions): 
   const [startR, startC] = startNode.split("-").map(Number);
   const [destR, destC] = destinationNode.split("-").map(Number);
 
-  const isProtected = (r: number, c: number) => {
+  function isProtected(r: number, c: number): boolean {
     const dStart = Math.hypot(r - startR, c - startC);
     const dDest = Math.hypot(r - destR, c - destC);
     // Keep start/goal areas and outer perimeter clear for a guaranteed lowland bypass route
     const isPerimeter = r <= 1 || r >= rows - 2 || c <= 1 || c >= cols - 2;
     return dStart <= 2.5 || dDest <= 2.5 || isPerimeter;
-  };
+  }
 
   // 1. Generate Hills (Gaussian drop-off)
   const elevations = new Map<string, number>();

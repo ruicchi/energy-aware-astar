@@ -14,13 +14,13 @@ describe("SimulationEngine", () => {
     vi.restoreAllMocks();
   });
 
-  const createMockDomAdapter = () => {
+  function createMockDomAdapter() {
     const domStore = new Map<
       string,
       { bg: string; classes: Set<string>; dataset: Record<string, string | undefined> }
     >();
 
-    const getCellElement = (key: string): SimulationDomElement => {
+    function getCellElement(key: string): SimulationDomElement {
       if (!domStore.has(key)) {
         domStore.set(key, { bg: "", classes: new Set(), dataset: {} });
       }
@@ -45,15 +45,15 @@ describe("SimulationEngine", () => {
         },
         dataset: record.dataset,
       };
-    };
+    }
 
-    const clearAllSearchVisuals = () => {
+    function clearAllSearchVisuals() {
       for (const record of domStore.values()) {
         delete record.dataset.manhattan;
         delete record.dataset.energy;
         delete record.dataset.path;
       }
-    };
+    }
 
     const updateRobotPosition = vi.fn();
     const updateRobotHeading = vi.fn();

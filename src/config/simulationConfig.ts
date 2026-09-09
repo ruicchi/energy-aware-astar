@@ -22,7 +22,7 @@ export const TERRAIN_CONFIG = {
     water: { cost: 0.1, color: "#00ffff" },
     wall: { color: "#1a88e2" },
   },
-  getElevationColor: (level: number): string => {
+  getElevationColor(level: number): string {
     if (level <= 0) return "";
     const brightness = Math.max(0, 255 - level * 20);
     return `rgb(0, ${brightness}, 0)`;
@@ -50,7 +50,7 @@ export const THEME_CONFIG = {
   pathLineColor: "#fffe6a",
 } as const;
 
-export const getHeadingRotation = (heading: Heading | undefined): string => {
+export function getHeadingRotation(heading: Heading | undefined): string {
   switch (heading) {
     case "UP":
       return "-90deg";
@@ -71,4 +71,4 @@ export const getHeadingRotation = (heading: Heading | undefined): string => {
     default:
       return "0deg";
   }
-};
+}
