@@ -783,6 +783,15 @@ export class SimulationEngine {
   public walk(): void {
     if (!this.currentPath || this.currentPath.length === 0 || this.isWalking) return;
 
+    if (this.currentPath.length <= 1) {
+      this.isWalking = false;
+      this.hasFinishedWalking = true;
+      this.playbackStatus = "idle";
+      this.walkingStep = 0;
+      this.notify();
+      return;
+    }
+
     this.currentRunId += 1;
     const runId = this.currentRunId;
 
@@ -793,55 +802,53 @@ export class SimulationEngine {
     this.playbackStatus = "walking";
     this.notify();
 
-    let cumulativeDelay = 0;
+    let cumulativeDelay = ANIMATION_CONFIG.walkStepDelayMs;
     let currentRobotHeading: Heading = this.robotHeading;
     const path = this.currentPath;
     const scenario = this.getScenario();
 
-    for (let i = 0; i < path.length; i++) {
-      if (i > 0) {
-        const [prevR, prevC] = path[i - 1].split("-").map(Number);
-        const [currR, currC] = path[i].split("-").map(Number);
-        const nextHeading = getHeading(path[i - 1], path[i]);
+    for (let i = 1; i < path.length; i++) {
+      const [prevR, prevC] = path[i - 1].split("-").map(Number);
+      const [currR, currC] = path[i].split("-").map(Number);
+      const nextHeading = getHeading(path[i - 1], path[i]);
 
-        const isSafe = isTraversableSlope(
-          { row: prevR, col: prevC },
-          { row: currR, col: currC, heading: nextHeading },
-          scenario,
-        );
+      const isSafe = isTraversableSlope(
+        { row: prevR, col: prevC },
+        { row: currR, col: currC, heading: nextHeading },
+        scenario,
+      );
 
-        if (!isSafe) {
-          const failTimeout = setTimeout(() => {
-            if (runId !== this.currentRunId) return;
-            this.isWalking = false;
-            this.hasFinishedWalking = true;
-            this.playbackStatus = "idle";
-            this.walkFailure = {
-              row: currR,
-              col: currC,
-              reason: "ROBOT TIPPED OVER",
-            };
-            this.notify();
-          }, cumulativeDelay);
-          this.activeTimeouts.push(failTimeout);
-          break;
-        }
+      if (!isSafe) {
+        const failTimeout = setTimeout(() => {
+          if (runId !== this.currentRunId) return;
+          this.isWalking = false;
+          this.hasFinishedWalking = true;
+          this.playbackStatus = "idle";
+          this.walkFailure = {
+            row: currR,
+            col: currC,
+            reason: "ROBOT TIPPED OVER",
+          };
+          this.notify();
+        }, cumulativeDelay);
+        this.activeTimeouts.push(failTimeout);
+        break;
+      }
 
-        if (
-          currentRobotHeading !== "NONE" &&
-          nextHeading !== "NONE" &&
-          nextHeading !== currentRobotHeading
-        ) {
-          const rotateTimeout = setTimeout(() => {
-            if (runId !== this.currentRunId) return;
-            this.robotHeading = nextHeading;
-            this.notify();
-          }, cumulativeDelay);
-          this.activeTimeouts.push(rotateTimeout);
+      if (
+        currentRobotHeading !== "NONE" &&
+        nextHeading !== "NONE" &&
+        nextHeading !== currentRobotHeading
+      ) {
+        const rotateTimeout = setTimeout(() => {
+          if (runId !== this.currentRunId) return;
+          this.robotHeading = nextHeading;
+          this.notify();
+        }, cumulativeDelay);
+        this.activeTimeouts.push(rotateTimeout);
 
-          cumulativeDelay += ANIMATION_CONFIG.walkRotateDelayMs;
-          currentRobotHeading = nextHeading;
-        }
+        cumulativeDelay += ANIMATION_CONFIG.walkRotateDelayMs;
+        currentRobotHeading = nextHeading;
       }
 
       const moveTimeout = setTimeout(() => {

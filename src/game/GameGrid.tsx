@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import Box from "@mui/material/Box";
 import { FloatingMenu } from "./FloatingMenu";
 import { FloatingManual } from "./FloatingManual";
@@ -42,6 +43,18 @@ const GameGrid = () => {
     ((pathTheme === "manhattan" && showManhattanSearch) ||
       (pathTheme === "energy" && showEnergySearch)),
   );
+
+  const polylinePoints = useMemo(() => {
+    if (!isLineVisible || !currentPath) return "";
+    return currentPath
+      .map((key) => {
+        const [r, c] = key.split("-").map(Number);
+        const x = c * cellSize + cellSize / 2;
+        const y = r * cellSize + cellSize / 2;
+        return `${x},${y}`;
+      })
+      .join(" ");
+  }, [isLineVisible, currentPath, cellSize]);
 
   return (
     <Box
@@ -88,14 +101,7 @@ const GameGrid = () => {
             }}
           >
             <polyline
-              points={currentPath
-                .map((key) => {
-                  const [r, c] = key.split("-").map(Number);
-                  const x = c * cellSize + cellSize / 2;
-                  const y = r * cellSize + cellSize / 2;
-                  return `${x},${y}`;
-                })
-                .join(" ")}
+              points={polylinePoints}
               fill="none"
               stroke={THEME_CONFIG.pathLineColor}
               strokeWidth={Math.max(2, Math.round(cellSize * 0.1))}

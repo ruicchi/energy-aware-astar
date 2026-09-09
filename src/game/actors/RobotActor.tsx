@@ -77,14 +77,17 @@ export const RobotActor = memo(
           e.stopPropagation();
           onMouseDown(robotNode);
         }}
+        style={{
+          transform: `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`,
+          transition: isWalking ? "transform 0.2s linear" : "none",
+          willChange: isWalking ? "transform" : "auto",
+        }}
         sx={{
           position: "absolute",
           top: 0,
           left: 0,
           width: cellSize,
           height: cellSize,
-          transform: `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`,
-          transition: isWalking ? "transform 0.2s linear" : "none",
           backgroundColor: THEME_CONFIG.robotColor,
           zIndex: 10,
           pointerEvents: isDragging || isWalking ? "none" : "auto",
@@ -100,11 +103,13 @@ export const RobotActor = memo(
       >
         {robotHeading && robotHeading !== "NONE" && (
           <ArrowForwardIcon
+            style={{
+              transform: `rotate(${getRotation(robotHeading)})`,
+              transition: "transform 0.2s ease-in-out",
+            }}
             sx={{
               fontSize: cellSize * 0.8,
               color: "#ffffff",
-              transform: `rotate(${getRotation(robotHeading)})`,
-              transition: "transform 0.2s ease-in-out",
               pointerEvents: "none",
             }}
           />

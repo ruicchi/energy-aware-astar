@@ -30,13 +30,15 @@ export const DestinationActor = memo(
           e.stopPropagation();
           onMouseDown(destinationNode);
         }}
+        style={{
+          transform: `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`,
+        }}
         sx={{
           position: "absolute",
           top: 0,
           left: 0,
           width: cellSize,
           height: cellSize,
-          transform: `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`,
           backgroundColor: THEME_CONFIG.destinationColor,
           zIndex: 10,
           pointerEvents: isDragging || isWalking ? "none" : "auto",
