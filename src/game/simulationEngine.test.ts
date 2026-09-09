@@ -1,0 +1,372 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  SimulationEngine,
+  type SimulationDomAdapter,
+  type SimulationDomElement,
+} from "./simulationEngine";
+
+describe("SimulationEngine", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const createMockDomAdapter = () => {
+    const domStore = new Map<
+      string,
+      { bg: string; classes: Set<string>; dataset: Record<string, string | undefined> }
+    >();
+
+    const getCellElement = (key: string): SimulationDomElement => {
+      if (!domStore.has(key)) {
+        domStore.set(key, { bg: "", classes: new Set(), dataset: {} });
+      }
+      const record = domStore.get(key)!;
+
+      return {
+        style: {
+          get backgroundColor() {
+            return record.bg;
+          },
+          set backgroundColor(val: string) {
+            record.bg = val;
+          },
+        },
+        classList: {
+          add(c: string) {
+            record.classes.add(c);
+          },
+          remove(c: string) {
+            record.classes.delete(c);
+          },
+        },
+        dataset: record.dataset,
+      };
+    };
+
+    const clearAllSearchVisuals = () => {
+      for (const record of domStore.values()) {
+        delete record.dataset.manhattan;
+        delete record.dataset.energy;
+        delete record.dataset.path;
+      }
+    };
+
+    const domAdapter: SimulationDomAdapter = {
+      getCellElement,
+      clearAllSearchVisuals,
+    };
+
+    return { domAdapter, domStore };
+  };
+
+  it("notifies subscribers and provides immutable snapshots", () => {
+    const engine = new SimulationEngine({ cols: 10, rows: 10 });
+    const listener = vi.fn();
+    const unsubscribe = engine.subscribe(listener);
+
+    engine.setActiveBrush("dirt");
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(engine.getSnapshot().activeBrush).toBe("dirt");
+
+    unsubscribe();
+    engine.setActiveBrush("water");
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(engine.getSnapshot().activeBrush).toBe("water");
+  });
+
+  describe("Stroke & Paint Buffer Semantics", () => {
+    it("paints walls during stroke and toggles walls off", () => {
+      const { domAdapter, domStore } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "5-5",
+        domAdapter,
+      });
+
+      engine.setActiveBrush("wall");
+      engine.startPaint("1-1");
+      expect(domStore.get("1-1")?.bg).toBe("#1a88e2");
+      expect(domStore.get("1-1")?.classes.has("is-wall")).toBe(true);
+
+      engine.continuePaint("1-2");
+      expect(domStore.get("1-2")?.bg).toBe("#1a88e2");
+
+      engine.endPaint();
+      expect(engine.getSnapshot().wallNodes.has("1-1")).toBe(true);
+      expect(engine.getSnapshot().wallNodes.has("1-2")).toBe(true);
+      // DOM inline preview styling is cleared for React rendering
+      expect(domStore.get("1-1")?.bg).toBe("");
+      expect(domStore.get("1-2")?.bg).toBe("");
+
+      // Second stroke on 1-1 toggles it off
+      engine.startPaint("1-1");
+      engine.endPaint();
+      expect(engine.getSnapshot().wallNodes.has("1-1")).toBe(false);
+      expect(engine.getSnapshot().wallNodes.has("1-2")).toBe(true);
+    });
+
+    it("paints configurable dirt and water terrain factors and updates them en masse", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "5-5",
+        domAdapter,
+      });
+
+      engine.setDirtBrushValue(2.0);
+      engine.setActiveBrush("dirt");
+      engine.startPaint("2-1");
+      engine.endPaint();
+
+      expect(engine.getSnapshot().terrainFactors.get("2-1")).toBe(2.0);
+      expect(engine.getSnapshot().terrainTypes.get("2-1")).toBe("dirt");
+
+      // Changing dirtBrushValue updates existing dirt cells
+      engine.setDirtBrushValue(3.5);
+      expect(engine.getSnapshot().terrainFactors.get("2-1")).toBe(3.5);
+
+      // Paint water
+      engine.setWaterBrushValue(1.5);
+      engine.setActiveBrush("water");
+      engine.startPaint("2-2");
+      engine.endPaint();
+
+      expect(engine.getSnapshot().terrainFactors.get("2-2")).toBe(1.5);
+      expect(engine.getSnapshot().terrainTypes.get("2-2")).toBe("water");
+
+      // Changing waterBrushValue updates water cells
+      engine.setWaterBrushValue(4.0);
+      expect(engine.getSnapshot().terrainFactors.get("2-2")).toBe(4.0);
+    });
+
+    it("moves robot and destination on drag and respects boundaries and walls", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "5-5",
+        initialWallNodes: new Set(["0-2"]),
+        domAdapter,
+      });
+
+      // Drag robot
+      engine.startPaint("0-0");
+      engine.continuePaint("0-1");
+      // Try to move into wall 0-2
+      engine.continuePaint("0-2");
+      engine.endPaint();
+
+      expect(engine.getSnapshot().robotNode).toBe("0-1");
+
+      // Drag destination
+      engine.startPaint("5-5");
+      engine.continuePaint("5-4");
+      engine.endPaint();
+
+      expect(engine.getSnapshot().destinationNode).toBe("5-4");
+    });
+
+    it("prevents dragging robot onto an unstable elevation slope", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "2-1",
+        initialDestinationNode: "5-5",
+        initialElevations: new Map([["2-3", 10]]),
+        domAdapter,
+      });
+
+      engine.startPaint("2-1");
+      engine.continuePaint("2-2"); // Unstable due to cliff at 2-3
+      engine.endPaint();
+
+      expect(engine.getSnapshot().robotNode).toBe("2-1");
+    });
+
+    it("skips painting elevation over robot node if it would cause instability", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "2-2",
+        initialDestinationNode: "5-5",
+        initialElevations: new Map([["2-3", 10]]),
+        domAdapter,
+      });
+
+      engine.setElevationBrushValue(10);
+      engine.setActiveBrush("elevation");
+      engine.startPaint("0-0");
+      engine.continuePaint("2-2"); // Robot node near cliff
+      engine.endPaint();
+
+      expect(engine.getSnapshot().elevations.get("0-0")).toBe(10);
+      expect(engine.getSnapshot().elevations.has("2-2")).toBe(false);
+    });
+
+    it("aborts stroke and restores previous snapshot", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "5-5",
+        initialWallNodes: new Set(["1-1"]),
+        domAdapter,
+      });
+
+      engine.setActiveBrush("wall");
+      engine.startPaint("1-2");
+      engine.continuePaint("1-3");
+      expect(engine.getSnapshot().wallNodes.has("1-2")).toBe(true);
+
+      engine.abortPaint();
+      expect(engine.isSessionActive()).toBe(false);
+      expect(engine.getSnapshot().wallNodes.has("1-2")).toBe(false);
+      expect(engine.getSnapshot().wallNodes.has("1-1")).toBe(true);
+    });
+
+    it("clears walls and terrain cleanly", () => {
+      const { domAdapter, domStore } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "5-5",
+        initialWallNodes: new Set(["1-1"]),
+        initialTerrainFactors: new Map([["2-1", 1.0]]),
+        initialElevations: new Map([["3-1", 5]]),
+        domAdapter,
+      });
+
+      domStore.get("1-1")?.classes.add("is-wall");
+
+      engine.clearWalls();
+      expect(engine.getSnapshot().wallNodes.size).toBe(0);
+      expect(engine.getSnapshot().terrainFactors.size).toBe(0);
+      expect(engine.getSnapshot().elevations.size).toBe(0);
+      expect(domStore.get("1-1")?.classes.has("is-wall")).toBe(false);
+    });
+  });
+
+  describe("Visualization & Search Playback", () => {
+    it("runs pathfinding visualization, animates open/closed search nodes, and displays path", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "2-0",
+        initialDestinationNode: "2-3",
+        domAdapter,
+      });
+
+      engine.visualize("manhattan");
+
+      const state1 = engine.getSnapshot();
+      expect(state1.isAnimating).toBe(true);
+      expect(state1.playbackStatus).toBe("searching");
+      expect(state1.currentPath).toEqual(["2-0", "2-1", "2-2", "2-3"]);
+      expect(state1.pathMetrics).not.toBeNull();
+      expect(state1.pathMetrics?.algorithm).toBe("Manhattan");
+
+      // Advance timers to complete node animation
+      vi.runAllTimers();
+
+      const state2 = engine.getSnapshot();
+      expect(state2.isAnimating).toBe(false);
+      expect(state2.isPathVisible).toBe(true);
+      expect(state2.isManhattanFinished).toBe(true);
+      expect(state2.playbackStatus).toBe("idle");
+    });
+  });
+
+  describe("Robot Walking Kinematics", () => {
+    it("walks path and updates step and heading", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "2-0",
+        initialDestinationNode: "2-2",
+        domAdapter,
+      });
+
+      engine.visualize("manhattan");
+      vi.runAllTimers();
+
+      engine.walk();
+      expect(engine.getSnapshot().isWalking).toBe(true);
+      expect(engine.getSnapshot().playbackStatus).toBe("walking");
+
+      // Advance through walking steps
+      vi.runAllTimers();
+
+      expect(engine.getSnapshot().isWalking).toBe(false);
+      expect(engine.getSnapshot().hasFinishedWalking).toBe(true);
+      expect(engine.getSnapshot().walkFailure).toBeNull();
+    });
+
+    it("detects untraversable slopes during walk and triggers failure", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "2-0",
+        initialDestinationNode: "2-3",
+        initialElevations: new Map([["2-2", 30]]), // extreme cliff
+        domAdapter,
+      });
+
+      // Run manhattan which ignores slope in spatial planning
+      engine.visualize("manhattan");
+      vi.runAllTimers();
+
+      engine.walk();
+      vi.runAllTimers();
+
+      const snapshot = engine.getSnapshot();
+      expect(snapshot.isWalking).toBe(false);
+      expect(snapshot.hasFinishedWalking).toBe(true);
+      expect(snapshot.walkFailure).not.toBeNull();
+      expect(snapshot.walkFailure?.reason).toBe("ROBOT TIPPED OVER");
+    });
+  });
+
+  describe("Reset", () => {
+    it("clears board, animations, and path metrics completely", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "1-1",
+        initialDestinationNode: "1-3",
+        initialWallNodes: new Set(["0-0"]),
+        domAdapter,
+      });
+
+      engine.visualize("energyAware");
+      vi.runAllTimers();
+
+      expect(engine.getSnapshot().pathMetrics).not.toBeNull();
+
+      engine.reset();
+      const state = engine.getSnapshot();
+      expect(state.pathMetrics).toBeNull();
+      expect(state.currentPath).toBeNull();
+      expect(state.wallNodes.size).toBe(0);
+      expect(state.isManhattanFinished).toBe(false);
+      expect(state.isEnergyFinished).toBe(false);
+      expect(state.playbackStatus).toBe("idle");
+    });
+  });
+});

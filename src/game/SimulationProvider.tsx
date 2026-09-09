@@ -1,13 +1,8 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import { useViewport } from "../hooks/useViewport";
-import { useGridMouseClicks } from "../hooks/useGridMouseClicks";
-import { usePathAnimation } from "../hooks/usePathAnimation";
-import { useRobotWalk } from "../hooks/useRobotWalk";
-import { findPath } from "../algorithms/astar";
-import type { Scenario, Heading, AlgorithmType, EnergyBreakdown } from "../shared/types";
-import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../config/simulationConfig";
-import { SimulationContext } from "./SimulationContext";
+import { SimulationEngine } from "./simulationEngine";
+import { SimulationContext, type SimulationContextValue } from "./SimulationContext";
 
 interface SimulationProviderProps {
   children: ReactNode;
@@ -19,251 +14,49 @@ export const SimulationProvider = ({ children }: SimulationProviderProps) => {
   const cols = Math.floor(viewport.width / cellSize);
   const rows = Math.floor(viewport.height / cellSize);
 
-  const defaultRobotCol = Math.floor(cols / 4);
-  const defaultDestCol = Math.floor((cols / 4) * 3);
-  const defaultRow = Math.floor(rows / 2);
+  const [engine] = useState(() => new SimulationEngine({ cols, rows, cellSize }));
 
-  const [elevationBrushValue, setElevationBrushValue] = useState<number>(5);
-  const [dirtBrushValue, setDirtBrushValue] = useState<number>(TERRAIN_CONFIG.types.dirt.cost);
-  const [waterBrushValue, setWaterBrushValue] = useState<number>(TERRAIN_CONFIG.types.water.cost);
-  const [selectedAlgo, setSelectedAlgo] = useState<AlgorithmType>("energyAware");
-  const [showGradients, setShowGradients] = useState<boolean>(false);
-  const [robotHeading, setRobotHeading] = useState<Heading>(VEHICLE_CONFIG.defaultHeading);
-  const [pathMetrics, setPathMetrics] = useState<{
-    algorithm: string;
-    distance: number;
-    energy: number;
-    energyBreakdown: EnergyBreakdown;
-  } | null>(null);
+  useEffect(() => {
+    engine.setDimensions(cols, rows, cellSize);
+  }, [engine, cols, rows, cellSize]);
 
-  const currentRunId = useRef<number>(0);
-
-  const handleSelectAlgo = useCallback((algo: AlgorithmType) => {
-    setSelectedAlgo(algo);
-    if (algo !== "energyAware") {
-      setRobotHeading("NONE");
-    }
-  }, []);
-
-  const {
-    wallNode,
-    terrainFactors,
-    terrainTypes,
-    elevations,
-    robotNode,
-    destinationNode,
-    activeBrush,
-    setActiveBrush,
-    handleMouseDown,
-    handleMouseEnter,
-    handleMouseUp,
-    clearWalls,
-  } = useGridMouseClicks(
-    `${defaultRow}-${defaultRobotCol}`,
-    `${defaultRow}-${defaultDestCol}`,
-    elevationBrushValue,
-    dirtBrushValue,
-    waterBrushValue,
-  );
-
-  const {
-    isManhattanFinished,
-    setIsManhattanFinished,
-    isEnergyFinished,
-    setIsEnergyFinished,
-    isAnimating,
-    showManhattanSearch,
-    setShowManhattanSearch,
-    showEnergySearch,
-    setShowEnergySearch,
-    isPathVisible,
-    pathTheme,
-    clearAnimations,
-    animateResult,
-    addTimeout,
-  } = usePathAnimation();
-
-  const {
-    currentPath,
-    setCurrentPath,
-    walkingStep,
-    isWalking,
-    hasFinishedWalking,
-    walkFailure,
-    handleWalkPath,
-    clearWalkState,
-  } = useRobotWalk(robotHeading, setRobotHeading, addTimeout);
-
-  const isLocked = isAnimating || isWalking;
-
-  const toggleGradients = useCallback(() => {
-    setShowGradients((prev) => !prev);
-  }, []);
-
-  const toggleManhattanSearch = useCallback(() => {
-    setShowManhattanSearch((prev) => !prev);
-  }, [setShowManhattanSearch]);
-
-  const toggleEnergySearch = useCallback(() => {
-    setShowEnergySearch((prev) => !prev);
-  }, [setShowEnergySearch]);
-
-  const getScenario = useCallback((): Scenario => {
-    return {
-      rows,
-      cols,
-      robotNode,
-      destinationNode,
-      wallNodes: wallNode,
-      terrainFactors,
-      terrainTypes,
-      elevations,
-      climbingFactor: ENERGY_CONFIG.climbingFactor,
-      turnPenalty: ENERGY_CONFIG.turnPenalty,
-      maxTraversableSlope: TERRAIN_CONFIG.defaultMaxTraversableSlope,
-      initialHeading: robotHeading,
-      showGradients,
-      robotPhysics: VEHICLE_CONFIG,
+  useEffect(() => {
+    return () => {
+      engine.destroy();
     };
-  }, [
-    rows,
-    cols,
-    robotNode,
-    destinationNode,
-    wallNode,
-    terrainFactors,
-    terrainTypes,
-    elevations,
-    robotHeading,
-    showGradients,
-  ]);
+  }, [engine]);
 
-  const visualize = useCallback(
-    (algoToRun?: AlgorithmType) => {
-      const algo = algoToRun ?? selectedAlgo;
-      clearAnimations(clearWalkState);
+  const state = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
 
-      const scenario = getScenario();
-
-      const algoConfigs: Record<AlgorithmType, { name: string; theme: "manhattan" | "energy" }> = {
-        energyAware: { name: "Energy-Aware", theme: "energy" },
-        manhattan: { name: "Manhattan", theme: "manhattan" },
-        euclidean: { name: "Euclidean", theme: "energy" },
-        octile: { name: "Octile", theme: "energy" },
-        chebyshev: { name: "Chebyshev", theme: "energy" },
-      };
-
-      const config = algoConfigs[algo];
-      const algoName = config.name;
-      const theme = config.theme;
-      const result = findPath(scenario, { algorithm: algo });
-
-      const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
-        result;
-
-      setPathMetrics({
-        algorithm: algoName,
-        distance: totalDistance,
-        energy: totalEnergy,
-        energyBreakdown,
-      });
-
-      currentRunId.current += 1;
-      const runId = currentRunId.current;
-
-      setCurrentPath(shortestPath.length > 0 ? shortestPath : null);
-
-      const duration = animateResult(visitedNodesInOrder, shortestPath, theme);
-
-      const finishTimeout = setTimeout(() => {
-        if (runId !== currentRunId.current) return;
-        if (theme === "manhattan") setIsManhattanFinished(true);
-        else setIsEnergyFinished(true);
-      }, duration);
-      addTimeout(finishTimeout as unknown as number);
-    },
-    [
-      selectedAlgo,
-      clearAnimations,
-      clearWalkState,
-      getScenario,
-      setCurrentPath,
-      animateResult,
-      setIsManhattanFinished,
-      setIsEnergyFinished,
-      addTimeout,
-    ],
+  const value: SimulationContextValue = useMemo(
+    () => ({
+      engine,
+      ...state,
+      wallNode: state.wallNodes,
+      hasPath: Boolean(state.currentPath && state.currentPath.length > 0),
+      setActiveBrush: (b) => engine.setActiveBrush(b),
+      setElevationBrushValue: (v) => engine.setElevationBrushValue(v),
+      setDirtBrushValue: (v) => engine.setDirtBrushValue(v),
+      setWaterBrushValue: (v) => engine.setWaterBrushValue(v),
+      setShowGradients: (s) => engine.setShowGradients(s),
+      toggleGradients: () => engine.toggleGradients(),
+      setRobotHeading: (h) => engine.setRobotHeading(h),
+      setSelectedAlgo: (a) => engine.setSelectedAlgo(a),
+      handleSelectAlgo: (a) => engine.setSelectedAlgo(a),
+      toggleManhattanSearch: () => engine.toggleManhattanSearch(),
+      toggleEnergySearch: () => engine.toggleEnergySearch(),
+      handleMouseDown: (key) => engine.startPaint(key),
+      handleMouseEnter: (key) => engine.continuePaint(key),
+      handleMouseUp: () => engine.endPaint(),
+      visualize: (algo) => engine.visualize(algo),
+      walkPath: () => engine.walk(),
+      clearWalls: () => engine.clearWalls(),
+      clearAnimations: () => engine.clearAnimations(),
+      resetSimulation: () => engine.reset(),
+      getScenario: () => engine.getScenario(),
+    }),
+    [engine, state],
   );
 
-  const walkPath = useCallback(() => {
-    const scenario = getScenario();
-    handleWalkPath(scenario);
-  }, [getScenario, handleWalkPath]);
-
-  const resetSimulation = useCallback(() => {
-    clearWalls();
-    clearAnimations(clearWalkState);
-    setPathMetrics(null);
-    setCurrentPath(null);
-  }, [clearWalls, clearAnimations, clearWalkState, setCurrentPath]);
-
-  return (
-    <SimulationContext.Provider
-      value={{
-        cols,
-        rows,
-        cellSize,
-        wallNode,
-        terrainFactors,
-        terrainTypes,
-        elevations,
-        robotNode,
-        destinationNode,
-        activeBrush,
-        setActiveBrush,
-        elevationBrushValue,
-        setElevationBrushValue,
-        dirtBrushValue,
-        setDirtBrushValue,
-        waterBrushValue,
-        setWaterBrushValue,
-        showGradients,
-        setShowGradients,
-        toggleGradients,
-        robotHeading,
-        setRobotHeading,
-        selectedAlgo,
-        setSelectedAlgo,
-        handleSelectAlgo,
-        pathMetrics,
-        isAnimating,
-        isManhattanFinished,
-        isEnergyFinished,
-        showManhattanSearch,
-        showEnergySearch,
-        isPathVisible,
-        pathTheme,
-        toggleManhattanSearch,
-        toggleEnergySearch,
-        currentPath,
-        walkingStep,
-        isWalking,
-        hasFinishedWalking,
-        walkFailure,
-        hasPath: !!currentPath,
-        isLocked,
-        handleMouseDown,
-        handleMouseEnter,
-        handleMouseUp,
-        visualize,
-        walkPath,
-        clearWalls,
-        clearAnimations,
-        resetSimulation,
-        getScenario,
-      }}
-    >
-      {children}
-    </SimulationContext.Provider>
-  );
+  return <SimulationContext.Provider value={value}>{children}</SimulationContext.Provider>;
 };
