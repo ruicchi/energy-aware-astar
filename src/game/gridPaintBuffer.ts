@@ -42,6 +42,31 @@ function parseCoordinates(key: string): [number, number] {
   return [Number(parts[0]), Number(parts[1])];
 }
 
+function isDirtCell(key: string, target: TerrainStateHolder): boolean {
+  if (target.wallNodes.has(key)) return false;
+  const type = target.terrainTypes.get(key);
+  if (type === "dirt") return true;
+  if (!type && target.terrainFactors.get(key) === TERRAIN_CONFIG.types.dirt.cost) {
+    return true;
+  }
+  return false;
+}
+
+function isWaterCell(key: string, target: TerrainStateHolder): boolean {
+  if (target.wallNodes.has(key)) return false;
+  const type = target.terrainTypes.get(key);
+  if (type === "water") return true;
+  if (!type && target.terrainFactors.get(key) === TERRAIN_CONFIG.types.water.cost) {
+    return true;
+  }
+  return false;
+}
+
+function isElevationCell(key: string, target: TerrainStateHolder): boolean {
+  if (target.wallNodes.has(key)) return false;
+  return (target.elevations.get(key) ?? 0) > 0;
+}
+
 /**
  * The deep GridPaintBuffer module.
  * Encapsulates transient pointer drawing sessions, temporary DOM feedback styling,
@@ -106,25 +131,17 @@ export class GridPaintBuffer {
     if (context.activeBrush === "wall") {
       calculatedDrawValue = !target.wallNodes.has(key);
     } else if (context.activeBrush === "dirt") {
-      const currentType = target.terrainTypes.get(key);
       const currentCost = target.terrainFactors.get(key);
-      const isCurrentDirt =
-        !target.wallNodes.has(key) &&
-        (currentType === "dirt" ||
-          (!currentType && currentCost === TERRAIN_CONFIG.types.dirt.cost));
+      const isCurrentDirt = isDirtCell(key, target);
       calculatedDrawValue =
         isCurrentDirt && currentCost === context.dirtBrushValue ? 0 : context.dirtBrushValue;
     } else if (context.activeBrush === "water") {
-      const currentType = target.terrainTypes.get(key);
       const currentCost = target.terrainFactors.get(key);
-      const isCurrentWater =
-        !target.wallNodes.has(key) &&
-        (currentType === "water" ||
-          (!currentType && currentCost === TERRAIN_CONFIG.types.water.cost));
+      const isCurrentWater = isWaterCell(key, target);
       calculatedDrawValue =
         isCurrentWater && currentCost === context.waterBrushValue ? 0 : context.waterBrushValue;
     } else if (context.activeBrush === "elevation") {
-      const current = target.wallNodes.has(key) ? 0 : (target.elevations.get(key) ?? 0);
+      const current = isElevationCell(key, target) ? (target.elevations.get(key) ?? 0) : 0;
       calculatedDrawValue =
         current === context.elevationBrushValue ? 0 : context.elevationBrushValue;
     }
@@ -191,8 +208,7 @@ export class GridPaintBuffer {
       return true;
     }
 
-    this.applyStrokeToCell(key, target);
-    return true;
+    return this.applyStrokeToCell(key, target);
   }
 
   public endStroke(): boolean {
@@ -238,37 +254,70 @@ export class GridPaintBuffer {
     return snapshot;
   }
 
-  private applyStrokeToCell(key: string, target: TerrainStateHolder): void {
-    if (!this.strokeSession) return;
+  private applyStrokeToCell(key: string, target: TerrainStateHolder): boolean {
+    if (!this.strokeSession) return false;
 
     const { brush, drawValue } = this.strokeSession;
 
     if (brush === "wall") {
       const isWall = Boolean(drawValue);
-      const nextWallNodes = new Set(target.wallNodes);
-      if (isWall) {
-        nextWallNodes.add(key);
-        if (target.terrainFactors.has(key) || target.terrainTypes.has(key)) {
-          const nextFactors = new Map(target.terrainFactors);
-          const nextTypes = new Map(target.terrainTypes);
-          nextFactors.delete(key);
-          nextTypes.delete(key);
-          target.terrainFactors = nextFactors;
-          target.terrainTypes = nextTypes;
+      if (!isWall) {
+        // Delete mode: only delete if the cell is currently a wall
+        if (!target.wallNodes.has(key)) {
+          return false;
         }
-        if (target.elevations.has(key)) {
-          const nextElevations = new Map(target.elevations);
-          nextElevations.delete(key);
-          target.elevations = nextElevations;
-        }
-      } else {
+        const nextWallNodes = new Set(target.wallNodes);
         nextWallNodes.delete(key);
+        target.wallNodes = nextWallNodes;
+        this.strokeSession.modifiedCells.add(key);
+        this.applyVisual(key, "wall", false);
+        return true;
       }
+
+      // Paint mode: paint wall and resolve mutual exclusion
+      if (target.wallNodes.has(key)) {
+        return false;
+      }
+      const nextWallNodes = new Set(target.wallNodes);
+      nextWallNodes.add(key);
       target.wallNodes = nextWallNodes;
+      if (target.terrainFactors.has(key) || target.terrainTypes.has(key)) {
+        const nextFactors = new Map(target.terrainFactors);
+        const nextTypes = new Map(target.terrainTypes);
+        nextFactors.delete(key);
+        nextTypes.delete(key);
+        target.terrainFactors = nextFactors;
+        target.terrainTypes = nextTypes;
+      }
+      if (target.elevations.has(key)) {
+        const nextElevations = new Map(target.elevations);
+        nextElevations.delete(key);
+        target.elevations = nextElevations;
+      }
       this.strokeSession.modifiedCells.add(key);
-      this.applyVisual(key, "wall", isWall);
-    } else if (brush === "dirt") {
+      this.applyVisual(key, "wall", true);
+      return true;
+    }
+
+    if (brush === "dirt") {
       const val = Number(drawValue);
+      if (val === 0) {
+        // Delete mode: only delete if the cell is currently dirt
+        if (!isDirtCell(key, target)) {
+          return false;
+        }
+        const nextFactors = new Map(target.terrainFactors);
+        const nextTypes = new Map(target.terrainTypes);
+        nextFactors.delete(key);
+        nextTypes.delete(key);
+        target.terrainFactors = nextFactors;
+        target.terrainTypes = nextTypes;
+        this.strokeSession.modifiedCells.add(key);
+        this.applyVisual(key, "dirt", 0);
+        return true;
+      }
+
+      // Paint mode: paint dirt and resolve mutual exclusion
       const nextFactors = new Map(target.terrainFactors);
       const nextTypes = new Map(target.terrainTypes);
       if (target.wallNodes.has(key)) {
@@ -281,19 +330,34 @@ export class GridPaintBuffer {
         nextElevations.delete(key);
         target.elevations = nextElevations;
       }
-      if (val === 0) {
-        nextFactors.delete(key);
-        nextTypes.delete(key);
-      } else {
-        nextFactors.set(key, val);
-        nextTypes.set(key, "dirt");
-      }
+      nextFactors.set(key, val);
+      nextTypes.set(key, "dirt");
       target.terrainFactors = nextFactors;
       target.terrainTypes = nextTypes;
       this.strokeSession.modifiedCells.add(key);
       this.applyVisual(key, "dirt", val);
-    } else if (brush === "water") {
+      return true;
+    }
+
+    if (brush === "water") {
       const val = Number(drawValue);
+      if (val === 0) {
+        // Delete mode: only delete if the cell is currently water
+        if (!isWaterCell(key, target)) {
+          return false;
+        }
+        const nextFactors = new Map(target.terrainFactors);
+        const nextTypes = new Map(target.terrainTypes);
+        nextFactors.delete(key);
+        nextTypes.delete(key);
+        target.terrainFactors = nextFactors;
+        target.terrainTypes = nextTypes;
+        this.strokeSession.modifiedCells.add(key);
+        this.applyVisual(key, "water", 0);
+        return true;
+      }
+
+      // Paint mode: paint water and resolve mutual exclusion
       const nextFactors = new Map(target.terrainFactors);
       const nextTypes = new Map(target.terrainTypes);
       if (target.wallNodes.has(key)) {
@@ -306,19 +370,31 @@ export class GridPaintBuffer {
         nextElevations.delete(key);
         target.elevations = nextElevations;
       }
-      if (val === 0) {
-        nextFactors.delete(key);
-        nextTypes.delete(key);
-      } else {
-        nextFactors.set(key, val);
-        nextTypes.set(key, "water");
-      }
+      nextFactors.set(key, val);
+      nextTypes.set(key, "water");
       target.terrainFactors = nextFactors;
       target.terrainTypes = nextTypes;
       this.strokeSession.modifiedCells.add(key);
       this.applyVisual(key, "water", val);
-    } else if (brush === "elevation") {
+      return true;
+    }
+
+    if (brush === "elevation") {
       const val = Number(drawValue);
+      if (val === 0) {
+        // Delete mode: only delete if the cell currently has elevation
+        if (!isElevationCell(key, target)) {
+          return false;
+        }
+        const nextElevations = new Map(target.elevations);
+        nextElevations.delete(key);
+        target.elevations = nextElevations;
+        this.strokeSession.modifiedCells.add(key);
+        this.applyVisual(key, "elevation", 0);
+        return true;
+      }
+
+      // Paint mode: paint elevation and resolve mutual exclusion
       const nextElevations = new Map(target.elevations);
       if (target.wallNodes.has(key)) {
         const nextWallNodes = new Set(target.wallNodes);
@@ -333,15 +409,14 @@ export class GridPaintBuffer {
         target.terrainFactors = nextFactors;
         target.terrainTypes = nextTypes;
       }
-      if (val === 0) {
-        nextElevations.delete(key);
-      } else {
-        nextElevations.set(key, val);
-      }
+      nextElevations.set(key, val);
       target.elevations = nextElevations;
       this.strokeSession.modifiedCells.add(key);
       this.applyVisual(key, "elevation", val);
+      return true;
     }
+
+    return false;
   }
 
   private applyVisual(

@@ -297,5 +297,101 @@ describe("GridPaintBuffer", () => {
     buffer.endStroke();
     expect(domStore.get("4-1")?.bg).toBe("");
   });
+
+  it("only deletes walls when wall brush is in delete mode, leaving dirt/water/elevation untouched", () => {
+    const { domAdapter, domStore } = createMockDomAdapter();
+    const buffer = new GridPaintBuffer(domAdapter);
+    const state = createInitialState();
+
+    state.wallNodes.add("1-1");
+    state.terrainFactors.set("1-2", 1.8);
+    state.terrainTypes.set("1-2", "dirt");
+    state.terrainFactors.set("1-3", 2.5);
+    state.terrainTypes.set("1-3", "water");
+    state.elevations.set("1-4", 4);
+    state.wallNodes.add("1-5");
+
+    const context = createContext({ activeBrush: "wall" });
+
+    // Start deleting on wall 1-1
+    buffer.startStroke("1-1", state, context);
+    expect(state.wallNodes.has("1-1")).toBe(false);
+    expect(domStore.get("1-1")?.bg).toBe("transparent");
+
+    // Drag over dirt 1-2: nothing should happen
+    const modifiedDirt = buffer.continueStroke("1-2", state, context);
+    expect(modifiedDirt).toBe(false);
+    expect(state.terrainFactors.get("1-2")).toBe(1.8);
+    expect(state.terrainTypes.get("1-2")).toBe("dirt");
+    expect(domStore.get("1-2")?.bg).toBeUndefined();
+
+    // Drag over water 1-3: nothing should happen
+    const modifiedWater = buffer.continueStroke("1-3", state, context);
+    expect(modifiedWater).toBe(false);
+    expect(state.terrainFactors.get("1-3")).toBe(2.5);
+    expect(state.terrainTypes.get("1-3")).toBe("water");
+    expect(domStore.get("1-3")?.bg).toBeUndefined();
+
+    // Drag over elevation 1-4: nothing should happen
+    const modifiedElev = buffer.continueStroke("1-4", state, context);
+    expect(modifiedElev).toBe(false);
+    expect(state.elevations.get("1-4")).toBe(4);
+    expect(domStore.get("1-4")?.bg).toBeUndefined();
+
+    // Drag over wall 1-5: should delete wall
+    const modifiedWall = buffer.continueStroke("1-5", state, context);
+    expect(modifiedWall).toBe(true);
+    expect(state.wallNodes.has("1-5")).toBe(false);
+    expect(domStore.get("1-5")?.bg).toBe("transparent");
+
+    buffer.endStroke();
+  });
+
+  it("only deletes dirt when dirt brush is in delete mode, leaving walls/water/elevation untouched", () => {
+    const { domAdapter, domStore } = createMockDomAdapter();
+    const buffer = new GridPaintBuffer(domAdapter);
+    const state = createInitialState();
+
+    state.terrainFactors.set("2-1", 1.8);
+    state.terrainTypes.set("2-1", "dirt");
+    state.wallNodes.add("2-2");
+    state.terrainFactors.set("2-3", 2.5);
+    state.terrainTypes.set("2-3", "water");
+    state.elevations.set("2-4", 3);
+    state.terrainFactors.set("2-5", 1.8);
+    state.terrainTypes.set("2-5", "dirt");
+
+    const context = createContext({ activeBrush: "dirt", dirtBrushValue: 1.8 });
+
+    // Start deleting on dirt 2-1
+    buffer.startStroke("2-1", state, context);
+    expect(state.terrainFactors.has("2-1")).toBe(false);
+    expect(state.terrainTypes.has("2-1")).toBe(false);
+    expect(domStore.get("2-1")?.bg).toBe("transparent");
+
+    // Drag over wall 2-2: untouched
+    expect(buffer.continueStroke("2-2", state, context)).toBe(false);
+    expect(state.wallNodes.has("2-2")).toBe(true);
+    expect(domStore.get("2-2")?.bg).toBeUndefined();
+
+    // Drag over water 2-3: untouched
+    expect(buffer.continueStroke("2-3", state, context)).toBe(false);
+    expect(state.terrainFactors.get("2-3")).toBe(2.5);
+    expect(state.terrainTypes.get("2-3")).toBe("water");
+    expect(domStore.get("2-3")?.bg).toBeUndefined();
+
+    // Drag over elevation 2-4: untouched
+    expect(buffer.continueStroke("2-4", state, context)).toBe(false);
+    expect(state.elevations.get("2-4")).toBe(3);
+    expect(domStore.get("2-4")?.bg).toBeUndefined();
+
+    // Drag over dirt 2-5: deleted
+    expect(buffer.continueStroke("2-5", state, context)).toBe(true);
+    expect(state.terrainFactors.has("2-5")).toBe(false);
+    expect(state.terrainTypes.has("2-5")).toBe(false);
+    expect(domStore.get("2-5")?.bg).toBe("transparent");
+
+    buffer.endStroke();
+  });
 });
 
