@@ -17,8 +17,8 @@ This project is a visual web-based simulation and dataset for an **Energy-Aware 
 - **`src/algorithms/`**: Contains implementations of different A* variants (e.g., `astarEnergyAware.ts`, `astarManhattan.ts`).
 - **`src/game/`**: The core visualization components, including the main `GameGrid` (`game.tsx`), `MemoizedCell.tsx`, and `FloatingMenu.tsx`.
 - **`src/hooks/`**: Custom React hooks for managing state and user interactions (e.g., `useGridMouseClicks.tsx` for wall placement, `useViewport.tsx` for responsive grid sizing).
-- **`src/charts/`**: Components for visualizing performance metrics and energy heatmaps.
 - **`src/data/`**: Scenarios and environments for testing different terrain types (flat, elevated, mixed, etc.).
+- **`src/benchmarks/`**: Benchmark engine, Monte Carlo simulations, and statistical reporters (CSV, LaTeX).
 
 ## Building and Running
 

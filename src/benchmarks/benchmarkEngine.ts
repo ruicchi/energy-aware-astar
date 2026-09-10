@@ -84,9 +84,9 @@ export {
   type StatisticalSummary,
 } from "./statisticalAnalysis";
 
+export { exportToCsv } from "./reporters/csvReporter";
 export {
-  exportToCsv,
   generateDeterministicLatexTable,
   generateMonteCarloLatexTable,
   generateEnergyBreakdownLatexTable,
-} from "./reporters";
+} from "./reporters/latexReporter";

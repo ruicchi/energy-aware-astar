@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
+import { exportToCsv } from "./csvReporter";
 import {
-  exportToCsv,
   generateDeterministicLatexTable,
   generateMonteCarloLatexTable,
   generateEnergyBreakdownLatexTable,
-} from "./index";
+} from "./latexReporter";
 import type { AlgorithmBenchmarkResult } from "../benchmarkEngine";
 import type { StatisticalSummary } from "../statisticalAnalysis";
 import type { AlgorithmType } from "../../shared/types";
