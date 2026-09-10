@@ -15,7 +15,6 @@ import {
   getHeadingRotation,
 } from "../config/simulationConfig";
 import {
-  getElevationGradient,
   getHeading,
   isTraversableSlope,
   evaluatePathSafety,
@@ -28,11 +27,13 @@ import {
   type ScenarioPresetId,
   type ScenarioPresetDescriptor,
 } from "../data";
+import { GridPaintBuffer, type TerrainStateHolder, type PaintContext } from "./gridPaintBuffer";
 
 export {
   SCENARIO_PRESETS,
   type ScenarioPresetId,
   type ScenarioPresetDescriptor,
+  GridPaintBuffer,
 };
 
 export interface SimulationDomElement {
@@ -171,20 +172,6 @@ export interface SimulationEngineOptions {
   domAdapter?: SimulationDomAdapter;
 }
 
-interface ActiveStrokeSession {
-  brush: BrushMode | "robot" | "destination";
-  drawValue: number | boolean | null;
-  modifiedCells: Set<string>;
-  previousSnapshot: {
-    wallNodes: Set<string>;
-    terrainFactors: Map<string, number>;
-    terrainTypes: Map<string, "dirt" | "water">;
-    elevations: Map<string, number>;
-    robotNode: string;
-    destinationNode: string;
-  };
-}
-
 function parseCoordinates(key: string): [number, number] {
   const parts = key.split("-");
   return [Number(parts[0]), Number(parts[1])];
@@ -252,7 +239,7 @@ export class SimulationEngine {
     safetyFailureReason?: string;
   } | null = null;
 
-  private strokeSession: ActiveStrokeSession | null = null;
+  private paintBuffer: GridPaintBuffer;
   private domAdapter: SimulationDomAdapter;
   private listeners: Set<() => void> = new Set();
   private activeTimeouts: ReturnType<typeof setTimeout>[] = [];
@@ -285,6 +272,7 @@ export class SimulationEngine {
     this.robotHeading = this.initialHeading;
     this.selectedAlgo = options.initialAlgo ?? "energyAware";
     this.domAdapter = options.domAdapter ?? createDefaultDomAdapter();
+    this.paintBuffer = new GridPaintBuffer(this.domAdapter);
 
     this.subscribe = this.subscribe.bind(this);
     this.getSnapshot = this.getSnapshot.bind(this);
@@ -336,7 +324,7 @@ export class SimulationEngine {
       walkingStep: this.walkingStep,
       walkFailure: this.walkFailure,
       pathMetrics: this.pathMetrics,
-      activeStrokeBrush: this.strokeSession?.brush ?? null,
+      activeStrokeBrush: this.paintBuffer.getActiveStrokeBrush(),
     };
 
     return this.cachedSnapshot;
@@ -522,10 +510,41 @@ export class SimulationEngine {
     this.notify();
   }
 
-  // --- Transient Pointer & Stroke Buffering (absorbed from GridPaintBuffer) ---
+  // --- Transient Pointer & Stroke Buffering (delegated to GridPaintBuffer) ---
 
   public isSessionActive(): boolean {
-    return this.strokeSession !== null;
+    return this.paintBuffer.isSessionActive();
+  }
+
+  private getTerrainTarget(): TerrainStateHolder {
+    return {
+      wallNodes: this.wallNodes,
+      terrainFactors: this.terrainFactors,
+      terrainTypes: this.terrainTypes,
+      elevations: this.elevations,
+      robotNode: this.robotNode,
+      destinationNode: this.destinationNode,
+    };
+  }
+
+  private getPaintContext(): PaintContext {
+    return {
+      activeBrush: this.activeBrush,
+      elevationBrushValue: this.elevationBrushValue,
+      dirtBrushValue: this.dirtBrushValue,
+      waterBrushValue: this.waterBrushValue,
+      robotHeading: this.robotHeading,
+      cellSize: this.cellSize,
+    };
+  }
+
+  private syncFromTerrainTarget(target: TerrainStateHolder): void {
+    this.wallNodes = target.wallNodes;
+    this.terrainFactors = target.terrainFactors;
+    this.terrainTypes = target.terrainTypes;
+    this.elevations = target.elevations;
+    this.robotNode = target.robotNode;
+    this.destinationNode = target.destinationNode;
   }
 
   public startPaint(key: string): void {
@@ -535,160 +554,50 @@ export class SimulationEngine {
       this.clearAnimations();
     }
 
-    const previousSnapshot = {
-      wallNodes: new Set(this.wallNodes),
-      terrainFactors: new Map(this.terrainFactors),
-      terrainTypes: new Map(this.terrainTypes),
-      elevations: new Map(this.elevations),
-      robotNode: this.robotNode,
-      destinationNode: this.destinationNode,
-    };
+    const target = this.getTerrainTarget();
+    const context = this.getPaintContext();
 
-    if (key === this.robotNode) {
-      this.strokeSession = {
-        brush: "robot",
-        drawValue: null,
-        modifiedCells: new Set(),
-        previousSnapshot,
-      };
+    const started = this.paintBuffer.startStroke(key, target, context);
+    if (started) {
+      this.syncFromTerrainTarget(target);
       this.notify();
-      return;
     }
-
-    if (key === this.destinationNode) {
-      this.strokeSession = {
-        brush: "destination",
-        drawValue: null,
-        modifiedCells: new Set(),
-        previousSnapshot,
-      };
-      this.notify();
-      return;
-    }
-
-    let calculatedDrawValue: number | boolean | null = null;
-
-    if (this.activeBrush === "wall") {
-      calculatedDrawValue = !this.wallNodes.has(key);
-    } else if (this.activeBrush === "dirt") {
-      const currentType = this.terrainTypes.get(key);
-      const currentCost = this.terrainFactors.get(key);
-      const isCurrentDirt =
-        !this.wallNodes.has(key) &&
-        (currentType === "dirt" ||
-          (!currentType && currentCost === TERRAIN_CONFIG.types.dirt.cost));
-      calculatedDrawValue =
-        isCurrentDirt && currentCost === this.dirtBrushValue ? 0 : this.dirtBrushValue;
-    } else if (this.activeBrush === "water") {
-      const currentType = this.terrainTypes.get(key);
-      const currentCost = this.terrainFactors.get(key);
-      const isCurrentWater =
-        !this.wallNodes.has(key) &&
-        (currentType === "water" ||
-          (!currentType && currentCost === TERRAIN_CONFIG.types.water.cost));
-      calculatedDrawValue =
-        isCurrentWater && currentCost === this.waterBrushValue ? 0 : this.waterBrushValue;
-    } else if (this.activeBrush === "elevation") {
-      const current = this.wallNodes.has(key) ? 0 : (this.elevations.get(key) ?? 0);
-      calculatedDrawValue =
-        current === this.elevationBrushValue ? 0 : this.elevationBrushValue;
-    }
-
-    this.strokeSession = {
-      brush: this.activeBrush,
-      drawValue: calculatedDrawValue,
-      modifiedCells: new Set(),
-      previousSnapshot,
-    };
-
-    this.applyStrokeToCell(key);
   }
 
   public continuePaint(key: string): void {
-    if (!this.strokeSession) return;
+    const target = this.getTerrainTarget();
+    const context = this.getPaintContext();
 
-    const { brush } = this.strokeSession;
-
-    if (brush === "robot") {
-      if (key !== this.destinationNode && !this.wallNodes.has(key)) {
-        if (this.robotNode === key) return;
-        const [r, c] = parseCoordinates(key);
-        if (!getElevationGradient(r, c, this.elevations).isUnstable) {
-          this.robotNode = key;
-          this.domAdapter.resetRobot(c, r, this.robotHeading, this.cellSize);
-          this.notify();
-        }
+    const modified = this.paintBuffer.continueStroke(key, target, context);
+    if (modified) {
+      this.syncFromTerrainTarget(target);
+      if (this.isPathVisible) {
+        this.solveInstantly(this.selectedAlgo);
       }
-      return;
+      this.notify();
     }
-
-    if (brush === "destination") {
-      if (key !== this.robotNode && !this.wallNodes.has(key)) {
-        if (this.destinationNode === key) return;
-        const [r, c] = parseCoordinates(key);
-        if (!getElevationGradient(r, c, this.elevations).isUnstable) {
-          this.destinationNode = key;
-          this.notify();
-        }
-      }
-      return;
-    }
-
-    if (key === this.robotNode || key === this.destinationNode) {
-      if (brush === "elevation") {
-        const testElevations = new Map(this.elevations);
-        testElevations.set(key, this.strokeSession.drawValue as number);
-        const [r, c] = parseCoordinates(key);
-        if (getElevationGradient(r, c, testElevations).isUnstable) {
-          return;
-        }
-      } else {
-        return;
-      }
-    }
-
-    this.applyStrokeToCell(key);
   }
 
   public endPaint(): void {
-    if (!this.strokeSession) return;
-
-    // Clear inline preview styles so React declarative state styling takes over
-    for (const key of this.strokeSession.modifiedCells) {
-      const element = this.domAdapter.getCellElement(key);
-      if (element) {
-        element.style.backgroundColor = "";
+    const ended = this.paintBuffer.endStroke();
+    if (ended) {
+      if (this.isPathVisible) {
+        this.solveInstantly(this.selectedAlgo);
       }
+      this.notify();
     }
-
-    this.strokeSession = null;
-    this.notify();
   }
 
   public abortPaint(): void {
-    if (!this.strokeSession) return;
-
-    this.wallNodes = this.strokeSession.previousSnapshot.wallNodes;
-    this.terrainFactors = this.strokeSession.previousSnapshot.terrainFactors;
-    this.terrainTypes = this.strokeSession.previousSnapshot.terrainTypes;
-    this.elevations = this.strokeSession.previousSnapshot.elevations;
-    this.robotNode = this.strokeSession.previousSnapshot.robotNode;
-    this.destinationNode = this.strokeSession.previousSnapshot.destinationNode;
-
-    for (const key of this.strokeSession.modifiedCells) {
-      const element = this.domAdapter.getCellElement(key);
-      if (element) {
-        element.style.backgroundColor = "";
-        if (this.wallNodes.has(key)) {
-          element.classList.add("is-wall");
-        } else {
-          element.classList.remove("is-wall");
-        }
+    const target = this.getTerrainTarget();
+    const restoredSnapshot = this.paintBuffer.abortStroke(target);
+    if (restoredSnapshot) {
+      this.syncFromTerrainTarget(target);
+      if (this.isPathVisible) {
+        this.solveInstantly(this.selectedAlgo);
       }
+      this.notify();
     }
-
-    this.strokeSession = null;
-    this.notify();
   }
 
   private clearWallsInternal(): void {
@@ -697,7 +606,7 @@ export class SimulationEngine {
       ...this.terrainFactors.keys(),
       ...this.terrainTypes.keys(),
       ...this.elevations.keys(),
-      ...(this.strokeSession ? this.strokeSession.modifiedCells : []),
+      ...this.paintBuffer.getModifiedCells(),
     ]);
 
     for (const key of keysToClean) {
@@ -708,7 +617,7 @@ export class SimulationEngine {
       }
     }
 
-    this.strokeSession = null;
+    this.paintBuffer.endStroke();
     this.wallNodes = new Set();
     this.terrainFactors = new Map();
     this.terrainTypes = new Map();
@@ -718,152 +627,6 @@ export class SimulationEngine {
   public clearWalls(): void {
     this.clearWallsInternal();
     this.notify();
-  }
-
-  private applyStrokeToCell(key: string): void {
-    if (!this.strokeSession) return;
-
-    const { brush, drawValue } = this.strokeSession;
-
-    if (brush === "wall") {
-      const isWall = Boolean(drawValue);
-      const nextWallNodes = new Set(this.wallNodes);
-      if (isWall) {
-        nextWallNodes.add(key);
-        if (this.terrainFactors.has(key) || this.terrainTypes.has(key)) {
-          const nextFactors = new Map(this.terrainFactors);
-          const nextTypes = new Map(this.terrainTypes);
-          nextFactors.delete(key);
-          nextTypes.delete(key);
-          this.terrainFactors = nextFactors;
-          this.terrainTypes = nextTypes;
-        }
-        if (this.elevations.has(key)) {
-          const nextElevations = new Map(this.elevations);
-          nextElevations.delete(key);
-          this.elevations = nextElevations;
-        }
-      } else {
-        nextWallNodes.delete(key);
-      }
-      this.wallNodes = nextWallNodes;
-      this.strokeSession.modifiedCells.add(key);
-      this.applyVisual(key, "wall", isWall);
-    } else if (brush === "dirt") {
-      const val = Number(drawValue);
-      const nextFactors = new Map(this.terrainFactors);
-      const nextTypes = new Map(this.terrainTypes);
-      if (this.wallNodes.has(key)) {
-        const nextWallNodes = new Set(this.wallNodes);
-        nextWallNodes.delete(key);
-        this.wallNodes = nextWallNodes;
-      }
-      if (this.elevations.has(key)) {
-        const nextElevations = new Map(this.elevations);
-        nextElevations.delete(key);
-        this.elevations = nextElevations;
-      }
-      if (val === 0) {
-        nextFactors.delete(key);
-        nextTypes.delete(key);
-      } else {
-        nextFactors.set(key, val);
-        nextTypes.set(key, "dirt");
-      }
-      this.terrainFactors = nextFactors;
-      this.terrainTypes = nextTypes;
-      this.strokeSession.modifiedCells.add(key);
-      this.applyVisual(key, "dirt", val);
-    } else if (brush === "water") {
-      const val = Number(drawValue);
-      const nextFactors = new Map(this.terrainFactors);
-      const nextTypes = new Map(this.terrainTypes);
-      if (this.wallNodes.has(key)) {
-        const nextWallNodes = new Set(this.wallNodes);
-        nextWallNodes.delete(key);
-        this.wallNodes = nextWallNodes;
-      }
-      if (this.elevations.has(key)) {
-        const nextElevations = new Map(this.elevations);
-        nextElevations.delete(key);
-        this.elevations = nextElevations;
-      }
-      if (val === 0) {
-        nextFactors.delete(key);
-        nextTypes.delete(key);
-      } else {
-        nextFactors.set(key, val);
-        nextTypes.set(key, "water");
-      }
-      this.terrainFactors = nextFactors;
-      this.terrainTypes = nextTypes;
-      this.strokeSession.modifiedCells.add(key);
-      this.applyVisual(key, "water", val);
-    } else if (brush === "elevation") {
-      const val = Number(drawValue);
-      const nextElevations = new Map(this.elevations);
-      if (this.wallNodes.has(key)) {
-        const nextWallNodes = new Set(this.wallNodes);
-        nextWallNodes.delete(key);
-        this.wallNodes = nextWallNodes;
-      }
-      if (this.terrainFactors.has(key) || this.terrainTypes.has(key)) {
-        const nextFactors = new Map(this.terrainFactors);
-        const nextTypes = new Map(this.terrainTypes);
-        nextFactors.delete(key);
-        nextTypes.delete(key);
-        this.terrainFactors = nextFactors;
-        this.terrainTypes = nextTypes;
-      }
-      if (val === 0) {
-        nextElevations.delete(key);
-      } else {
-        nextElevations.set(key, val);
-      }
-      this.elevations = nextElevations;
-      this.strokeSession.modifiedCells.add(key);
-      this.applyVisual(key, "elevation", val);
-    }
-  }
-
-  private applyVisual(
-    key: string,
-    mode: "wall" | "dirt" | "water" | "elevation",
-    value: number | boolean,
-  ): void {
-    const element = this.domAdapter.getCellElement(key);
-    if (!element) return;
-
-    if (mode === "wall") {
-      if (value) {
-        element.classList.add("is-wall");
-        element.style.backgroundColor = TERRAIN_CONFIG.types.wall.color;
-      } else {
-        element.classList.remove("is-wall");
-        element.style.backgroundColor = "transparent";
-      }
-    } else if (mode === "dirt") {
-      element.classList.remove("is-wall");
-      if (value) {
-        element.style.backgroundColor = TERRAIN_CONFIG.types.dirt.color;
-      } else {
-        element.style.backgroundColor = "transparent";
-      }
-    } else if (mode === "water") {
-      element.classList.remove("is-wall");
-      if (value) {
-        element.style.backgroundColor = TERRAIN_CONFIG.types.water.color;
-      } else {
-        element.style.backgroundColor = "transparent";
-      }
-    } else if (mode === "elevation") {
-      element.classList.remove("is-wall");
-      if (value) {
-        element.style.backgroundColor = TERRAIN_CONFIG.getElevationColor(Number(value));
-      } else {
-        element.style.backgroundColor = "transparent";
-      }
-    }
   }
 
   // --- Animation & Timer Management ---
