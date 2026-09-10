@@ -1,6 +1,6 @@
 import { Box, Typography, useTheme, useMediaQuery } from "@mui/material";
 import { FloatingPanel } from "../FloatingPanel";
-import { useSimulation } from "../SimulationContext";
+import { useSimulationSelector } from "../simulationHooks";
 import { UI_CONFIG, THEME_CONFIG } from "../../config/simulationConfig";
 
 interface MetricsModalProps {
@@ -8,7 +8,7 @@ interface MetricsModalProps {
 }
 
 export function MetricsModal({ onClose }: MetricsModalProps) {
-  const { pathMetrics } = useSimulation();
+  const pathMetrics = useSimulationSelector((s) => s.pathMetrics);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 

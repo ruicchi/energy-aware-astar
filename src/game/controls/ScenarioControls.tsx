@@ -10,7 +10,7 @@ import {
   type SelectChangeEvent,
 } from "@mui/material";
 import { Casino, Refresh } from "@mui/icons-material";
-import { useSimulation } from "../SimulationContext";
+import { useSimulationEngine, useScenarioState } from "../simulationHooks";
 import {
   flatTerrainScenario,
   elevatedTerrainScenario,
@@ -22,34 +22,35 @@ import {
 type ScenarioKey = "freeform" | "case1" | "case2" | "case3" | "case4" | "procedural";
 
 export function ScenarioControls() {
-  const { loadScenario, resetToFreeform, isFixedDimensions, isLocked } = useSimulation();
+  const engine = useSimulationEngine();
+  const { isFixedDimensions, isLocked } = useScenarioState();
 
   const [selectedKey, setSelectedKey] = useState<ScenarioKey>("freeform");
   const [seed, setSeed] = useState<number>(1);
 
   function applyScenario(key: ScenarioKey, currentSeed = seed) {
     if (key === "freeform") {
-      resetToFreeform();
+      engine.resetToFreeform();
       return;
     }
 
     if (key === "case1") {
-      loadScenario(flatTerrainScenario, {
+      engine.loadScenario(flatTerrainScenario, {
         name: "Flat Obstacles",
         instantSolve: true,
       });
     } else if (key === "case2") {
-      loadScenario(elevatedTerrainScenario, {
+      engine.loadScenario(elevatedTerrainScenario, {
         name: "Steep Ridge",
         instantSolve: true,
       });
     } else if (key === "case3") {
-      loadScenario(frictionTerrainScenario, {
+      engine.loadScenario(frictionTerrainScenario, {
         name: "Mud & Water",
         instantSolve: true,
       });
     } else if (key === "case4") {
-      loadScenario(mixedTerrainScenario, {
+      engine.loadScenario(mixedTerrainScenario, {
         name: "Mixed Hazard",
         instantSolve: true,
       });
@@ -62,7 +63,7 @@ export function ScenarioControls() {
         numMudPatches: 3,
         obstacleDensity: 0.08,
       });
-      loadScenario(proceduralScenario, {
+      engine.loadScenario(proceduralScenario, {
         name: `Seed #${currentSeed}`,
         instantSolve: true,
       });

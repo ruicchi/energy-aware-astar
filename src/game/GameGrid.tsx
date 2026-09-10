@@ -1,20 +1,25 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import Box from "@mui/material/Box";
 import { FloatingMenu } from "./FloatingMenu";
 import { FloatingBrushes } from "./FloatingBrushes";
 import { FloatingManual } from "./FloatingManual";
-import { useSimulation } from "./SimulationContext";
+import {
+  useSimulationEngine,
+  useSimulationSelector,
+  useGridDimensions,
+  useTerrainState,
+  usePlaybackState,
+  useSearchTelemetry,
+} from "./simulationHooks";
 import { TerrainGrid } from "./TerrainGrid";
 import { RobotActor } from "./actors/RobotActor";
 import { DestinationActor } from "./actors/DestinationActor";
 import { THEME_CONFIG, UI_CONFIG } from "../config/simulationConfig";
 
 export default function GameGrid() {
+  const engine = useSimulationEngine();
+  const { cols, rows, cellSize, isFixedDimensions } = useGridDimensions();
   const {
-    cols,
-    rows,
-    cellSize,
-    isFixedDimensions,
     wallNode,
     terrainFactors,
     terrainTypes,
@@ -22,21 +27,21 @@ export default function GameGrid() {
     robotNode,
     destinationNode,
     showGradients,
-    robotHeading,
+  } = useTerrainState();
+  const {
     showManhattanSearch,
     showEnergySearch,
     isPathVisible,
     pathTheme,
     currentPath,
-    walkingStep,
-    isWalking,
-    hasFinishedWalking,
-    isLocked,
-    activeStrokeBrush,
-    handleMouseDown,
-    handleMouseEnter,
-    handleMouseUp,
-  } = useSimulation();
+  } = useSearchTelemetry();
+  const { walkingStep, isWalking, hasFinishedWalking, isLocked } = usePlaybackState();
+  const robotHeading = useSimulationSelector((s) => s.robotHeading);
+  const activeStrokeBrush = useSimulationSelector((s) => s.activeStrokeBrush);
+
+  const handleMouseDown = useCallback((key: string) => engine.startPaint(key), [engine]);
+  const handleMouseEnter = useCallback((key: string) => engine.continuePaint(key), [engine]);
+  const handleMouseUp = useCallback(() => engine.endPaint(), [engine]);
 
   const isLineVisible = Boolean(
     isPathVisible &&

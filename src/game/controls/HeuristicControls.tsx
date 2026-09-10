@@ -1,30 +1,28 @@
 import { Box, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import { OpenInNew } from "@mui/icons-material";
 import { THEME_CONFIG } from "../../config/simulationConfig";
-import { useSimulation } from "../SimulationContext";
+import {
+  useSimulationEngine,
+  useSearchTelemetry,
+  usePlaybackState,
+} from "../simulationHooks";
 
 interface HeuristicControlsProps {
   onOpenResults: () => void;
 }
 
 export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
+  const engine = useSimulationEngine();
   const {
     selectedAlgo,
-    handleSelectAlgo,
-    visualize,
     isManhattanFinished,
     isEnergyFinished,
     showManhattanSearch,
     showEnergySearch,
-    toggleManhattanSearch,
-    toggleEnergySearch,
     hasPath,
-    isWalking,
-    walkPath,
     pathMetrics,
-    walkFailure,
-    isLocked,
-  } = useSimulation();
+  } = useSearchTelemetry();
+  const { isWalking, walkFailure, isLocked } = usePlaybackState();
 
   return (
     <Box
@@ -52,7 +50,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
         fullWidth
         size="small"
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => handleSelectAlgo("energyAware")}
+        onClick={() => engine.setSelectedAlgo("energyAware")}
       >
         Energy-Aware
       </Button>
@@ -63,7 +61,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
         fullWidth
         size="small"
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => handleSelectAlgo("manhattan")}
+        onClick={() => engine.setSelectedAlgo("manhattan")}
       >
         Manhattan
       </Button>
@@ -73,7 +71,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
         color="primary"
         size="small"
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => handleSelectAlgo("euclidean")}
+        onClick={() => engine.setSelectedAlgo("euclidean")}
       >
         Euclidean
       </Button>
@@ -83,7 +81,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
         color="primary"
         size="small"
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => handleSelectAlgo("octile")}
+        onClick={() => engine.setSelectedAlgo("octile")}
       >
         Octile
       </Button>
@@ -94,7 +92,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
         size="small"
         fullWidth
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => handleSelectAlgo("chebyshev")}
+        onClick={() => engine.setSelectedAlgo("chebyshev")}
       >
         Chebyshev
       </Button>
@@ -105,7 +103,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
         fullWidth
         sx={{ mt: 1, py: 1, fontWeight: "bold" }}
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => visualize(selectedAlgo)}
+        onClick={() => engine.visualize(selectedAlgo)}
       >
         Visualize
       </Button>
@@ -116,7 +114,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
           color={isWalking ? "primary" : "primary"}
           fullWidth
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={walkPath}
+          onClick={() => engine.walk()}
           sx={{ mt: 1 }}
         >
           {isWalking ? "Walking..." : "Walk Path"}
@@ -132,7 +130,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
               fullWidth
               color="primary"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={toggleManhattanSearch}
+              onClick={() => engine.toggleManhattanSearch()}
             >
               {showManhattanSearch ? "Hide Search Map" : "Show Search Map"}
             </Button>
@@ -144,7 +142,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
               fullWidth
               color="primary"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={toggleEnergySearch}
+              onClick={() => engine.toggleEnergySearch()}
             >
               {showEnergySearch ? "Hide Search Map" : "Show Search Map"}
             </Button>
@@ -196,12 +194,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
             Evaluated Nodes: {pathMetrics.energyBreakdown.nodesEvaluated}
           </Typography>
           {pathMetrics.isSafe !== undefined && (
-            <Typography
-              variant="caption"
-              display="block"
-              fontWeight="bold"
-              color={pathMetrics.isSafe ? "success.main" : "error.main"}
-            >
+            <Typography variant="caption" display="block">
               Safety: {pathMetrics.isSafe ? "Safe" : `Unsafe (${pathMetrics.safetyFailureReason})`}
             </Typography>
           )}
