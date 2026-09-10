@@ -207,6 +207,12 @@ export class SimulationEngine {
   private loadedScenarioName: string | null = null;
   private maxTraversableSlope: number | null = null;
   private initialScenarioHeading: Heading = VEHICLE_CONFIG.defaultHeading;
+  private initialHeading: Heading = VEHICLE_CONFIG.defaultHeading;
+  private freeformCols: number;
+  private freeformRows: number;
+  private freeformCellSize: number;
+  private initialRobotNode: string | null = null;
+  private initialDestinationNode: string | null = null;
 
   private wallNodes: Set<string>;
   private terrainFactors: Map<string, number>;
@@ -258,6 +264,14 @@ export class SimulationEngine {
     this.rows = options.rows ?? GRID_CONFIG.defaultRows;
     this.cellSize = options.cellSize ?? GRID_CONFIG.defaultCellSize;
 
+    this.freeformCols = this.cols;
+    this.freeformRows = this.rows;
+    this.freeformCellSize = this.cellSize;
+
+    this.initialRobotNode = options.initialRobotNode ?? null;
+    this.initialDestinationNode = options.initialDestinationNode ?? null;
+    this.initialHeading = options.initialHeading ?? VEHICLE_CONFIG.defaultHeading;
+
     const defaultRobotCol = Math.floor(this.cols / 4);
     const defaultDestCol = Math.floor((this.cols / 4) * 3);
     const defaultRow = Math.floor(this.rows / 2);
@@ -268,7 +282,7 @@ export class SimulationEngine {
     this.terrainFactors = new Map(options.initialTerrainFactors ?? []);
     this.terrainTypes = new Map(options.initialTerrainTypes ?? []);
     this.elevations = new Map(options.initialElevations ?? []);
-    this.robotHeading = options.initialHeading ?? VEHICLE_CONFIG.defaultHeading;
+    this.robotHeading = this.initialHeading;
     this.selectedAlgo = options.initialAlgo ?? "energyAware";
     this.domAdapter = options.domAdapter ?? createDefaultDomAdapter();
 
@@ -337,6 +351,12 @@ export class SimulationEngine {
 
   // --- Dimension & Viewport Management ---
 
+  public setFreeformDimensions(cols: number, rows: number, cellSize: number): void {
+    this.freeformCols = cols;
+    this.freeformRows = rows;
+    this.freeformCellSize = cellSize;
+  }
+
   public setDimensions(cols: number, rows: number, cellSize: number): void {
     if (this.isFixedDimensions) {
       if (this.cellSize !== cellSize) {
@@ -347,12 +367,27 @@ export class SimulationEngine {
       }
       return;
     }
+
+    this.freeformCols = cols;
+    this.freeformRows = rows;
+    this.freeformCellSize = cellSize;
+
     if (cols === this.cols && rows === this.rows && cellSize === this.cellSize) return;
     this.cols = cols;
     this.rows = rows;
     this.cellSize = cellSize;
+
     const [startR, startC] = this.robotNode.split("-").map(Number);
-    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    const clampedRobotR = Math.min(Math.max(0, startR), rows - 1);
+    const clampedRobotC = Math.min(Math.max(0, startC), cols - 1);
+    this.robotNode = `${clampedRobotR}-${clampedRobotC}`;
+
+    const [destR, destC] = this.destinationNode.split("-").map(Number);
+    const clampedDestR = Math.min(Math.max(0, destR), rows - 1);
+    const clampedDestC = Math.min(Math.max(0, destC), cols - 1);
+    this.destinationNode = `${clampedDestR}-${clampedDestC}`;
+
+    this.domAdapter.resetRobot(clampedRobotC, clampedRobotR, this.robotHeading, this.cellSize);
     this.notify();
   }
 
@@ -643,8 +678,16 @@ export class SimulationEngine {
     this.notify();
   }
 
-  public clearWalls(): void {
-    for (const key of this.wallNodes) {
+  private clearWallsInternal(): void {
+    const keysToClean = new Set<string>([
+      ...this.wallNodes,
+      ...this.terrainFactors.keys(),
+      ...this.terrainTypes.keys(),
+      ...this.elevations.keys(),
+      ...(this.strokeSession ? this.strokeSession.modifiedCells : []),
+    ]);
+
+    for (const key of keysToClean) {
       const element = this.domAdapter.getCellElement(key);
       if (element) {
         element.style.backgroundColor = "";
@@ -652,22 +695,15 @@ export class SimulationEngine {
       }
     }
 
-    if (this.strokeSession) {
-      for (const key of this.strokeSession.modifiedCells) {
-        const element = this.domAdapter.getCellElement(key);
-        if (element) {
-          element.style.backgroundColor = "";
-          element.classList.remove("is-wall");
-        }
-      }
-      this.strokeSession = null;
-    }
-
+    this.strokeSession = null;
     this.wallNodes = new Set();
     this.terrainFactors = new Map();
     this.terrainTypes = new Map();
     this.elevations = new Map();
+  }
 
+  public clearWalls(): void {
+    this.clearWallsInternal();
     this.notify();
   }
 
@@ -1080,14 +1116,8 @@ export class SimulationEngine {
     this.clearTimers();
     this.domAdapter.clearAllSearchVisuals();
 
-    // Clear old wall classes from DOM
-    for (const key of this.wallNodes) {
-      const element = this.domAdapter.getCellElement(key);
-      if (element) {
-        element.style.backgroundColor = "";
-        element.classList.remove("is-wall");
-      }
-    }
+    // Clear old wall and terrain classes from DOM and memory
+    this.clearWallsInternal();
 
     this.isFixedDimensions = true;
     this.loadedScenarioName = name;
@@ -1189,9 +1219,56 @@ export class SimulationEngine {
     this.loadedScenarioName = null;
     this.maxTraversableSlope = null;
     this.initialScenarioHeading = VEHICLE_CONFIG.defaultHeading;
-    if (cols) this.cols = cols;
-    if (rows) this.rows = rows;
-    if (cellSize) this.cellSize = cellSize;
+    this.robotHeading = this.initialHeading;
+    this.showGradients = false;
+
+    let targetCols = cols ?? this.freeformCols;
+    let targetRows = rows ?? this.freeformRows;
+    let targetCellSize = cellSize ?? this.freeformCellSize;
+
+    if (!cols && typeof window !== "undefined" && window.innerWidth > 0 && window.innerHeight > 0) {
+      const fallbackCellSize =
+        window.innerWidth < GRID_CONFIG.mobileBreakpoint
+          ? GRID_CONFIG.mobileCellSize
+          : GRID_CONFIG.defaultCellSize;
+      targetCellSize = cellSize ?? fallbackCellSize;
+      targetCols = Math.floor(window.innerWidth / targetCellSize);
+      targetRows = Math.floor(window.innerHeight / targetCellSize);
+    }
+
+    this.cols = targetCols;
+    this.rows = targetRows;
+    this.cellSize = targetCellSize;
+    this.freeformCols = targetCols;
+    this.freeformRows = targetRows;
+    this.freeformCellSize = targetCellSize;
+
+    const defaultRobotCol = Math.floor(this.cols / 4);
+    const defaultDestCol = Math.floor((this.cols / 4) * 3);
+    const defaultRow = Math.floor(this.rows / 2);
+
+    if (this.initialRobotNode) {
+      const [r, c] = parseCoordinates(this.initialRobotNode);
+      if (r < this.rows && c < this.cols) {
+        this.robotNode = this.initialRobotNode;
+      } else {
+        this.robotNode = `${defaultRow}-${defaultRobotCol}`;
+      }
+    } else {
+      this.robotNode = `${defaultRow}-${defaultRobotCol}`;
+    }
+
+    if (this.initialDestinationNode) {
+      const [r, c] = parseCoordinates(this.initialDestinationNode);
+      if (r < this.rows && c < this.cols) {
+        this.destinationNode = this.initialDestinationNode;
+      } else {
+        this.destinationNode = `${defaultRow}-${defaultDestCol}`;
+      }
+    } else {
+      this.destinationNode = `${defaultRow}-${defaultDestCol}`;
+    }
+
     this.reset();
   }
 
@@ -1202,7 +1279,7 @@ export class SimulationEngine {
     this.clearTimers();
     this.domAdapter.clearAllSearchVisuals();
 
-    this.clearWalls();
+    this.clearWallsInternal();
 
     if (!this.isFixedDimensions) {
       this.maxTraversableSlope = null;

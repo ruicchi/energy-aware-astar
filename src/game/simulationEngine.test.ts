@@ -587,7 +587,7 @@ describe("SimulationEngine", () => {
       expect(euclideanSnapshot.isPathVisible).toBe(true);
     });
 
-    it("resets to freeform viewport mode properly", () => {
+    it("resets to freeform viewport mode properly with explicit dimensions", () => {
       const { domAdapter } = createMockDomAdapter();
       const engine = new SimulationEngine({ cols: 40, rows: 25, domAdapter });
 
@@ -612,8 +612,48 @@ describe("SimulationEngine", () => {
       expect(snapshot.loadedScenarioName).toBeNull();
       expect(snapshot.cols).toBe(50);
       expect(snapshot.rows).toBe(30);
+      expect(snapshot.robotNode).toBe("15-12");
+      expect(snapshot.destinationNode).toBe("15-37");
+      expect(snapshot.robotHeading).toBe("NONE");
+      expect(snapshot.showGradients).toBe(false);
       expect(snapshot.wallNodes.size).toBe(0);
       expect(snapshot.currentPath).toBeNull();
+    });
+
+    it("resets back to initial freeform state when called without arguments after a 25x25 scenario", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({ cols: 60, rows: 34, domAdapter });
+      const initialSnapshot = engine.getSnapshot();
+      expect(initialSnapshot.cols).toBe(60);
+      expect(initialSnapshot.rows).toBe(34);
+      expect(initialSnapshot.isFixedDimensions).toBe(false);
+      const initialRobotNode = initialSnapshot.robotNode;
+      const initialDestNode = initialSnapshot.destinationNode;
+
+      engine.loadPreset("case1");
+      const loadedSnapshot = engine.getSnapshot();
+      expect(loadedSnapshot.isFixedDimensions).toBe(true);
+      expect(loadedSnapshot.cols).toBe(25);
+      expect(loadedSnapshot.rows).toBe(25);
+      expect(loadedSnapshot.robotNode).toBe("2-2");
+      expect(loadedSnapshot.destinationNode).toBe("22-22");
+      expect(loadedSnapshot.wallNodes.size).toBeGreaterThan(0);
+
+      // User switches back to Freeform (no args passed, as in ScenarioControls)
+      engine.resetToFreeform();
+      const freeformSnapshot = engine.getSnapshot();
+      expect(freeformSnapshot.isFixedDimensions).toBe(false);
+      expect(freeformSnapshot.loadedScenarioName).toBeNull();
+      expect(freeformSnapshot.cols).toBe(60);
+      expect(freeformSnapshot.rows).toBe(34);
+      expect(freeformSnapshot.robotNode).toBe(initialRobotNode);
+      expect(freeformSnapshot.destinationNode).toBe(initialDestNode);
+      expect(freeformSnapshot.robotHeading).toBe("NONE");
+      expect(freeformSnapshot.showGradients).toBe(false);
+      expect(freeformSnapshot.wallNodes.size).toBe(0);
+      expect(freeformSnapshot.terrainFactors.size).toBe(0);
+      expect(freeformSnapshot.elevations.size).toBe(0);
+      expect(freeformSnapshot.currentPath).toBeNull();
     });
 
     it("loads catalog presets through loadPreset", () => {
@@ -655,5 +695,49 @@ describe("SimulationEngine", () => {
       expect(snap1.elevations).toEqual(snap2.elevations);
       expect(snap1.currentPath).toEqual(snap2.currentPath);
     });
+
+    it("restores custom initial positions and heading when resetting to freeform", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 30,
+        rows: 20,
+        initialRobotNode: "3-4",
+        initialDestinationNode: "18-25",
+        initialHeading: "N",
+        domAdapter,
+      });
+
+      engine.loadPreset("case2");
+      expect(engine.getSnapshot().isFixedDimensions).toBe(true);
+
+      engine.resetToFreeform();
+      const snapshot = engine.getSnapshot();
+      expect(snapshot.isFixedDimensions).toBe(false);
+      expect(snapshot.cols).toBe(30);
+      expect(snapshot.rows).toBe(20);
+      expect(snapshot.robotNode).toBe("3-4");
+      expect(snapshot.destinationNode).toBe("18-25");
+      expect(snapshot.robotHeading).toBe("N");
+      expect(snapshot.showGradients).toBe(false);
+    });
+
+    it("clamps actor positions when viewport shrinks in freeform mode", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 40,
+        rows: 30,
+        initialRobotNode: "28-38",
+        initialDestinationNode: "25-35",
+        domAdapter,
+      });
+
+      engine.setDimensions(20, 15, 28);
+      const snapshot = engine.getSnapshot();
+      expect(snapshot.cols).toBe(20);
+      expect(snapshot.rows).toBe(15);
+      expect(snapshot.robotNode).toBe("14-19");
+      expect(snapshot.destinationNode).toBe("14-19");
+    });
   });
 });
+

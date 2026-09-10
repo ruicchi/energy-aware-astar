@@ -26,6 +26,8 @@ export function ScenarioControls() {
   const [selectedKey, setSelectedKey] = useState<ScenarioKey>("freeform");
   const [seed, setSeed] = useState<number>(1);
 
+  const activeKey: ScenarioKey = isFixedDimensions ? selectedKey : "freeform";
+
   function applyScenario(key: ScenarioKey, currentSeed = seed) {
     if (key === "freeform") {
       engine.resetToFreeform();
@@ -49,7 +51,7 @@ export function ScenarioControls() {
   function handleSeedChange(e: React.ChangeEvent<HTMLInputElement>) {
     const nextSeed = Math.max(1, parseInt(e.target.value, 10) || 1);
     setSeed(nextSeed);
-    if (selectedKey === "procedural") {
+    if (activeKey === "procedural") {
       applyScenario("procedural", nextSeed);
     }
   }
@@ -62,7 +64,7 @@ export function ScenarioControls() {
   }
 
   function handleReload() {
-    applyScenario(selectedKey);
+    applyScenario(activeKey);
   }
 
   return (
@@ -102,7 +104,7 @@ export function ScenarioControls() {
 
       <Select
         size="small"
-        value={selectedKey}
+        value={activeKey}
         onChange={handleSelectChange}
         onPointerDown={(e) => e.stopPropagation()}
         sx={{
@@ -124,7 +126,7 @@ export function ScenarioControls() {
         </MenuItem>
       </Select>
 
-      {selectedKey === "procedural" && (
+      {activeKey === "procedural" && (
         <Box
           sx={{
             display: "flex",
