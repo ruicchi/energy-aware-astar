@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useLayoutEffect } from "react";
 import Box from "@mui/material/Box";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import type { Heading } from "../../shared/types";
@@ -10,9 +10,6 @@ export interface RobotActorProps {
   robotHeading: Heading;
   isDragging: boolean;
   isWalking: boolean;
-  hasFinishedWalking: boolean;
-  walkingStep: number;
-  currentPath: string[] | null;
   onMouseDown: (key: string) => void;
 }
 
@@ -23,28 +20,20 @@ export const RobotActor = memo(
     robotHeading,
     isDragging,
     isWalking,
-    hasFinishedWalking,
-    walkingStep,
-    currentPath,
     onMouseDown,
   }: RobotActorProps) {
-    let row = 0;
-    let col = 0;
+    const parts = robotNode.split("-");
+    const row = Number(parts[0]);
+    const col = Number(parts[1]);
 
-    if (
-      (isWalking || hasFinishedWalking) &&
-      currentPath &&
-      walkingStep >= 0 &&
-      walkingStep < currentPath.length
-    ) {
-      const parts = currentPath[walkingStep].split("-");
-      row = Number(parts[0]);
-      col = Number(parts[1]);
-    } else {
-      const parts = robotNode.split("-");
-      row = Number(parts[0]);
-      col = Number(parts[1]);
-    }
+    useLayoutEffect(() => {
+      if (typeof document === "undefined") return;
+      const node = document.getElementById("robot-actor");
+      if (node && !isWalking) {
+        node.style.transition = "none";
+        node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
+      }
+    }, [row, col, cellSize, isWalking]);
 
     return (
       <Box
@@ -54,11 +43,6 @@ export const RobotActor = memo(
           if (isWalking) return;
           e.stopPropagation();
           onMouseDown(robotNode);
-        }}
-        style={{
-          transform: `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`,
-          transition: isWalking ? "transform 0.2s linear" : "none",
-          willChange: isWalking ? "transform" : "auto",
         }}
         sx={{
           position: "absolute",
@@ -83,7 +67,6 @@ export const RobotActor = memo(
           id="robot-actor-arrow"
           style={{
             transform: `rotate(${getHeadingRotation(robotHeading)})`,
-            transition: "transform 0.2s ease-in-out",
             display: robotHeading && robotHeading !== "NONE" ? "block" : "none",
           }}
           sx={{

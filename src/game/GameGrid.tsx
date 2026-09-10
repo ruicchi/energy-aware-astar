@@ -35,7 +35,7 @@ export default function GameGrid() {
     pathTheme,
     currentPath,
   } = useSearchTelemetry();
-  const { walkingStep, isWalking, hasFinishedWalking, isLocked } = usePlaybackState();
+  const { isWalking, isLocked } = usePlaybackState();
   const robotHeading = useSimulationSelector((s) => s.robotHeading);
   const activeStrokeBrush = useSimulationSelector((s) => s.activeStrokeBrush);
 
@@ -151,9 +151,6 @@ export default function GameGrid() {
           robotHeading={robotHeading}
           isDragging={activeStrokeBrush === "robot"}
           isWalking={isWalking}
-          hasFinishedWalking={hasFinishedWalking}
-          walkingStep={walkingStep}
-          currentPath={currentPath}
           onMouseDown={handleMouseDown}
         />
 

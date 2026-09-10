@@ -107,7 +107,6 @@ export function usePlaybackState() {
       isWalking: s.isWalking,
       hasFinishedWalking: s.hasFinishedWalking,
       isLocked: s.isLocked,
-      walkingStep: s.walkingStep,
       walkFailure: s.walkFailure,
     }),
     shallowEqual,

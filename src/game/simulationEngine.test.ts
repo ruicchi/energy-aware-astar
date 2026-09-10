@@ -56,17 +56,19 @@ describe("SimulationEngine", () => {
       }
     }
 
-    const updateRobotPosition = vi.fn();
-    const updateRobotHeading = vi.fn();
+    const setRobotPosition = vi.fn();
+    const setRobotHeading = vi.fn();
+    const resetRobot = vi.fn();
 
     const domAdapter: SimulationDomAdapter = {
       getCellElement,
       clearAllSearchVisuals,
-      updateRobotPosition,
-      updateRobotHeading,
+      setRobotPosition,
+      setRobotHeading,
+      resetRobot,
     };
 
-    return { domAdapter, domStore, updateRobotPosition, updateRobotHeading };
+    return { domAdapter, domStore, setRobotPosition, setRobotHeading, resetRobot };
   };
 
   it("notifies subscribers and provides immutable snapshots", () => {
@@ -444,7 +446,7 @@ describe("SimulationEngine", () => {
     });
 
     it("invokes direct DOM adapter updates during walk without firing intermediate notifications", () => {
-      const { domAdapter, updateRobotPosition } = createMockDomAdapter();
+      const { domAdapter, setRobotPosition } = createMockDomAdapter();
       const engine = new SimulationEngine({
         cols: 10,
         rows: 10,
@@ -468,7 +470,7 @@ describe("SimulationEngine", () => {
       vi.runAllTimers();
 
       // Direct DOM position was called for traversal steps
-      expect(updateRobotPosition).toHaveBeenCalled();
+      expect(setRobotPosition).toHaveBeenCalled();
 
       // 1 additional notification on walk finish, total 2 (no intermediate re-render spam)
       expect(listener).toHaveBeenCalledTimes(2);

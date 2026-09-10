@@ -34,8 +34,9 @@ export interface SimulationDomElement {
 export interface SimulationDomAdapter {
   getCellElement: (key: string) => SimulationDomElement | null;
   clearAllSearchVisuals: () => void;
-  updateRobotPosition?: (col: number, row: number, cellSize: number) => void;
-  updateRobotHeading?: (heading: Heading) => void;
+  setRobotPosition: (col: number, row: number, cellSize: number, animated?: boolean) => void;
+  setRobotHeading: (heading: Heading, animated?: boolean) => void;
+  resetRobot: (col: number, row: number, heading: Heading, cellSize: number) => void;
 }
 
 export function createDefaultDomAdapter(): SimulationDomAdapter {
@@ -53,19 +54,37 @@ export function createDefaultDomAdapter(): SimulationDomAdapter {
         delete node.dataset.path;
       });
     },
-    updateRobotPosition(col: number, row: number, cellSize: number) {
+    setRobotPosition(col: number, row: number, cellSize: number, animated = false) {
       if (typeof document === "undefined") return;
       const node = document.getElementById("robot-actor");
       if (node) {
+        node.style.transition = animated ? "transform 0.2s linear" : "none";
+        node.style.willChange = animated ? "transform" : "auto";
         node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
       }
     },
-    updateRobotHeading(heading: Heading) {
+    setRobotHeading(heading: Heading, animated = false) {
       if (typeof document === "undefined") return;
       const node = document.getElementById("robot-actor-arrow");
       if (node) {
         node.style.display = heading && heading !== "NONE" ? "block" : "none";
+        node.style.transition = animated ? "transform 0.2s ease-in-out" : "none";
         node.style.transform = `rotate(${getHeadingRotation(heading)})`;
+      }
+    },
+    resetRobot(col: number, row: number, heading: Heading, cellSize: number) {
+      if (typeof document === "undefined") return;
+      const node = document.getElementById("robot-actor");
+      if (node) {
+        node.style.transition = "none";
+        node.style.willChange = "auto";
+        node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
+      }
+      const arrowNode = document.getElementById("robot-actor-arrow");
+      if (arrowNode) {
+        arrowNode.style.display = heading && heading !== "NONE" ? "block" : "none";
+        arrowNode.style.transition = "none";
+        arrowNode.style.transform = `rotate(${getHeadingRotation(heading)})`;
       }
     },
   };
@@ -309,6 +328,8 @@ export class SimulationEngine {
     if (this.isFixedDimensions) {
       if (this.cellSize !== cellSize) {
         this.cellSize = cellSize;
+        const [startR, startC] = this.robotNode.split("-").map(Number);
+        this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
         this.notify();
       }
       return;
@@ -317,6 +338,8 @@ export class SimulationEngine {
     this.cols = cols;
     this.rows = rows;
     this.cellSize = cellSize;
+    const [startR, startC] = this.robotNode.split("-").map(Number);
+    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
     this.notify();
   }
 
@@ -403,6 +426,7 @@ export class SimulationEngine {
   public setRobotHeading(heading: Heading): void {
     if (this.robotHeading === heading) return;
     this.robotHeading = heading;
+    this.domAdapter.setRobotHeading(heading, false);
     this.notify();
   }
 
@@ -530,6 +554,7 @@ export class SimulationEngine {
         const [r, c] = parseCoordinates(key);
         if (!getElevationGradient(r, c, this.elevations).isUnstable) {
           this.robotNode = key;
+          this.domAdapter.resetRobot(c, r, this.robotHeading, this.cellSize);
           this.notify();
         }
       }
@@ -808,8 +833,7 @@ export class SimulationEngine {
     this.walkFailure = null;
 
     const [startR, startC] = this.robotNode.split("-").map(Number);
-    this.domAdapter.updateRobotPosition?.(startC, startR, this.cellSize);
-    this.domAdapter.updateRobotHeading?.(this.robotHeading);
+    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     this.notify();
   }
@@ -832,8 +856,7 @@ export class SimulationEngine {
     this.walkingStep = -1;
 
     const [startR, startC] = this.robotNode.split("-").map(Number);
-    this.domAdapter.updateRobotPosition?.(startC, startR, this.cellSize);
-    this.domAdapter.updateRobotHeading?.(this.robotHeading);
+    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     const scenario = this.getScenario();
 
@@ -969,7 +992,7 @@ export class SimulationEngine {
         const rotateTimeout = setTimeout(() => {
           if (runId !== this.currentRunId) return;
           this.robotHeading = nextHeading;
-          this.domAdapter.updateRobotHeading?.(nextHeading);
+          this.domAdapter.setRobotHeading(nextHeading, true);
         }, cumulativeDelay);
         this.activeTimeouts.push(rotateTimeout);
 
@@ -980,7 +1003,7 @@ export class SimulationEngine {
       const moveTimeout = setTimeout(() => {
         if (runId !== this.currentRunId) return;
         this.walkingStep = i;
-        this.domAdapter.updateRobotPosition?.(currC, currR, this.cellSize);
+        this.domAdapter.setRobotPosition(currC, currR, this.cellSize, true);
 
         if (i === path.length - 1) {
           const finishTimeout = setTimeout(() => {
@@ -1048,8 +1071,7 @@ export class SimulationEngine {
     this.walkFailure = null;
 
     const [startR, startC] = this.robotNode.split("-").map(Number);
-    this.domAdapter.updateRobotPosition?.(startC, startR, this.cellSize);
-    this.domAdapter.updateRobotHeading?.(this.robotHeading);
+    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     if (instantSolve) {
       this.solveInstantly(this.selectedAlgo);
@@ -1075,8 +1097,7 @@ export class SimulationEngine {
     this.walkingStep = -1;
 
     const [startR, startC] = this.robotNode.split("-").map(Number);
-    this.domAdapter.updateRobotPosition?.(startC, startR, this.cellSize);
-    this.domAdapter.updateRobotHeading?.(this.robotHeading);
+    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     const scenario = this.getScenario();
 
@@ -1162,8 +1183,7 @@ export class SimulationEngine {
     this.pathMetrics = null;
 
     const [startR, startC] = this.robotNode.split("-").map(Number);
-    this.domAdapter.updateRobotPosition?.(startC, startR, this.cellSize);
-    this.domAdapter.updateRobotHeading?.(this.robotHeading);
+    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     this.notify();
   }
