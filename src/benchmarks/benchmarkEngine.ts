@@ -1,4 +1,4 @@
-import { findPath } from "../algorithms/astar/engine";
+import { findPath } from "../algorithms/astar";
 import { evaluatePathSafety } from "../physics/terrainPhysics";
 import type { Scenario, AlgorithmType, EnergyBreakdown } from "../shared/types";
 

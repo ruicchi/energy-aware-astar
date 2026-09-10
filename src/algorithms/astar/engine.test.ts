@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { findPath } from "./engine"
+import { findPath } from "./index"
 import type { Scenario } from "../../shared/types"
 import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../../config/simulationConfig"
 
