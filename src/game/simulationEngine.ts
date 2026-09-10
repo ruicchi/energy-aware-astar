@@ -21,6 +21,19 @@ import {
   evaluatePathSafety,
 } from "../physics/terrainPhysics";
 import { findPath } from "../algorithms/astar";
+import {
+  getScenarioPreset,
+  generateProceduralScenario,
+  SCENARIO_PRESETS,
+  type ScenarioPresetId,
+  type ScenarioPresetDescriptor,
+} from "../data";
+
+export {
+  SCENARIO_PRESETS,
+  type ScenarioPresetId,
+  type ScenarioPresetDescriptor,
+};
 
 export interface SimulationDomElement {
   style: { backgroundColor: string };
@@ -1023,6 +1036,36 @@ export class SimulationEngine {
   }
 
   // --- Scenario Loading & Instant Solving ---
+
+  public loadPreset(
+    presetId: ScenarioPresetId,
+    options?: { instantSolve?: boolean },
+  ): void {
+    const preset = getScenarioPreset(presetId);
+    if (!preset) return;
+    this.loadScenario(preset.scenario, {
+      name: preset.name,
+      instantSolve: options?.instantSolve ?? true,
+    });
+  }
+
+  public loadProcedural(
+    seed: number,
+    options?: { instantSolve?: boolean; rows?: number; cols?: number },
+  ): void {
+    const scenario = generateProceduralScenario({
+      seed,
+      rows: options?.rows ?? 25,
+      cols: options?.cols ?? 25,
+      numHills: 3,
+      numMudPatches: 3,
+      obstacleDensity: 0.08,
+    });
+    this.loadScenario(scenario, {
+      name: `Seed #${seed}`,
+      instantSolve: options?.instantSolve ?? true,
+    });
+  }
 
   public loadScenario(
     scenario: Scenario,

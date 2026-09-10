@@ -10,16 +10,14 @@ import {
   type SelectChangeEvent,
 } from "@mui/material";
 import { Casino, Refresh } from "@mui/icons-material";
-import { useSimulationEngine, useScenarioState } from "../simulationHooks";
 import {
-  flatTerrainScenario,
-  elevatedTerrainScenario,
-  frictionTerrainScenario,
-  mixedTerrainScenario,
-  generateProceduralScenario,
-} from "../../data";
+  useSimulationEngine,
+  useScenarioState,
+  SCENARIO_PRESETS,
+  type ScenarioPresetId,
+} from "../simulationHooks";
 
-type ScenarioKey = "freeform" | "case1" | "case2" | "case3" | "case4" | "procedural";
+type ScenarioKey = "freeform" | ScenarioPresetId | "procedural";
 
 export function ScenarioControls() {
   const engine = useSimulationEngine();
@@ -34,40 +32,12 @@ export function ScenarioControls() {
       return;
     }
 
-    if (key === "case1") {
-      engine.loadScenario(flatTerrainScenario, {
-        name: "Flat Obstacles",
-        instantSolve: true,
-      });
-    } else if (key === "case2") {
-      engine.loadScenario(elevatedTerrainScenario, {
-        name: "Steep Ridge",
-        instantSolve: true,
-      });
-    } else if (key === "case3") {
-      engine.loadScenario(frictionTerrainScenario, {
-        name: "Mud & Water",
-        instantSolve: true,
-      });
-    } else if (key === "case4") {
-      engine.loadScenario(mixedTerrainScenario, {
-        name: "Mixed Hazard",
-        instantSolve: true,
-      });
-    } else if (key === "procedural") {
-      const proceduralScenario = generateProceduralScenario({
-        seed: currentSeed,
-        rows: 25,
-        cols: 25,
-        numHills: 3,
-        numMudPatches: 3,
-        obstacleDensity: 0.08,
-      });
-      engine.loadScenario(proceduralScenario, {
-        name: `Seed #${currentSeed}`,
-        instantSolve: true,
-      });
+    if (key === "procedural") {
+      engine.loadProcedural(currentSeed);
+      return;
     }
+
+    engine.loadPreset(key);
   }
 
   function handleSelectChange(e: SelectChangeEvent<ScenarioKey>) {
@@ -144,18 +114,11 @@ export function ScenarioControls() {
         <MenuItem value="freeform" sx={{ fontSize: "12px" }}>
           Freeform
         </MenuItem>
-        <MenuItem value="case1" sx={{ fontSize: "12px" }}>
-          1: Flat Obstacles
-        </MenuItem>
-        <MenuItem value="case2" sx={{ fontSize: "12px" }}>
-          2: Steep Ridge
-        </MenuItem>
-        <MenuItem value="case3" sx={{ fontSize: "12px" }}>
-          3: Mud & Water
-        </MenuItem>
-        <MenuItem value="case4" sx={{ fontSize: "12px" }}>
-          4: Mixed Hazard
-        </MenuItem>
+        {SCENARIO_PRESETS.map((preset) => (
+          <MenuItem key={preset.id} value={preset.id} sx={{ fontSize: "12px" }}>
+            {preset.label}
+          </MenuItem>
+        ))}
         <MenuItem value="procedural" sx={{ fontSize: "12px" }}>
           Monte Carlo Seed (1-50)
         </MenuItem>

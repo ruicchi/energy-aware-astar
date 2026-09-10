@@ -615,5 +615,45 @@ describe("SimulationEngine", () => {
       expect(snapshot.wallNodes.size).toBe(0);
       expect(snapshot.currentPath).toBeNull();
     });
+
+    it("loads catalog presets through loadPreset", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({ cols: 40, rows: 25, domAdapter });
+
+      engine.loadPreset("case1");
+      let snapshot = engine.getSnapshot();
+      expect(snapshot.isFixedDimensions).toBe(true);
+      expect(snapshot.loadedScenarioName).toBe("Flat Obstacles");
+      expect(snapshot.robotNode).toBe("2-2");
+      expect(snapshot.destinationNode).toBe("22-22");
+      expect(snapshot.wallNodes.size).toBeGreaterThan(0);
+      expect(snapshot.currentPath).not.toBeNull();
+      expect(snapshot.pathMetrics?.isSafe).toBe(true);
+
+      engine.loadPreset("case2");
+      snapshot = engine.getSnapshot();
+      expect(snapshot.loadedScenarioName).toBe("Steep Ridge");
+      expect(snapshot.elevations.size).toBeGreaterThan(0);
+      expect(snapshot.showGradients).toBe(true);
+    });
+
+    it("generates deterministic procedural scenarios through loadProcedural", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine1 = new SimulationEngine({ cols: 40, rows: 25, domAdapter });
+      const engine2 = new SimulationEngine({ cols: 40, rows: 25, domAdapter });
+
+      engine1.loadProcedural(42);
+      engine2.loadProcedural(42);
+
+      const snap1 = engine1.getSnapshot();
+      const snap2 = engine2.getSnapshot();
+
+      expect(snap1.loadedScenarioName).toBe("Seed #42");
+      expect(snap1.isFixedDimensions).toBe(true);
+      expect(snap1.wallNodes).toEqual(snap2.wallNodes);
+      expect(snap1.terrainFactors).toEqual(snap2.terrainFactors);
+      expect(snap1.elevations).toEqual(snap2.elevations);
+      expect(snap1.currentPath).toEqual(snap2.currentPath);
+    });
   });
 });

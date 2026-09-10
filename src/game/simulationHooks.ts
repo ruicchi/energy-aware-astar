@@ -7,6 +7,12 @@ import {
 } from "react";
 import type { SimulationEngine, SimulationState } from "./simulationEngine";
 
+export {
+  SCENARIO_PRESETS,
+  type ScenarioPresetId,
+  type ScenarioPresetDescriptor,
+} from "./simulationEngine";
+
 export const SimulationEngineContext = createContext<SimulationEngine | null>(null);
 
 /**
