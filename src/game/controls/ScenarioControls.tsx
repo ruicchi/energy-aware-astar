@@ -35,22 +35,22 @@ export function ScenarioControls() {
 
     if (key === "case1") {
       loadScenario(flatTerrainScenario, {
-        name: "Case 1: Flat Obstacles",
+        name: "Flat Obstacles",
         instantSolve: true,
       });
     } else if (key === "case2") {
       loadScenario(elevatedTerrainScenario, {
-        name: "Case 2: Steep Ridge",
+        name: "Steep Ridge",
         instantSolve: true,
       });
     } else if (key === "case3") {
       loadScenario(frictionTerrainScenario, {
-        name: "Case 3: Mud & Water",
+        name: "Mud & Water",
         instantSolve: true,
       });
     } else if (key === "case4") {
       loadScenario(mixedTerrainScenario, {
-        name: "Case 4: Mixed Hazard",
+        name: "Mixed Hazard",
         instantSolve: true,
       });
     } else if (key === "procedural") {
@@ -112,11 +112,11 @@ export function ScenarioControls() {
           justifyContent: "space-between",
         }}
       >
-        <Typography variant="caption" color="textSecondary" sx={{ fontWeight: "bold" }}>
-          Benchmark Scenario
+        <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: "block" }}>
+          Scenario
         </Typography>
         {isFixedDimensions && (
-          <Tooltip title="Reload Scenario configuration" arrow>
+          <Tooltip title="Reload" arrow>
             <IconButton
               size="small"
               onPointerDown={(e) => e.stopPropagation()}
@@ -141,22 +141,22 @@ export function ScenarioControls() {
         }}
       >
         <MenuItem value="freeform" sx={{ fontSize: "12px" }}>
-          Freeform (Full Viewport)
+          Freeform
         </MenuItem>
         <MenuItem value="case1" sx={{ fontSize: "12px" }}>
-          Case 1: Flat Obstacles
+          1: Flat Obstacles
         </MenuItem>
         <MenuItem value="case2" sx={{ fontSize: "12px" }}>
-          Case 2: Steep Ridge
+          2: Steep Ridge
         </MenuItem>
         <MenuItem value="case3" sx={{ fontSize: "12px" }}>
-          Case 3: Mud & Water
+          3: Mud & Water
         </MenuItem>
         <MenuItem value="case4" sx={{ fontSize: "12px" }}>
-          Case 4: Mixed Hazard
+          4: Mixed Hazard
         </MenuItem>
         <MenuItem value="procedural" sx={{ fontSize: "12px" }}>
-          Monte Carlo Seed (1–50)
+          Monte Carlo Seed (1-50)
         </MenuItem>
       </Select>
 
@@ -177,7 +177,11 @@ export function ScenarioControls() {
             onChange={handleSeedChange}
             onPointerDown={(e) => e.stopPropagation()}
             slotProps={{
-              htmlInput: { min: 1, max: 9999, style: { fontSize: "12px", padding: "4px 8px" } },
+              htmlInput: {
+                min: 1,
+                max: 9999,
+                style: { fontSize: "12px", padding: "4px 8px" },
+              },
               inputLabel: { style: { fontSize: "11px" } },
             }}
             sx={{ flex: 1 }}

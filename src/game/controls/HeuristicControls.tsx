@@ -37,7 +37,12 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
         transition: "opacity 0.2s",
       }}
     >
-      <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: "block" }}>
+      <Typography
+        variant="caption"
+        color="textSecondary"
+        align="left"
+        sx={{ mb: 0.5, display: "block" }}
+      >
         Heuristic
       </Typography>
 
@@ -197,7 +202,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
               fontWeight="bold"
               color={pathMetrics.isSafe ? "success.main" : "error.main"}
             >
-              Safety: {pathMetrics.isSafe ? "Safe ✓" : `Unsafe ✗ (${pathMetrics.safetyFailureReason ?? "Hazard"})`}
+              Safety: {pathMetrics.isSafe ? "Safe" : `Unsafe (${pathMetrics.safetyFailureReason})`}
             </Typography>
           )}
 

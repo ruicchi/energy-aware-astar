@@ -52,7 +52,12 @@ export function HeadingControls() {
         pointerEvents: !isEnergyAware ? "none" : "auto",
       }}
     >
-      <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: "block" }}>
+      <Typography
+        variant="caption"
+        color="textSecondary"
+        align="left"
+        sx={{ mb: 1, display: "block" }}
+      >
         Initial Heading
       </Typography>
       <Box
