@@ -587,6 +587,39 @@ describe("SimulationEngine", () => {
       expect(euclideanSnapshot.isPathVisible).toBe(true);
     });
 
+    it("clears path and yellow line when switching heuristic in freeform mode, requiring visualize click", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({ cols: 10, rows: 10, domAdapter });
+
+      expect(engine.getSnapshot().isFixedDimensions).toBe(false);
+
+      // 1. Visualize in freeform mode
+      engine.visualize("energyAware");
+      vi.runAllTimers();
+
+      const visualizedSnapshot = engine.getSnapshot();
+      expect(visualizedSnapshot.isPathVisible).toBe(true);
+      expect(visualizedSnapshot.currentPath).not.toBeNull();
+      expect(visualizedSnapshot.pathMetrics).not.toBeNull();
+
+      // 2. Switch heuristic in freeform mode: path line and metrics should be cleared, not visible
+      engine.setSelectedAlgo("manhattan");
+      const switchedSnapshot = engine.getSnapshot();
+      expect(switchedSnapshot.selectedAlgo).toBe("manhattan");
+      expect(switchedSnapshot.isPathVisible).toBe(false);
+      expect(switchedSnapshot.currentPath).toBeNull();
+      expect(switchedSnapshot.pathMetrics).toBeNull();
+
+      // 3. Yellow line path only renders after Visualize is clicked
+      engine.visualize("manhattan");
+      vi.runAllTimers();
+
+      const reVisualizedSnapshot = engine.getSnapshot();
+      expect(reVisualizedSnapshot.isPathVisible).toBe(true);
+      expect(reVisualizedSnapshot.currentPath).not.toBeNull();
+      expect(reVisualizedSnapshot.pathMetrics?.algorithm).toBe("Manhattan");
+    });
+
     it("resets to freeform viewport mode properly with explicit dimensions", () => {
       const { domAdapter } = createMockDomAdapter();
       const engine = new SimulationEngine({ cols: 40, rows: 25, domAdapter });

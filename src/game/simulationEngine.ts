@@ -483,11 +483,14 @@ export class SimulationEngine {
     this.selectedAlgo = algo;
     if (algo !== "energyAware") {
       this.robotHeading = "NONE";
+      this.domAdapter.setRobotHeading("NONE", false);
     } else if (this.loadedScenarioName && this.initialScenarioHeading !== "NONE") {
       this.robotHeading = this.initialScenarioHeading;
+      this.domAdapter.setRobotHeading(this.robotHeading, false);
     }
 
     if (
+      this.isFixedDimensions &&
       instantSolveIfPathVisible &&
       (this.isPathVisible || Boolean(this.currentPath && this.currentPath.length > 0)) &&
       !this.isAnimating &&
@@ -495,7 +498,17 @@ export class SimulationEngine {
     ) {
       this.solveInstantly(algo);
     } else {
-      this.notify();
+      if (
+        !this.isFixedDimensions &&
+        (this.isPathVisible ||
+          Boolean(this.currentPath && this.currentPath.length > 0) ||
+          this.isManhattanFinished ||
+          this.isEnergyFinished)
+      ) {
+        this.clearAnimations();
+      } else {
+        this.notify();
+      }
     }
   }
 
@@ -880,6 +893,7 @@ export class SimulationEngine {
     this.isWalking = false;
     this.hasFinishedWalking = false;
     this.walkFailure = null;
+    this.pathMetrics = null;
 
     const [startR, startC] = this.robotNode.split("-").map(Number);
     this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
