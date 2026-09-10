@@ -187,6 +187,10 @@ export class GridPaintBuffer {
       }
     }
 
+    if (this.strokeSession.modifiedCells.has(key)) {
+      return true;
+    }
+
     this.applyStrokeToCell(key, target);
     return true;
   }
@@ -222,7 +226,11 @@ export class GridPaintBuffer {
       const element = this.domAdapter.getCellElement(key);
       if (element) {
         element.style.backgroundColor = "";
-        element.classList.remove("is-wall");
+        if (target.wallNodes.has(key)) {
+          element.classList.add("is-wall");
+        } else {
+          element.classList.remove("is-wall");
+        }
       }
     }
 

@@ -103,7 +103,9 @@ describe("GridPaintBuffer", () => {
     buffer.startStroke("1-1", state, context);
     expect(state.wallNodes.has("1-1")).toBe(false);
     expect(domStore.get("1-1")?.classes.has("is-wall")).toBe(false);
+    expect(domStore.get("1-1")?.bg).toBe("transparent");
     buffer.endStroke();
+    expect(domStore.get("1-1")?.bg).toBe("");
   });
 
   it("paints dirt and enforces layer mutual exclusion", () => {
@@ -233,4 +235,67 @@ describe("GridPaintBuffer", () => {
     expect(domStore.get("2-2")?.classes.has("is-wall")).toBe(false);
     expect(domStore.get("2-2")?.bg).toBe("");
   });
+
+  it("deletes dirt during drag stroke and instantly shows transparent background", () => {
+    const { domAdapter, domStore } = createMockDomAdapter();
+    const buffer = new GridPaintBuffer(domAdapter);
+    const state = createInitialState();
+    state.terrainFactors.set("2-2", 1.8);
+    state.terrainTypes.set("2-2", "dirt");
+    state.terrainFactors.set("2-3", 1.8);
+    state.terrainTypes.set("2-3", "dirt");
+
+    const context = createContext({ activeBrush: "dirt", dirtBrushValue: 1.8 });
+
+    // Click on 2-2 to delete dirt
+    buffer.startStroke("2-2", state, context);
+    expect(state.terrainFactors.has("2-2")).toBe(false);
+    expect(state.terrainTypes.has("2-2")).toBe(false);
+    expect(domStore.get("2-2")?.bg).toBe("transparent");
+
+    // Drag to 2-3 to delete next dirt tile
+    buffer.continueStroke("2-3", state, context);
+    expect(state.terrainFactors.has("2-3")).toBe(false);
+    expect(state.terrainTypes.has("2-3")).toBe(false);
+    expect(domStore.get("2-3")?.bg).toBe("transparent");
+
+    // Re-entering 2-2 returns true early without re-executing
+    const reentered = buffer.continueStroke("2-2", state, context);
+    expect(reentered).toBe(true);
+    expect(domStore.get("2-2")?.bg).toBe("transparent");
+
+    // Mouse up clears inline preview styles so declarative React styles apply
+    buffer.endStroke();
+    expect(domStore.get("2-2")?.bg).toBe("");
+    expect(domStore.get("2-3")?.bg).toBe("");
+  });
+
+  it("deletes water and elevation during drag stroke with instant transparent background", () => {
+    const { domAdapter, domStore } = createMockDomAdapter();
+    const buffer = new GridPaintBuffer(domAdapter);
+    const state = createInitialState();
+
+    // Setup water
+    state.terrainFactors.set("3-1", 2.5);
+    state.terrainTypes.set("3-1", "water");
+    const waterContext = createContext({ activeBrush: "water", waterBrushValue: 2.5 });
+
+    buffer.startStroke("3-1", state, waterContext);
+    expect(state.terrainFactors.has("3-1")).toBe(false);
+    expect(state.terrainTypes.has("3-1")).toBe(false);
+    expect(domStore.get("3-1")?.bg).toBe("transparent");
+    buffer.endStroke();
+    expect(domStore.get("3-1")?.bg).toBe("");
+
+    // Setup elevation
+    state.elevations.set("4-1", 3);
+    const elevationContext = createContext({ activeBrush: "elevation", elevationBrushValue: 3 });
+
+    buffer.startStroke("4-1", state, elevationContext);
+    expect(state.elevations.has("4-1")).toBe(false);
+    expect(domStore.get("4-1")?.bg).toBe("transparent");
+    buffer.endStroke();
+    expect(domStore.get("4-1")?.bg).toBe("");
+  });
 });
+

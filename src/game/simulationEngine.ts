@@ -545,6 +545,7 @@ export class SimulationEngine {
     this.elevations = target.elevations;
     this.robotNode = target.robotNode;
     this.destinationNode = target.destinationNode;
+    this.cachedSnapshot = null;
   }
 
   public startPaint(key: string): void {
@@ -560,7 +561,10 @@ export class SimulationEngine {
     const started = this.paintBuffer.startStroke(key, target, context);
     if (started) {
       this.syncFromTerrainTarget(target);
-      this.notify();
+      const brush = this.paintBuffer.getActiveStrokeBrush();
+      if (brush === "robot" || brush === "destination") {
+        this.notify();
+      }
     }
   }
 
@@ -571,10 +575,10 @@ export class SimulationEngine {
     const modified = this.paintBuffer.continueStroke(key, target, context);
     if (modified) {
       this.syncFromTerrainTarget(target);
-      if (this.isPathVisible) {
-        this.solveInstantly(this.selectedAlgo);
+      const brush = this.paintBuffer.getActiveStrokeBrush();
+      if (brush === "robot" || brush === "destination") {
+        this.notify();
       }
-      this.notify();
     }
   }
 
@@ -583,8 +587,9 @@ export class SimulationEngine {
     if (ended) {
       if (this.isPathVisible) {
         this.solveInstantly(this.selectedAlgo);
+      } else {
+        this.notify();
       }
-      this.notify();
     }
   }
 
@@ -595,8 +600,9 @@ export class SimulationEngine {
       this.syncFromTerrainTarget(target);
       if (this.isPathVisible) {
         this.solveInstantly(this.selectedAlgo);
+      } else {
+        this.notify();
       }
-      this.notify();
     }
   }
 
