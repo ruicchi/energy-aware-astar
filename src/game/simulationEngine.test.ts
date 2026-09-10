@@ -212,6 +212,43 @@ describe("SimulationEngine", () => {
       expect(engine.getSnapshot().elevations.get("1-1")).toBe(4);
     });
 
+    it("instantly updates cell visuals to transparent when deleting on mouse drag", () => {
+      const { domAdapter, domStore } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "5-5",
+        initialWallNodes: new Set(["1-1", "1-2", "1-3"]),
+        domAdapter,
+      });
+
+      // Start deleting walls on mouse drag
+      engine.setActiveBrush("wall");
+      engine.startPaint("1-1");
+      expect(domStore.get("1-1")?.bg).toBe("transparent");
+      expect(domStore.get("1-1")?.classes.has("is-wall")).toBe(false);
+
+      // Drag over 1-2
+      engine.continuePaint("1-2");
+      expect(domStore.get("1-2")?.bg).toBe("transparent");
+      expect(domStore.get("1-2")?.classes.has("is-wall")).toBe(false);
+
+      // Drag over 1-3
+      engine.continuePaint("1-3");
+      expect(domStore.get("1-3")?.bg).toBe("transparent");
+      expect(domStore.get("1-3")?.classes.has("is-wall")).toBe(false);
+
+      // After endPaint, inline preview styles are reset for React declarative rendering
+      engine.endPaint();
+      expect(domStore.get("1-1")?.bg).toBe("");
+      expect(domStore.get("1-2")?.bg).toBe("");
+      expect(domStore.get("1-3")?.bg).toBe("");
+      expect(engine.getSnapshot().wallNodes.has("1-1")).toBe(false);
+      expect(engine.getSnapshot().wallNodes.has("1-2")).toBe(false);
+      expect(engine.getSnapshot().wallNodes.has("1-3")).toBe(false);
+    });
+
     it("moves robot and destination on drag and respects boundaries and walls", () => {
       const { domAdapter } = createMockDomAdapter();
       const engine = new SimulationEngine({

@@ -753,28 +753,28 @@ export class SimulationEngine {
         element.style.backgroundColor = TERRAIN_CONFIG.types.wall.color;
       } else {
         element.classList.remove("is-wall");
-        element.style.backgroundColor = "";
+        element.style.backgroundColor = "transparent";
       }
     } else if (mode === "dirt") {
       element.classList.remove("is-wall");
       if (value) {
         element.style.backgroundColor = TERRAIN_CONFIG.types.dirt.color;
       } else {
-        element.style.backgroundColor = "";
+        element.style.backgroundColor = "transparent";
       }
     } else if (mode === "water") {
       element.classList.remove("is-wall");
       if (value) {
         element.style.backgroundColor = TERRAIN_CONFIG.types.water.color;
       } else {
-        element.style.backgroundColor = "";
+        element.style.backgroundColor = "transparent";
       }
     } else if (mode === "elevation") {
       element.classList.remove("is-wall");
       if (value) {
         element.style.backgroundColor = TERRAIN_CONFIG.getElevationColor(Number(value));
       } else {
-        element.style.backgroundColor = "";
+        element.style.backgroundColor = "transparent";
       }
     }
   }
