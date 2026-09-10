@@ -489,20 +489,22 @@ export class SimulationEngine {
       const currentType = this.terrainTypes.get(key);
       const currentCost = this.terrainFactors.get(key);
       const isCurrentDirt =
-        currentType === "dirt" ||
-        (!currentType && currentCost === TERRAIN_CONFIG.types.dirt.cost);
+        !this.wallNodes.has(key) &&
+        (currentType === "dirt" ||
+          (!currentType && currentCost === TERRAIN_CONFIG.types.dirt.cost));
       calculatedDrawValue =
         isCurrentDirt && currentCost === this.dirtBrushValue ? 0 : this.dirtBrushValue;
     } else if (this.activeBrush === "water") {
       const currentType = this.terrainTypes.get(key);
       const currentCost = this.terrainFactors.get(key);
       const isCurrentWater =
-        currentType === "water" ||
-        (!currentType && currentCost === TERRAIN_CONFIG.types.water.cost);
+        !this.wallNodes.has(key) &&
+        (currentType === "water" ||
+          (!currentType && currentCost === TERRAIN_CONFIG.types.water.cost));
       calculatedDrawValue =
         isCurrentWater && currentCost === this.waterBrushValue ? 0 : this.waterBrushValue;
     } else if (this.activeBrush === "elevation") {
-      const current = this.elevations.get(key) ?? 0;
+      const current = this.wallNodes.has(key) ? 0 : (this.elevations.get(key) ?? 0);
       calculatedDrawValue =
         current === this.elevationBrushValue ? 0 : this.elevationBrushValue;
     }
@@ -591,12 +593,10 @@ export class SimulationEngine {
       const element = this.domAdapter.getCellElement(key);
       if (element) {
         element.style.backgroundColor = "";
-        if (this.strokeSession.brush === "wall") {
-          if (this.wallNodes.has(key)) {
-            element.classList.add("is-wall");
-          } else {
-            element.classList.remove("is-wall");
-          }
+        if (this.wallNodes.has(key)) {
+          element.classList.add("is-wall");
+        } else {
+          element.classList.remove("is-wall");
         }
       }
     }
@@ -643,6 +643,19 @@ export class SimulationEngine {
       const nextWallNodes = new Set(this.wallNodes);
       if (isWall) {
         nextWallNodes.add(key);
+        if (this.terrainFactors.has(key) || this.terrainTypes.has(key)) {
+          const nextFactors = new Map(this.terrainFactors);
+          const nextTypes = new Map(this.terrainTypes);
+          nextFactors.delete(key);
+          nextTypes.delete(key);
+          this.terrainFactors = nextFactors;
+          this.terrainTypes = nextTypes;
+        }
+        if (this.elevations.has(key)) {
+          const nextElevations = new Map(this.elevations);
+          nextElevations.delete(key);
+          this.elevations = nextElevations;
+        }
       } else {
         nextWallNodes.delete(key);
       }
@@ -653,6 +666,16 @@ export class SimulationEngine {
       const val = Number(drawValue);
       const nextFactors = new Map(this.terrainFactors);
       const nextTypes = new Map(this.terrainTypes);
+      if (this.wallNodes.has(key)) {
+        const nextWallNodes = new Set(this.wallNodes);
+        nextWallNodes.delete(key);
+        this.wallNodes = nextWallNodes;
+      }
+      if (this.elevations.has(key)) {
+        const nextElevations = new Map(this.elevations);
+        nextElevations.delete(key);
+        this.elevations = nextElevations;
+      }
       if (val === 0) {
         nextFactors.delete(key);
         nextTypes.delete(key);
@@ -668,6 +691,16 @@ export class SimulationEngine {
       const val = Number(drawValue);
       const nextFactors = new Map(this.terrainFactors);
       const nextTypes = new Map(this.terrainTypes);
+      if (this.wallNodes.has(key)) {
+        const nextWallNodes = new Set(this.wallNodes);
+        nextWallNodes.delete(key);
+        this.wallNodes = nextWallNodes;
+      }
+      if (this.elevations.has(key)) {
+        const nextElevations = new Map(this.elevations);
+        nextElevations.delete(key);
+        this.elevations = nextElevations;
+      }
       if (val === 0) {
         nextFactors.delete(key);
         nextTypes.delete(key);
@@ -682,6 +715,19 @@ export class SimulationEngine {
     } else if (brush === "elevation") {
       const val = Number(drawValue);
       const nextElevations = new Map(this.elevations);
+      if (this.wallNodes.has(key)) {
+        const nextWallNodes = new Set(this.wallNodes);
+        nextWallNodes.delete(key);
+        this.wallNodes = nextWallNodes;
+      }
+      if (this.terrainFactors.has(key) || this.terrainTypes.has(key)) {
+        const nextFactors = new Map(this.terrainFactors);
+        const nextTypes = new Map(this.terrainTypes);
+        nextFactors.delete(key);
+        nextTypes.delete(key);
+        this.terrainFactors = nextFactors;
+        this.terrainTypes = nextTypes;
+      }
       if (val === 0) {
         nextElevations.delete(key);
       } else {
@@ -710,19 +756,26 @@ export class SimulationEngine {
         element.style.backgroundColor = "";
       }
     } else if (mode === "dirt") {
+      element.classList.remove("is-wall");
       if (value) {
         element.style.backgroundColor = TERRAIN_CONFIG.types.dirt.color;
       } else {
         element.style.backgroundColor = "";
       }
     } else if (mode === "water") {
+      element.classList.remove("is-wall");
       if (value) {
         element.style.backgroundColor = TERRAIN_CONFIG.types.water.color;
       } else {
         element.style.backgroundColor = "";
       }
     } else if (mode === "elevation") {
-      element.style.backgroundColor = TERRAIN_CONFIG.getElevationColor(Number(value));
+      element.classList.remove("is-wall");
+      if (value) {
+        element.style.backgroundColor = TERRAIN_CONFIG.getElevationColor(Number(value));
+      } else {
+        element.style.backgroundColor = "";
+      }
     }
   }
 

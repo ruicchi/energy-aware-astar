@@ -153,6 +153,65 @@ describe("SimulationEngine", () => {
       expect(engine.getSnapshot().terrainFactors.get("2-2")).toBe(4.0);
     });
 
+    it("overwrites a painted wall tile when clicked or dragged over with another brush", () => {
+      const { domAdapter, domStore } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "5-5",
+        domAdapter,
+      });
+
+      // 1. Paint walls at 1-1 and 1-2
+      engine.setActiveBrush("wall");
+      engine.startPaint("1-1");
+      engine.continuePaint("1-2");
+      engine.endPaint();
+      expect(engine.getSnapshot().wallNodes.has("1-1")).toBe(true);
+      expect(engine.getSnapshot().wallNodes.has("1-2")).toBe(true);
+
+      // 2. Click 1-1 with dirt brush -> overwrites wall with dirt
+      engine.setActiveBrush("dirt");
+      engine.setDirtBrushValue(2.5);
+      engine.startPaint("1-1");
+      expect(domStore.get("1-1")?.classes.has("is-wall")).toBe(false);
+      engine.endPaint();
+
+      expect(engine.getSnapshot().wallNodes.has("1-1")).toBe(false);
+      expect(engine.getSnapshot().terrainFactors.get("1-1")).toBe(2.5);
+      expect(engine.getSnapshot().terrainTypes.get("1-1")).toBe("dirt");
+
+      // 3. Drag water brush across 1-2 -> overwrites wall with water
+      engine.setActiveBrush("water");
+      engine.setWaterBrushValue(3.5);
+      engine.startPaint("1-2");
+      expect(domStore.get("1-2")?.classes.has("is-wall")).toBe(false);
+      engine.endPaint();
+
+      expect(engine.getSnapshot().wallNodes.has("1-2")).toBe(false);
+      expect(engine.getSnapshot().terrainFactors.get("1-2")).toBe(3.5);
+      expect(engine.getSnapshot().terrainTypes.get("1-2")).toBe("water");
+
+      // 4. Paint a wall again at 1-1 -> overwrites dirt with wall
+      engine.setActiveBrush("wall");
+      engine.startPaint("1-1");
+      engine.endPaint();
+      expect(engine.getSnapshot().wallNodes.has("1-1")).toBe(true);
+      expect(engine.getSnapshot().terrainFactors.has("1-1")).toBe(false);
+      expect(engine.getSnapshot().terrainTypes.has("1-1")).toBe(false);
+
+      // 5. Click 1-1 with elevation brush -> overwrites wall with elevation
+      engine.setActiveBrush("elevation");
+      engine.setElevationBrushValue(4);
+      engine.startPaint("1-1");
+      expect(domStore.get("1-1")?.classes.has("is-wall")).toBe(false);
+      engine.endPaint();
+
+      expect(engine.getSnapshot().wallNodes.has("1-1")).toBe(false);
+      expect(engine.getSnapshot().elevations.get("1-1")).toBe(4);
+    });
+
     it("moves robot and destination on drag and respects boundaries and walls", () => {
       const { domAdapter } = createMockDomAdapter();
       const engine = new SimulationEngine({

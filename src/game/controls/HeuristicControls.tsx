@@ -113,7 +113,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
       {hasPath && (
         <Button
           variant="contained"
-          color="secondary"
+          color={isWalking ? "primary" : "primary"}
           fullWidth
           onPointerDown={(e) => e.stopPropagation()}
           onClick={walkPath}
@@ -130,7 +130,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
               variant={showManhattanSearch ? "contained" : "outlined"}
               size="small"
               fullWidth
-              color="secondary"
+              color="primary"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={toggleManhattanSearch}
             >
@@ -142,7 +142,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
               variant={showEnergySearch ? "contained" : "outlined"}
               size="small"
               fullWidth
-              color="secondary"
+              color="primary"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={toggleEnergySearch}
             >
