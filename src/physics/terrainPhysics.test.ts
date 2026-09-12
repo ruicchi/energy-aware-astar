@@ -7,6 +7,7 @@ import {
   getPosture,
   isStablePosture,
   isTraversableSlope,
+  getElevationSlopeDegrees,
   SQRT2,
 } from "./terrainPhysics"
 import type { Scenario } from "../shared/types"
@@ -148,6 +149,15 @@ describe("Terrain Physics", () => {
       )
 
       expect(isTraversable).toBe(false)
+    })
+
+    it("calculates nominal elevation slope angle in degrees", () => {
+      // With elevationScale = 0.5 and step = 1.0:
+      // level 1: atan(0.5) * 180 / PI ≈ 26.565°
+      // level 2: atan(1.0) * 180 / PI = 45.0°
+      expect(getElevationSlopeDegrees(0)).toBeCloseTo(0, 1)
+      expect(getElevationSlopeDegrees(1)).toBeCloseTo(26.6, 1)
+      expect(getElevationSlopeDegrees(2)).toBeCloseTo(45.0, 1)
     })
   })
 })

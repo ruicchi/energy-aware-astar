@@ -1,5 +1,6 @@
 import { Box, Typography, Button, Tooltip, Slider } from "@mui/material";
 import { TERRAIN_CONFIG, BRUSH_CONFIG, THEME_CONFIG } from "../../config/simulationConfig";
+import { getElevationSlopeDegrees } from "../../physics/terrainPhysics";
 import { useSimulationEngine, useBrushState } from "../simulationHooks";
 
 export function TerrainBrushControls() {
@@ -11,6 +12,8 @@ export function TerrainBrushControls() {
     elevationBrushValue,
     showGradients,
   } = useBrushState();
+
+  const elevationAngle = getElevationSlopeDegrees(elevationBrushValue).toFixed(1);
 
   return (
     <Box>
@@ -186,9 +189,15 @@ export function TerrainBrushControls() {
           }}
         >
           <Box>
-            <Typography variant="caption" color="textSecondary">
-              Brush Height: {elevationBrushValue}
-            </Typography>
+            <Tooltip
+              title={`Nominal slope angle: ${elevationAngle}° from flat terrain`}
+              arrow
+              placement="top"
+            >
+              <Typography variant="caption" color="textSecondary" sx={{ cursor: "default" }}>
+                Brush Height: {elevationBrushValue} ({elevationAngle}°)
+              </Typography>
+            </Tooltip>
             <Slider
               size="small"
               value={elevationBrushValue}

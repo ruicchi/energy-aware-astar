@@ -181,6 +181,14 @@ export function getSlopeDegrees(
   return Math.atan(Math.abs(elevationDelta) / getStepDistance(target.heading)) * (180 / Math.PI);
 }
 
+/**
+ * Calculates the nominal slope angle (in degrees) for a given elevation level
+ * relative to flat ground across a single grid step.
+ */
+export function getElevationSlopeDegrees(elevationLevel: number, stepDistance = 1.0): number {
+  return Math.atan((Math.abs(elevationLevel) * ELEVATION_SCALE) / stepDistance) * (180 / Math.PI);
+}
+
 export function isTraversableSlope(
   current: { row: number; col: number },
   target: { row: number; col: number; heading: Heading },
