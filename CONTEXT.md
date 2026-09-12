@@ -40,9 +40,9 @@ _Avoid_: SimulationContext, Store, GameManager
 The deep module computing spatial elevation gradients, vehicle posture (roll, pitch), and Santos center-of-mass stability constraints across terrain.
 _Avoid_: TerrainUtils, PhysicsEngine, MathUtils
 
-**Grid Paint Buffer**:
-The internal sub-system within the Simulation Engine that encapsulates transient pointer drawing sessions, temporary DOM feedback styling, and atomic commit semantics across grid layers (walls, terrain friction, and elevation).
-_Avoid_: GridState, CanvasBuffer, WallManager
+**Scenario Terrain**:
+The deep module encapsulating persistent grid topology, obstacle boundaries, terrain friction factors, elevation distributions, actor placements, and transactional pointer stroke mutations across all grid layers.
+_Avoid_: GridState, TerrainModel, WallManager, GridPaintBuffer
 
 **Simulation Configuration**:
 The consolidated configuration module defining physical vehicle dimensions, terrain parameters, energy weights, animation timings, and visualization theme colors.

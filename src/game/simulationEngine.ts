@@ -7,7 +7,6 @@ import type {
 } from "../shared/types";
 import {
   VEHICLE_CONFIG,
-  ENERGY_CONFIG,
   ANIMATION_CONFIG,
   GRID_CONFIG,
   BRUSH_CONFIG,
@@ -26,13 +25,17 @@ import {
   type ScenarioPresetId,
   type ScenarioPresetDescriptor,
 } from "../data";
-import { GridPaintBuffer, type TerrainStateHolder, type PaintContext } from "./gridPaintBuffer";
+import {
+  ScenarioTerrain,
+  type PaintContext,
+} from "./scenarioTerrain";
 
 export {
   SCENARIO_PRESETS,
   type ScenarioPresetId,
   type ScenarioPresetDescriptor,
-  GridPaintBuffer,
+  ScenarioTerrain,
+  ScenarioTerrain as GridPaintBuffer,
 };
 
 export interface SimulationDomElement {
@@ -173,10 +176,6 @@ export interface SimulationEngineOptions {
   domAdapter?: SimulationDomAdapter;
 }
 
-function parseCoordinates(key: string): [number, number] {
-  const parts = key.split("-");
-  return [Number(parts[0]), Number(parts[1])];
-}
 
 /**
  * The deep SimulationEngine module.
@@ -203,12 +202,7 @@ export class SimulationEngine {
   private initialRobotNode: string | null = null;
   private initialDestinationNode: string | null = null;
 
-  private wallNodes: Set<string>;
-  private terrainFactors: Map<string, number>;
-  private terrainTypes: Map<string, "dirt" | "water">;
-  private elevations: Map<string, number>;
-  private robotNode: string;
-  private destinationNode: string;
+  private terrain: ScenarioTerrain;
 
   private activeBrush: BrushMode = "wall";
   private elevationBrushValue: number = BRUSH_CONFIG.elevation.defaultValue;
@@ -240,8 +234,6 @@ export class SimulationEngine {
     isSafe?: boolean;
     safetyFailureReason?: string;
   } | null = null;
-
-  private paintBuffer: GridPaintBuffer;
   private domAdapter: SimulationDomAdapter;
   private listeners: Set<() => void> = new Set();
   private activeTimeouts: ReturnType<typeof setTimeout>[] = [];
@@ -261,23 +253,24 @@ export class SimulationEngine {
     this.initialDestinationNode = options.initialDestinationNode ?? null;
     this.initialHeading = options.initialHeading ?? VEHICLE_CONFIG.defaultHeading;
 
-    const defaultRobotCol = Math.floor(this.cols / 4);
-    const defaultDestCol = Math.floor((this.cols / 4) * 3);
-    const defaultRow = Math.floor(this.rows / 2);
 
-    this.robotNode = options.initialRobotNode ?? `${defaultRow}-${defaultRobotCol}`;
-    this.destinationNode = options.initialDestinationNode ?? `${defaultRow}-${defaultDestCol}`;
-    this.wallNodes = new Set(options.initialWallNodes ?? []);
-    this.terrainFactors = new Map(options.initialTerrainFactors ?? []);
-    this.terrainTypes = new Map(options.initialTerrainTypes ?? []);
-    this.elevations = new Map(options.initialElevations ?? []);
+    this.domAdapter = options.domAdapter ?? createDefaultDomAdapter();
+    this.terrain = new ScenarioTerrain({
+      cols: this.cols,
+      rows: this.rows,
+      initialRobotNode: options.initialRobotNode,
+      initialDestinationNode: options.initialDestinationNode,
+      initialWallNodes: options.initialWallNodes,
+      initialTerrainFactors: options.initialTerrainFactors,
+      initialTerrainTypes: options.initialTerrainTypes,
+      initialElevations: options.initialElevations,
+      domAdapter: this.domAdapter,
+    });
     this.defaultMaxTraversableSlope =
       options.initialMaxTraversableSlope ?? VEHICLE_CONFIG.maxTraversableSlope;
     this.maxTraversableSlope = this.defaultMaxTraversableSlope;
     this.robotHeading = this.initialHeading;
     this.selectedAlgo = options.initialAlgo ?? "energyAware";
-    this.domAdapter = options.domAdapter ?? createDefaultDomAdapter();
-    this.paintBuffer = new GridPaintBuffer(this.domAdapter);
 
     this.subscribe = this.subscribe.bind(this);
     this.getSnapshot = this.getSnapshot.bind(this);
@@ -295,18 +288,20 @@ export class SimulationEngine {
   public getSnapshot(): SimulationState {
     if (this.cachedSnapshot) return this.cachedSnapshot;
 
+    const terrainSnapshot = this.terrain.getSnapshot();
+
     this.cachedSnapshot = {
       cols: this.cols,
       rows: this.rows,
       cellSize: this.cellSize,
       isFixedDimensions: this.isFixedDimensions,
       loadedScenarioName: this.loadedScenarioName,
-      wallNodes: this.wallNodes,
-      terrainFactors: this.terrainFactors,
-      terrainTypes: this.terrainTypes,
-      elevations: this.elevations,
-      robotNode: this.robotNode,
-      destinationNode: this.destinationNode,
+      wallNodes: terrainSnapshot.wallNodes,
+      terrainFactors: terrainSnapshot.terrainFactors,
+      terrainTypes: terrainSnapshot.terrainTypes,
+      elevations: terrainSnapshot.elevations,
+      robotNode: terrainSnapshot.robotNode,
+      destinationNode: terrainSnapshot.destinationNode,
       activeBrush: this.activeBrush,
       elevationBrushValue: this.elevationBrushValue,
       dirtBrushValue: this.dirtBrushValue,
@@ -330,7 +325,7 @@ export class SimulationEngine {
       walkingStep: this.walkingStep,
       walkFailure: this.walkFailure,
       pathMetrics: this.pathMetrics,
-      activeStrokeBrush: this.paintBuffer.getActiveStrokeBrush(),
+      activeStrokeBrush: this.terrain.getActiveStrokeBrush(),
     };
 
     return this.cachedSnapshot;
@@ -355,7 +350,7 @@ export class SimulationEngine {
     if (this.isFixedDimensions) {
       if (this.cellSize !== cellSize) {
         this.cellSize = cellSize;
-        const [startR, startC] = this.robotNode.split("-").map(Number);
+        const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
         this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
         this.notify();
       }
@@ -371,16 +366,7 @@ export class SimulationEngine {
     this.rows = rows;
     this.cellSize = cellSize;
 
-    const [startR, startC] = this.robotNode.split("-").map(Number);
-    const clampedRobotR = Math.min(Math.max(0, startR), rows - 1);
-    const clampedRobotC = Math.min(Math.max(0, startC), cols - 1);
-    this.robotNode = `${clampedRobotR}-${clampedRobotC}`;
-
-    const [destR, destC] = this.destinationNode.split("-").map(Number);
-    const clampedDestR = Math.min(Math.max(0, destR), rows - 1);
-    const clampedDestC = Math.min(Math.max(0, destC), cols - 1);
-    this.destinationNode = `${clampedDestR}-${clampedDestC}`;
-
+    const { clampedRobotR, clampedRobotC } = this.terrain.setDimensions(cols, rows);
     this.domAdapter.resetRobot(clampedRobotC, clampedRobotR, this.robotHeading, this.cellSize);
     this.notify();
   }
@@ -388,26 +374,15 @@ export class SimulationEngine {
   // --- Scenario Query ---
 
   public getScenario(): Scenario {
-    return {
+    return this.terrain.toScenario({
       rows: this.rows,
       cols: this.cols,
-      robotNode: this.robotNode,
-      destinationNode: this.destinationNode,
-      wallNodes: this.wallNodes,
-      terrainFactors: this.terrainFactors,
-      terrainTypes: this.terrainTypes,
-      elevations: this.elevations,
-      climbingFactor: ENERGY_CONFIG.climbingFactor,
-      turnPenalty: ENERGY_CONFIG.turnPenalty,
       maxTraversableSlope: this.maxTraversableSlope,
       initialHeading: this.robotHeading,
       showGradients: this.showGradients,
-      robotPhysics: {
-        ...VEHICLE_CONFIG,
-        maxTraversableSlope: this.maxTraversableSlope,
-      },
-    };
+    });
   }
+
 
   // --- Configuration Mutators ---
 
@@ -426,34 +401,14 @@ export class SimulationEngine {
   public setDirtBrushValue(val: number): void {
     if (this.dirtBrushValue === val) return;
     this.dirtBrushValue = val;
-    let changed = false;
-    const next = new Map(this.terrainFactors);
-    for (const [k, type] of this.terrainTypes.entries()) {
-      if (type === "dirt" && next.get(k) !== val) {
-        next.set(k, val);
-        changed = true;
-      }
-    }
-    if (changed) {
-      this.terrainFactors = next;
-    }
+    this.terrain.updateTypeCost("dirt", val);
     this.notify();
   }
 
   public setWaterBrushValue(val: number): void {
     if (this.waterBrushValue === val) return;
     this.waterBrushValue = val;
-    let changed = false;
-    const next = new Map(this.terrainFactors);
-    for (const [k, type] of this.terrainTypes.entries()) {
-      if (type === "water" && next.get(k) !== val) {
-        next.set(k, val);
-        changed = true;
-      }
-    }
-    if (changed) {
-      this.terrainFactors = next;
-    }
+    this.terrain.updateTypeCost("water", val);
     this.notify();
   }
 
@@ -544,21 +499,10 @@ export class SimulationEngine {
     this.notify();
   }
 
-  // --- Transient Pointer & Stroke Buffering (delegated to GridPaintBuffer) ---
+  // --- Transient Pointer & Stroke Buffering (delegated to ScenarioTerrain) ---
 
   public isSessionActive(): boolean {
-    return this.paintBuffer.isSessionActive();
-  }
-
-  private getTerrainTarget(): TerrainStateHolder {
-    return {
-      wallNodes: this.wallNodes,
-      terrainFactors: this.terrainFactors,
-      terrainTypes: this.terrainTypes,
-      elevations: this.elevations,
-      robotNode: this.robotNode,
-      destinationNode: this.destinationNode,
-    };
+    return this.terrain.isSessionActive();
   }
 
   private getPaintContext(): PaintContext {
@@ -572,16 +516,6 @@ export class SimulationEngine {
     };
   }
 
-  private syncFromTerrainTarget(target: TerrainStateHolder): void {
-    this.wallNodes = target.wallNodes;
-    this.terrainFactors = target.terrainFactors;
-    this.terrainTypes = target.terrainTypes;
-    this.elevations = target.elevations;
-    this.robotNode = target.robotNode;
-    this.destinationNode = target.destinationNode;
-    this.cachedSnapshot = null;
-  }
-
   public startPaint(key: string): void {
     if (this.isAnimating || this.isWalking) return;
 
@@ -589,13 +523,10 @@ export class SimulationEngine {
       this.clearAnimations();
     }
 
-    const target = this.getTerrainTarget();
     const context = this.getPaintContext();
-
-    const started = this.paintBuffer.startStroke(key, target, context);
+    const started = this.terrain.startStroke(key, context);
     if (started) {
-      this.syncFromTerrainTarget(target);
-      const brush = this.paintBuffer.getActiveStrokeBrush();
+      const brush = this.terrain.getActiveStrokeBrush();
       if (brush === "robot" || brush === "destination") {
         this.notify();
       }
@@ -603,13 +534,10 @@ export class SimulationEngine {
   }
 
   public continuePaint(key: string): void {
-    const target = this.getTerrainTarget();
     const context = this.getPaintContext();
-
-    const modified = this.paintBuffer.continueStroke(key, target, context);
+    const modified = this.terrain.continueStroke(key, context);
     if (modified) {
-      this.syncFromTerrainTarget(target);
-      const brush = this.paintBuffer.getActiveStrokeBrush();
+      const brush = this.terrain.getActiveStrokeBrush();
       if (brush === "robot" || brush === "destination") {
         this.notify();
       }
@@ -617,7 +545,7 @@ export class SimulationEngine {
   }
 
   public endPaint(): void {
-    const ended = this.paintBuffer.endStroke();
+    const ended = this.terrain.commitStroke();
     if (ended) {
       if (this.isPathVisible) {
         this.solveInstantly(this.selectedAlgo);
@@ -628,10 +556,8 @@ export class SimulationEngine {
   }
 
   public abortPaint(): void {
-    const target = this.getTerrainTarget();
-    const restoredSnapshot = this.paintBuffer.abortStroke(target);
+    const restoredSnapshot = this.terrain.abortStroke();
     if (restoredSnapshot) {
-      this.syncFromTerrainTarget(target);
       if (this.isPathVisible) {
         this.solveInstantly(this.selectedAlgo);
       } else {
@@ -640,34 +566,11 @@ export class SimulationEngine {
     }
   }
 
-  private clearWallsInternal(): void {
-    const keysToClean = new Set<string>([
-      ...this.wallNodes,
-      ...this.terrainFactors.keys(),
-      ...this.terrainTypes.keys(),
-      ...this.elevations.keys(),
-      ...this.paintBuffer.getModifiedCells(),
-    ]);
-
-    for (const key of keysToClean) {
-      const element = this.domAdapter.getCellElement(key);
-      if (element) {
-        element.style.backgroundColor = "";
-        element.classList.remove("is-wall");
-      }
-    }
-
-    this.paintBuffer.endStroke();
-    this.wallNodes = new Set();
-    this.terrainFactors = new Map();
-    this.terrainTypes = new Map();
-    this.elevations = new Map();
-  }
-
   public clearWalls(): void {
-    this.clearWallsInternal();
+    this.terrain.clearAll();
     this.notify();
   }
+
 
   // --- Animation & Timer Management ---
 
@@ -698,7 +601,7 @@ export class SimulationEngine {
     this.walkFailure = null;
     this.pathMetrics = null;
 
-    const [startR, startC] = this.robotNode.split("-").map(Number);
+    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
     this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     this.notify();
@@ -721,7 +624,7 @@ export class SimulationEngine {
     this.walkFailure = null;
     this.walkingStep = -1;
 
-    const [startR, startC] = this.robotNode.split("-").map(Number);
+    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
     this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     const scenario = this.getScenario();
@@ -933,28 +836,21 @@ export class SimulationEngine {
     this.clearTimers();
     this.domAdapter.clearAllSearchVisuals();
 
-    // Clear old wall and terrain classes from DOM and memory
-    this.clearWallsInternal();
-
     this.isFixedDimensions = true;
     this.loadedScenarioName = name;
     this.cols = scenario.cols ?? 25;
     this.rows = scenario.rows ?? 25;
 
-    this.robotNode = scenario.robotNode;
-    this.destinationNode = scenario.destinationNode;
+    this.terrain.loadScenario(scenario);
+
     this.robotHeading = scenario.initialHeading ?? VEHICLE_CONFIG.defaultHeading;
     this.initialScenarioHeading = this.robotHeading;
-    this.wallNodes = new Set(scenario.wallNodes);
-    this.terrainFactors = new Map(scenario.terrainFactors);
-    this.terrainTypes = new Map(scenario.terrainTypes ?? []);
-    this.elevations = new Map(scenario.elevations);
     this.maxTraversableSlope =
       scenario.maxTraversableSlope ??
       scenario.robotPhysics?.maxTraversableSlope ??
       this.defaultMaxTraversableSlope;
 
-    if (this.elevations.size > 0) {
+    if (this.terrain.getElevations().size > 0) {
       this.showGradients = true;
     }
 
@@ -963,7 +859,7 @@ export class SimulationEngine {
     this.hasFinishedWalking = false;
     this.walkFailure = null;
 
-    const [startR, startC] = this.robotNode.split("-").map(Number);
+    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
     this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     if (instantSolve) {
@@ -989,7 +885,7 @@ export class SimulationEngine {
     this.walkFailure = null;
     this.walkingStep = -1;
 
-    const [startR, startC] = this.robotNode.split("-").map(Number);
+    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
     this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     const scenario = this.getScenario();
@@ -1063,31 +959,12 @@ export class SimulationEngine {
     this.freeformRows = targetRows;
     this.freeformCellSize = targetCellSize;
 
-    const defaultRobotCol = Math.floor(this.cols / 4);
-    const defaultDestCol = Math.floor((this.cols / 4) * 3);
-    const defaultRow = Math.floor(this.rows / 2);
-
-    if (this.initialRobotNode) {
-      const [r, c] = parseCoordinates(this.initialRobotNode);
-      if (r < this.rows && c < this.cols) {
-        this.robotNode = this.initialRobotNode;
-      } else {
-        this.robotNode = `${defaultRow}-${defaultRobotCol}`;
-      }
-    } else {
-      this.robotNode = `${defaultRow}-${defaultRobotCol}`;
-    }
-
-    if (this.initialDestinationNode) {
-      const [r, c] = parseCoordinates(this.initialDestinationNode);
-      if (r < this.rows && c < this.cols) {
-        this.destinationNode = this.initialDestinationNode;
-      } else {
-        this.destinationNode = `${defaultRow}-${defaultDestCol}`;
-      }
-    } else {
-      this.destinationNode = `${defaultRow}-${defaultDestCol}`;
-    }
+    this.terrain.resetNodes({
+      rows: this.rows,
+      cols: this.cols,
+      initialRobotNode: this.initialRobotNode,
+      initialDestinationNode: this.initialDestinationNode,
+    });
 
     this.reset();
   }
@@ -1099,7 +976,7 @@ export class SimulationEngine {
     this.clearTimers();
     this.domAdapter.clearAllSearchVisuals();
 
-    this.clearWallsInternal();
+    this.terrain.clearAll();
 
     if (!this.isFixedDimensions) {
       this.maxTraversableSlope = this.defaultMaxTraversableSlope;
@@ -1122,7 +999,7 @@ export class SimulationEngine {
     this.walkFailure = null;
     this.pathMetrics = null;
 
-    const [startR, startC] = this.robotNode.split("-").map(Number);
+    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
     this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     this.notify();
