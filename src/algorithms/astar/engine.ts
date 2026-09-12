@@ -118,12 +118,14 @@ function calculateEnergyHeuristic(
   const distance = Math.hypot(row - destRow, col - destCol);
   const hTrans = distance / ENERGY_CONFIG.maxVelocityDivisor;
   const minAngle = getMinAngleToDestination(heading, row, col, destRow, destCol);
-  const hRot = scenario.turnPenalty * minAngle;
+  const turnPenalty = scenario.turnPenalty ?? ENERGY_CONFIG.turnPenalty;
+  const hRot = turnPenalty * minAngle;
 
   const currentElevation = scenario.elevations.get(`${row}-${col}`) || 0;
   const destElevation = scenario.elevations.get(scenario.destinationNode) || 0;
   const elevationDelta = destElevation - currentElevation;
-  const hElev = elevationDelta > 0 ? elevationDelta * scenario.climbingFactor : 0;
+  const climbingFactor = scenario.climbingFactor ?? ENERGY_CONFIG.climbingFactor;
+  const hElev = elevationDelta > 0 ? elevationDelta * climbingFactor : 0;
 
   return hTrans + hRot + hElev;
 }
@@ -204,11 +206,15 @@ function getEnergyCostBreakdown(
   if (elevationDelta > 0) {
     gradientPenaltyMultiplier =
       slopeDegrees <= ENERGY_CONFIG.excessiveSlopeThreshold
-        ? scenario.climbingFactor
+        ? scenario.climbingFactor ?? ENERGY_CONFIG.climbingFactor
         : ENERGY_CONFIG.excessiveSlopePenaltyMultiplier;
   }
 
-  const rawTurnCost = getTurnCost(current.heading, target.heading, scenario.turnPenalty);
+  const rawTurnCost = getTurnCost(
+    current.heading,
+    target.heading,
+    scenario.turnPenalty ?? ENERGY_CONFIG.turnPenalty,
+  );
 
   // Use average terrain factor for the move (0.5 distance in start cell, 0.5 in target cell)
   const startTerrainBreakdown = getTerrainPenaltyBreakdown(

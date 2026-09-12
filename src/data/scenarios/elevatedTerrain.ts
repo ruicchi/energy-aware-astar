@@ -36,6 +36,7 @@ export const elevatedTerrainScenario: Scenario = {
   terrainFactors: new Map(),
   elevations: createElevatedMap(),
   climbingFactor: ENERGY_CONFIG.climbingFactor,
+  turnPenalty: ENERGY_CONFIG.turnPenalty,
   maxTraversableSlope: VEHICLE_CONFIG.maxTraversableSlope,
   robotPhysics: VEHICLE_CONFIG,
 };

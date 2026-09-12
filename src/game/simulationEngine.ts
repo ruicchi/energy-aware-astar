@@ -392,6 +392,7 @@ export class SimulationEngine {
       terrainTypes: this.terrainTypes,
       elevations: this.elevations,
       climbingFactor: ENERGY_CONFIG.climbingFactor,
+      turnPenalty: ENERGY_CONFIG.turnPenalty,
       maxTraversableSlope:
         this.maxTraversableSlope ??
         VEHICLE_CONFIG.maxTraversableSlope ??
