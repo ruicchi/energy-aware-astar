@@ -5,6 +5,7 @@ import {
   generateMonteCarloLatexTable,
   generateEnergyBreakdownLatexTable,
 } from "./latexReporter";
+import { generateMarkdownSummary } from "./markdownReporter";
 import type { AlgorithmBenchmarkResult } from "../benchmarkEngine";
 import type { StatisticalSummary } from "../statisticalAnalysis";
 import type { AlgorithmType } from "../../shared/types";
@@ -119,4 +120,76 @@ describe("Benchmark Reporters", () => {
       expect(latex).toContain("40.00");
     });
   });
+
+  describe("generateMarkdownSummary", () => {
+    it("generates markdown summary with statistical table and key findings", () => {
+      const summaryMap = new Map<AlgorithmType, StatisticalSummary>([
+        [
+          "energyAware",
+          {
+            algorithm: "energyAware",
+            trials: 50,
+            meanDistance: 38.11,
+            stdDistance: 2.80,
+            meanEnergy: 41.36,
+            stdEnergy: 2.83,
+            meanNodes: 1677,
+            stdNodes: 350,
+            meanTimeMs: 22.0,
+            stdTimeMs: 4.5,
+            safetyRatePercent: 100,
+          },
+        ],
+        [
+          "manhattan",
+          {
+            algorithm: "manhattan",
+            trials: 50,
+            meanDistance: 40.0,
+            stdDistance: 0.0,
+            meanEnergy: 260.40,
+            stdEnergy: 159.05,
+            meanNodes: 50,
+            stdNodes: 9,
+            meanTimeMs: 0.16,
+            stdTimeMs: 0.04,
+            safetyRatePercent: 18.0,
+            energySavingsPercentVsEA: 84.1,
+            pValueVsEA: 0.0001,
+          },
+        ],
+        [
+          "euclidean",
+          {
+            algorithm: "euclidean",
+            trials: 50,
+            meanDistance: 30.12,
+            stdDistance: 0.75,
+            meanEnergy: 291.72,
+            stdEnergy: 167.12,
+            meanNodes: 127,
+            stdNodes: 53,
+            meanTimeMs: 0.38,
+            stdTimeMs: 0.14,
+            safetyRatePercent: 4.0,
+            energySavingsPercentVsEA: 85.8,
+            pValueVsEA: 0.0001,
+          },
+        ],
+      ]);
+
+      const md = generateMarkdownSummary(summaryMap, 50);
+
+      expect(md).toContain("# Chapter 4: Simulation Results & Discussion Summary");
+      expect(md).toContain("Evaluated **50** randomly generated procedural terrains");
+      expect(md).toContain("| **Energy-Aware A*** | 38.11 ± 2.80 | 41.36 ± 2.83 | **Baseline** | 1677 ± 350 | **100.0%** | -- |");
+      expect(md).toContain("+84.1%");
+      expect(md).toContain("+85.8%");
+      expect(md).toContain("1. **Significant Energy Conservation:**");
+      expect(md).toContain("2. **Topographic Traversability & Rollover Prevention:**");
+      expect(md).toContain("3. **Spatial vs. Energetic Trade-off:**");
+      expect(md).toContain("4. **Search Complexity:**");
+    });
+  });
 });
+

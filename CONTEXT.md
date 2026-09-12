@@ -57,7 +57,7 @@ The consolidated configuration module defining physical vehicle dimensions, terr
 _Avoid_: Constants, GlobalSettings, AppConfig
 
 **Benchmark Engine**:
-The deep module executing algorithm comparison suites across deterministic and Monte Carlo procedural scenarios to capture raw trajectory and safety telemetry.
+The deep module executing algorithm comparison experiments across deterministic and Monte Carlo procedural suites (`runDeterministicBenchmarkSuite`, `runMonteCarloBenchmarkSuite`, `runBenchmarkExperiment`), coordinating trial execution, statistical hypothesis testing, and publication artifact generation through a unified interface.
 _Avoid_: BenchmarkRunner, TestHarness, PerfTest
 
 **Statistical Analysis**:
@@ -65,7 +65,7 @@ The mathematical module evaluating benchmark distributions, computing sample var
 _Avoid_: MathHelpers, StatsUtils, AnalysisService
 
 **Benchmark Reporters**:
-The presentation adapters serializing benchmark telemetry and statistical summaries into structured CSV records and LaTeX `booktabs` tables.
+The presentation adapters serializing benchmark telemetry and statistical summaries into structured CSV records, LaTeX `booktabs` tables, and Chapter 4 discussion Markdown summaries.
 _Avoid_: TableFormatters, Exporters, LatexGenerators
 
 **Simulation Canvas Seam**:
