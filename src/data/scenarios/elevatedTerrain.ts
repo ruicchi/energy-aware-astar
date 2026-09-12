@@ -36,8 +36,7 @@ export const elevatedTerrainScenario: Scenario = {
   terrainFactors: new Map(),
   elevations: createElevatedMap(),
   climbingFactor: ENERGY_CONFIG.climbingFactor,
-  turnPenalty: ENERGY_CONFIG.turnPenalty,
-  maxTraversableSlope: ENERGY_CONFIG.excessiveSlopeThreshold, // Slopes > 30 degrees are deemed untraversable
+  maxTraversableSlope: VEHICLE_CONFIG.maxTraversableSlope,
   robotPhysics: VEHICLE_CONFIG,
 };
 

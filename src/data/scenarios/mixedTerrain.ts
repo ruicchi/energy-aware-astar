@@ -1,5 +1,5 @@
 import type { Scenario } from "../../shared/types";
-import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../../config/simulationConfig";
+import { VEHICLE_CONFIG, ENERGY_CONFIG } from "../../config/simulationConfig";
 
 /**
  * Creates a high-friction mud and water zone across the center diagonal.
@@ -46,7 +46,7 @@ export const frictionTerrainScenario: Scenario = {
   elevations: new Map(),
   climbingFactor: ENERGY_CONFIG.climbingFactor,
   turnPenalty: ENERGY_CONFIG.turnPenalty,
-  maxTraversableSlope: TERRAIN_CONFIG.defaultMaxTraversableSlope,
+  maxTraversableSlope: VEHICLE_CONFIG.maxTraversableSlope,
   robotPhysics: VEHICLE_CONFIG,
 };
 
@@ -109,7 +109,7 @@ export const mixedTerrainScenario: Scenario = {
   elevations: complexData.elevations,
   climbingFactor: ENERGY_CONFIG.climbingFactor,
   turnPenalty: ENERGY_CONFIG.turnPenalty,
-  maxTraversableSlope: ENERGY_CONFIG.excessiveSlopeThreshold,
+  maxTraversableSlope: VEHICLE_CONFIG.maxTraversableSlope,
   robotPhysics: VEHICLE_CONFIG,
 };
 

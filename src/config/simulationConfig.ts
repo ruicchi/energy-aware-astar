@@ -2,6 +2,7 @@ import type { Heading, RobotPhysicsConfig } from "../shared/types";
 
 export interface VehicleConfig extends RobotPhysicsConfig {
   defaultHeading: Heading;
+  maxTraversableSlope: number;
 }
 
 export const VEHICLE_CONFIG: VehicleConfig = {
@@ -10,11 +11,12 @@ export const VEHICLE_CONFIG: VehicleConfig = {
   wheelBase: 1.2,
   comHeight: 0.6,
   stabilityMargin: 0.05,
+  maxTraversableSlope: 30, // Maximum elevation slope angle the robot can traverse (in degrees)
 };
 
 export const TERRAIN_CONFIG = {
   elevationScale: 0.5,
-  defaultMaxTraversableSlope: 45,
+  defaultMaxTraversableSlope: VEHICLE_CONFIG.maxTraversableSlope,
   maxStableGradient: 1.0,
   minGradientMagnitude: 0.05,
   arrowDisplayThreshold: 0.1,
@@ -134,7 +136,7 @@ export const PROCEDURAL_CONFIG = {
   defaultNumHills: 3,
   defaultNumMudPatches: 3,
   defaultObstacleDensity: 0.05,
-  maxTraversableSlope: 30,
+  maxTraversableSlope: VEHICLE_CONFIG.maxTraversableSlope,
   protectedRadius: 2.5,
   waterProbability: 0.4,
   hills: {

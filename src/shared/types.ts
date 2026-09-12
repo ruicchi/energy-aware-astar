@@ -41,6 +41,7 @@ export interface RobotPhysicsConfig {
   wheelBase: number
   comHeight: number
   stabilityMargin: number
+  maxTraversableSlope?: number
 }
 
 export interface Scenario {

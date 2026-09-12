@@ -69,8 +69,10 @@ export function FloatingPanel({
 
   function handlePointerMove(e: React.PointerEvent) {
     if (!isDragging) return;
-    const maxX = typeof window !== "undefined" ? window.innerWidth - UI_CONFIG.dragBounds.paddingX : 1000;
-    const maxY = typeof window !== "undefined" ? window.innerHeight - UI_CONFIG.dragBounds.paddingY : 1000;
+    const maxX =
+      typeof window !== "undefined" ? window.innerWidth - UI_CONFIG.dragBounds.paddingX : 1000;
+    const maxY =
+      typeof window !== "undefined" ? window.innerHeight - UI_CONFIG.dragBounds.paddingY : 1000;
 
     const rawX = e.clientX - dragStart.current.x;
     const rawY = e.clientY - dragStart.current.y;
@@ -117,7 +119,10 @@ export function FloatingPanel({
           justifyContent: "space-between",
           alignItems: "center",
           p: 1.5,
-          borderBottom: !collapsible || isExpanded ? `1px solid ${THEME_CONFIG.panelHeaderBorderColor}` : "none",
+          borderBottom:
+            !collapsible || isExpanded
+              ? `1px solid ${THEME_CONFIG.panelHeaderBorderColor}`
+              : "none",
         }}
       >
         <Typography variant="subtitle1" fontWeight="bold">
@@ -135,24 +140,14 @@ export function FloatingPanel({
             </IconButton>
           )}
           {onClose && (
-            <IconButton
-              size="small"
-              onClick={onClose}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
+            <IconButton size="small" onClick={onClose} onPointerDown={(e) => e.stopPropagation()}>
               <Close fontSize="inherit" />
             </IconButton>
           )}
         </Box>
       </Box>
 
-      {collapsible ? (
-        <Collapse in={isExpanded}>
-          {children}
-        </Collapse>
-      ) : (
-        children
-      )}
+      {collapsible ? <Collapse in={isExpanded}>{children}</Collapse> : children}
     </Paper>
   );
 }

@@ -1,5 +1,5 @@
 import type { Scenario } from "../../shared/types";
-import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../../config/simulationConfig";
+import { VEHICLE_CONFIG, ENERGY_CONFIG } from "../../config/simulationConfig";
 
 /**
  * Scenario 1: Flat Obstacle Course
@@ -24,6 +24,6 @@ export const flatTerrainScenario: Scenario = {
   elevations: new Map(),
   climbingFactor: ENERGY_CONFIG.climbingFactor,
   turnPenalty: ENERGY_CONFIG.turnPenalty,
-  maxTraversableSlope: TERRAIN_CONFIG.defaultMaxTraversableSlope,
+  maxTraversableSlope: VEHICLE_CONFIG.maxTraversableSlope,
   robotPhysics: VEHICLE_CONFIG,
 };

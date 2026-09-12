@@ -187,7 +187,10 @@ export function isTraversableSlope(
   scenario: Scenario,
   ignoreStability = false,
 ): boolean {
-  const maxTraversableSlope = scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE;
+  const maxTraversableSlope =
+    scenario.maxTraversableSlope ??
+    scenario.robotPhysics?.maxTraversableSlope ??
+    DEFAULT_MAX_TRAVERSABLE_SLOPE;
   const slopeDegrees = getSlopeDegrees(current, target, scenario.elevations);
   if (slopeDegrees > maxTraversableSlope) return false;
 
@@ -233,7 +236,10 @@ export function evaluatePathSafety(
       maxSlopeEncountered = slope;
     }
 
-    const maxTraversableSlope = scenario.maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE;
+    const maxTraversableSlope =
+      scenario.maxTraversableSlope ??
+      scenario.robotPhysics?.maxTraversableSlope ??
+      DEFAULT_MAX_TRAVERSABLE_SLOPE;
     if (slope > maxTraversableSlope) {
       return {
         isSafe: false,

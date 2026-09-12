@@ -392,8 +392,10 @@ export class SimulationEngine {
       terrainTypes: this.terrainTypes,
       elevations: this.elevations,
       climbingFactor: ENERGY_CONFIG.climbingFactor,
-      turnPenalty: ENERGY_CONFIG.turnPenalty,
-      maxTraversableSlope: this.maxTraversableSlope ?? TERRAIN_CONFIG.defaultMaxTraversableSlope,
+      maxTraversableSlope:
+        this.maxTraversableSlope ??
+        VEHICLE_CONFIG.maxTraversableSlope ??
+        TERRAIN_CONFIG.defaultMaxTraversableSlope,
       initialHeading: this.robotHeading,
       showGradients: this.showGradients,
       robotPhysics: VEHICLE_CONFIG,
@@ -463,6 +465,12 @@ export class SimulationEngine {
     if (this.robotHeading === heading) return;
     this.robotHeading = heading;
     this.domAdapter.setRobotHeading(heading, false);
+    this.notify();
+  }
+
+  public setMaxTraversableSlope(slope: number | null): void {
+    if (this.maxTraversableSlope === slope) return;
+    this.maxTraversableSlope = slope;
     this.notify();
   }
 
@@ -915,7 +923,10 @@ export class SimulationEngine {
     this.terrainFactors = new Map(scenario.terrainFactors);
     this.terrainTypes = new Map(scenario.terrainTypes ?? []);
     this.elevations = new Map(scenario.elevations);
-    this.maxTraversableSlope = scenario.maxTraversableSlope ?? TERRAIN_CONFIG.defaultMaxTraversableSlope;
+    this.maxTraversableSlope =
+      scenario.maxTraversableSlope ??
+      scenario.robotPhysics?.maxTraversableSlope ??
+      VEHICLE_CONFIG.maxTraversableSlope;
 
     if (this.elevations.size > 0) {
       this.showGradients = true;
