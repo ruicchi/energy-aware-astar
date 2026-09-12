@@ -1,67 +1,39 @@
-import { useMemo, useCallback } from "react";
 import Box from "@mui/material/Box";
 import { FloatingMenu } from "./FloatingMenu";
 import { FloatingBrushes } from "./FloatingBrushes";
 import { FloatingManual } from "./FloatingManual";
-import {
-  useSimulationEngine,
-  useSimulationSelector,
-  useGridDimensions,
-  useTerrainState,
-  usePlaybackState,
-  useSearchTelemetry,
-} from "./simulationHooks";
+import { useGridCanvas } from "./simulationHooks";
 import { TerrainGrid } from "./TerrainGrid";
 import { RobotActor } from "./actors/RobotActor";
 import { DestinationActor } from "./actors/DestinationActor";
 import { THEME_CONFIG, UI_CONFIG } from "../config/simulationConfig";
 
 export default function GameGrid() {
-  const engine = useSimulationEngine();
-  const { cols, rows, cellSize, isFixedDimensions } = useGridDimensions();
   const {
-    wallNode,
+    cols,
+    rows,
+    cellSize,
+    isFixedDimensions,
+    wallNodes,
     terrainFactors,
     terrainTypes,
     elevations,
+    showGradients,
     robotNode,
     destinationNode,
-    showGradients,
-  } = useTerrainState();
-  const {
+    robotHeading,
+    activeStrokeBrush,
+    isWalking,
+    isLocked,
     showManhattanSearch,
     showEnergySearch,
-    isPathVisible,
-    pathTheme,
+    isLineVisible,
+    polylinePoints,
     currentPath,
-  } = useSearchTelemetry();
-  const { isWalking, isLocked } = usePlaybackState();
-  const robotHeading = useSimulationSelector((s) => s.robotHeading);
-  const activeStrokeBrush = useSimulationSelector((s) => s.activeStrokeBrush);
-
-  const handleMouseDown = useCallback((key: string) => engine.startPaint(key), [engine]);
-  const handleMouseEnter = useCallback((key: string) => engine.continuePaint(key), [engine]);
-  const handleMouseUp = useCallback(() => engine.endPaint(), [engine]);
-
-  const isLineVisible = Boolean(
-    isPathVisible &&
-    currentPath &&
-    currentPath.length > 1 &&
-    ((pathTheme === "manhattan" && showManhattanSearch) ||
-      (pathTheme === "energy" && showEnergySearch)),
-  );
-
-  const polylinePoints = useMemo(() => {
-    if (!isLineVisible || !currentPath) return "";
-    return currentPath
-      .map((key) => {
-        const [r, c] = key.split("-").map(Number);
-        const x = c * cellSize + cellSize / 2;
-        const y = r * cellSize + cellSize / 2;
-        return `${x},${y}`;
-      })
-      .join(" ");
-  }, [isLineVisible, currentPath, cellSize]);
+    handleMouseDown,
+    handleMouseEnter,
+    handleMouseUp,
+  } = useGridCanvas();
 
   return (
     <Box
@@ -112,7 +84,7 @@ export default function GameGrid() {
             rows={rows}
             cols={cols}
             cellSize={cellSize}
-            wallNode={wallNode}
+            wallNodes={wallNodes}
             terrainFactors={terrainFactors}
             terrainTypes={terrainTypes}
             elevations={elevations}

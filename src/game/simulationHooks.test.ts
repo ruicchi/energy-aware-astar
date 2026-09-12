@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { shallowEqual } from "./simulationHooks";
+import {
+  shallowEqual,
+  computePolylinePoints,
+  selectGridCanvas,
+  selectControlBar,
+} from "./simulationHooks";
 import { SimulationEngine } from "./simulationEngine";
 
 describe("simulationHooks - shallowEqual", () => {
@@ -138,3 +143,106 @@ describe("simulationHooks - Sliced Selectors & Re-render Isolation", () => {
     expect(shallowEqual(gridSlice1, gridSlice2)).toBe(true);
   });
 });
+
+describe("simulationHooks - computePolylinePoints", () => {
+  it("returns an empty string when path is null, undefined, or has fewer than 2 coordinates", () => {
+    expect(computePolylinePoints(null, 20)).toBe("");
+    expect(computePolylinePoints(undefined, 20)).toBe("");
+    expect(computePolylinePoints([], 20)).toBe("");
+    expect(computePolylinePoints(["0-0"], 20)).toBe("");
+  });
+
+  it("calculates center coordinates for SVG polyline accurately", () => {
+    const points = computePolylinePoints(["0-0", "1-2", "3-5"], 20);
+    // 0-0: col 0, row 0 -> 0*20+10, 0*20+10 = 10,10
+    // 1-2: col 2, row 1 -> 2*20+10, 1*20+10 = 50,30
+    // 3-5: col 5, row 3 -> 5*20+10, 3*20+10 = 110,70
+    expect(points).toBe("10,10 50,30 110,70");
+  });
+});
+
+describe("simulationHooks - Unified Grid Canvas Seam", () => {
+  it("extracts complete canvas state including wallNodes and backwards-compatible wallNode", () => {
+    const engine = new SimulationEngine({ cols: 15, rows: 12, cellSize: 24 });
+    const s = engine.getSnapshot();
+    const canvas = selectGridCanvas(s);
+
+    expect(canvas.cols).toBe(15);
+    expect(canvas.rows).toBe(12);
+    expect(canvas.cellSize).toBe(24);
+    expect(canvas.wallNodes).toBe(s.wallNodes);
+    expect(canvas.wallNode).toBe(s.wallNodes);
+    expect(canvas.robotNode).toBe(s.robotNode);
+    expect(canvas.destinationNode).toBe(s.destinationNode);
+    expect(canvas.robotHeading).toBe(s.robotHeading);
+    expect(canvas.isLineVisible).toBe(false);
+    expect(canvas.polylinePoints).toBe("");
+  });
+
+  it("completely shields GameGrid from re-renders when brush controls or parameters change", () => {
+    const engine = new SimulationEngine({ cols: 20, rows: 20 });
+    const s1 = engine.getSnapshot();
+    const canvas1 = selectGridCanvas(s1);
+
+    // Change various brush settings
+    engine.setActiveBrush("dirt");
+    engine.setDirtBrushValue(5);
+    engine.setWaterBrushValue(8);
+    engine.setElevationBrushValue(4);
+    engine.setMaxTraversableSlope(35);
+
+    const s2 = engine.getSnapshot();
+    const canvas2 = selectGridCanvas(s2);
+
+    // The canvas selector is shallowly identical: 0 re-renders for GameGrid!
+    expect(shallowEqual(canvas1, canvas2)).toBe(true);
+  });
+
+  it("re-renders canvas when terrain or dimensions change", () => {
+    const engine = new SimulationEngine({ cols: 20, rows: 20 });
+    const s1 = engine.getSnapshot();
+    const canvas1 = selectGridCanvas(s1);
+
+    engine.setActiveBrush("wall");
+    engine.startPaint("5-5");
+    engine.endPaint();
+    const s2 = engine.getSnapshot();
+    const canvas2 = selectGridCanvas(s2);
+
+    expect(shallowEqual(canvas1, canvas2)).toBe(false);
+    expect(canvas2.wallNodes.has("5-5")).toBe(true);
+  });
+
+  it("computes polyline points when a path is visible", () => {
+    const engine = new SimulationEngine({ cols: 20, rows: 20 });
+    engine.solveInstantly(); // Solves path
+    const s = engine.getSnapshot();
+    const canvas = selectGridCanvas(s);
+
+    expect(canvas.currentPath).not.toBeNull();
+    if (s.isPathVisible && canvas.currentPath && canvas.currentPath.length > 1) {
+      expect(canvas.isLineVisible).toBe(true);
+      expect(canvas.polylinePoints.length).toBeGreaterThan(0);
+      expect(canvas.polylinePoints).toContain(",");
+    }
+  });
+});
+
+describe("simulationHooks - Unified Control Bar Seam", () => {
+  it("projects simulation control state and responds to brush updates", () => {
+    const engine = new SimulationEngine({ cols: 20, rows: 20 });
+    const s1 = engine.getSnapshot();
+    const control1 = selectControlBar(s1);
+
+    expect(control1.activeBrush).toBe("wall");
+    expect(control1.isEnergyAware).toBe(true);
+
+    engine.setDirtBrushValue(7);
+    const s2 = engine.getSnapshot();
+    const control2 = selectControlBar(s2);
+
+    expect(shallowEqual(control1, control2)).toBe(false);
+    expect(control2.dirtBrushValue).toBe(7);
+  });
+});
+

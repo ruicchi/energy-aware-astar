@@ -7,7 +7,8 @@ export interface TerrainGridProps {
   rows: number;
   cols: number;
   cellSize: number;
-  wallNode: Set<string>;
+  wallNodes?: Set<string>;
+  wallNode?: Set<string>;
   terrainFactors: Map<string, number>;
   terrainTypes: Map<string, "dirt" | "water">;
   elevations: Map<string, number>;
@@ -21,6 +22,7 @@ export const TerrainGrid = memo(
     rows,
     cols,
     cellSize,
+    wallNodes,
     wallNode,
     terrainFactors,
     terrainTypes,
@@ -29,6 +31,7 @@ export const TerrainGrid = memo(
     onMouseDown,
     onMouseEnter,
   }: TerrainGridProps) {
+    const walls = wallNodes ?? wallNode ?? new Set<string>();
     const cells = useMemo(() => {
       return Array.from({ length: rows * cols }, (_, index) => {
         const row = Math.floor(index / cols);
@@ -46,7 +49,7 @@ export const TerrainGrid = memo(
       <>
         {cells.map((cell) => {
           const displayState = resolveCellDisplayState({
-            isWall: wallNode.has(cell.key),
+            isWall: walls.has(cell.key),
             isRobot: false,
             isDestination: false,
             terrainFactor: terrainFactors.get(cell.key) || 0,

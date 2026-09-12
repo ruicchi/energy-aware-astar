@@ -12,7 +12,7 @@ import {
 } from "@mui/icons-material";
 import type { Heading } from "../../shared/types";
 import { THEME_CONFIG } from "../../config/simulationConfig";
-import { useSimulationEngine, useSimulationSelector } from "../simulationHooks";
+import { useHeadingControls } from "../simulationHooks";
 
 const HEADINGS: Heading[] = [
   "UP_LEFT",
@@ -39,10 +39,7 @@ const ICON_MAP: Record<Heading, React.ReactNode> = {
 };
 
 export function HeadingControls() {
-  const engine = useSimulationEngine();
-  const robotHeading = useSimulationSelector((s) => s.robotHeading);
-  const selectedAlgo = useSimulationSelector((s) => s.selectedAlgo);
-  const isEnergyAware = selectedAlgo === "energyAware";
+  const { robotHeading, isEnergyAware, setRobotHeading } = useHeadingControls();
 
   return (
     <Box
@@ -81,7 +78,7 @@ export function HeadingControls() {
               aspectRatio: "1/1",
             }}
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => engine.setRobotHeading(h)}
+            onClick={() => setRobotHeading(h)}
           >
             {ICON_MAP[h]}
           </Button>

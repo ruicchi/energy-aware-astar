@@ -67,3 +67,12 @@ _Avoid_: MathHelpers, StatsUtils, AnalysisService
 **Benchmark Reporters**:
 The presentation adapters serializing benchmark telemetry and statistical summaries into structured CSV records and LaTeX `booktabs` tables.
 _Avoid_: TableFormatters, Exporters, LatexGenerators
+
+**Simulation Canvas Seam**:
+The unified domain hook and selector projection (`useGridCanvas`) consolidating grid dimensions, terrain layer collections, kinematic actor orientations, search polyline geometry, and pointer stroke event handlers for canvas rendering.
+_Avoid_: ViewportHooks, CanvasStore, GridSelectors
+
+**Simulation Control Seam**:
+The cohesive domain hooks (`useControlBar`, `useHeadingControls`, `usePathMetrics`) aggregating scenario configuration, brush parameters, algorithm selection, and playback commands across control panels.
+_Avoid_: ControlHooks, ToolRibbonManager, PanelState
+
