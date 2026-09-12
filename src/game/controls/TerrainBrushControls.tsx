@@ -3,6 +3,14 @@ import { TERRAIN_CONFIG, BRUSH_CONFIG, THEME_CONFIG } from "../../config/simulat
 import { getElevationSlopeDegrees } from "../../physics/terrainPhysics";
 import { useSimulationEngine, useBrushState } from "../simulationHooks";
 
+const SLOPE_MARKS = [
+  { value: 5, label: "5°" },
+  { value: 15, label: "15°" },
+  { value: 30, label: "30°" },
+  { value: 45, label: "45°" },
+  { value: 90, label: "90°" },
+];
+
 export function TerrainBrushControls() {
   const engine = useSimulationEngine();
   const {
@@ -10,6 +18,7 @@ export function TerrainBrushControls() {
     dirtBrushValue,
     waterBrushValue,
     elevationBrushValue,
+    maxTraversableSlope,
     showGradients,
   } = useBrushState();
 
@@ -131,12 +140,20 @@ export function TerrainBrushControls() {
               max={BRUSH_CONFIG.dirt.max}
               step={BRUSH_CONFIG.dirt.step}
               marks={[
-                { value: BRUSH_CONFIG.dirt.min, label: String(BRUSH_CONFIG.dirt.min) },
+                {
+                  value: BRUSH_CONFIG.dirt.min,
+                  label: String(BRUSH_CONFIG.dirt.min),
+                },
                 { value: 1, label: "1" },
                 { value: 2.5, label: "2.5" },
-                { value: BRUSH_CONFIG.dirt.max, label: String(BRUSH_CONFIG.dirt.max) },
+                {
+                  value: BRUSH_CONFIG.dirt.max,
+                  label: String(BRUSH_CONFIG.dirt.max),
+                },
               ]}
-              onChange={(_, value) => engine.setDirtBrushValue(Number((value as number).toFixed(1)))}
+              onChange={(_, value) =>
+                engine.setDirtBrushValue(Number((value as number).toFixed(1)))
+              }
               onPointerDown={(e) => e.stopPropagation()}
             />
           </Box>
@@ -165,12 +182,20 @@ export function TerrainBrushControls() {
               max={BRUSH_CONFIG.water.max}
               step={BRUSH_CONFIG.water.step}
               marks={[
-                { value: BRUSH_CONFIG.water.min, label: String(BRUSH_CONFIG.water.min) },
+                {
+                  value: BRUSH_CONFIG.water.min,
+                  label: String(BRUSH_CONFIG.water.min),
+                },
                 { value: 1, label: "1" },
                 { value: 2.5, label: "2.5" },
-                { value: BRUSH_CONFIG.water.max, label: String(BRUSH_CONFIG.water.max) },
+                {
+                  value: BRUSH_CONFIG.water.max,
+                  label: String(BRUSH_CONFIG.water.max),
+                },
               ]}
-              onChange={(_, value) => engine.setWaterBrushValue(Number((value as number).toFixed(1)))}
+              onChange={(_, value) =>
+                engine.setWaterBrushValue(Number((value as number).toFixed(1)))
+              }
               onPointerDown={(e) => e.stopPropagation()}
             />
           </Box>
@@ -185,7 +210,7 @@ export function TerrainBrushControls() {
             mt: 1,
             display: "flex",
             flexDirection: "column",
-            gap: 1,
+            gap: 1.5,
           }}
         >
           <Box>
@@ -209,6 +234,36 @@ export function TerrainBrushControls() {
               onPointerDown={(e) => e.stopPropagation()}
             />
           </Box>
+
+          <Box>
+            <Tooltip
+              title={`Maximum slope angle the robot can traverse: ${maxTraversableSlope}°`}
+              arrow
+              placement="top"
+            >
+              <Typography variant="caption" color="textSecondary" sx={{ cursor: "default" }}>
+                Max Traversable Slope: {maxTraversableSlope}°
+              </Typography>
+            </Tooltip>
+            <Slider
+              size="small"
+              value={maxTraversableSlope}
+              min={BRUSH_CONFIG.maxTraversableSlope.min}
+              max={BRUSH_CONFIG.maxTraversableSlope.max}
+              step={BRUSH_CONFIG.maxTraversableSlope.step}
+              marks={SLOPE_MARKS}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(v) => `${v}°`}
+              onChange={(_, value) => engine.setMaxTraversableSlope(value as number)}
+              onPointerDown={(e) => e.stopPropagation()}
+              sx={{
+                "& .MuiSlider-markLabel": {
+                  fontSize: "0.68rem",
+                },
+              }}
+            />
+          </Box>
+
           <Button
             variant={showGradients ? "contained" : "outlined"}
             size="small"

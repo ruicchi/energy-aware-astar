@@ -8,7 +8,6 @@ import type {
 import {
   VEHICLE_CONFIG,
   ENERGY_CONFIG,
-  TERRAIN_CONFIG,
   ANIMATION_CONFIG,
   GRID_CONFIG,
   BRUSH_CONFIG,
@@ -125,6 +124,7 @@ export interface SimulationState {
   elevationBrushValue: number;
   dirtBrushValue: number;
   waterBrushValue: number;
+  maxTraversableSlope: number;
   showGradients: boolean;
   robotHeading: Heading;
   selectedAlgo: AlgorithmType;
@@ -169,6 +169,7 @@ export interface SimulationEngineOptions {
   initialElevations?: Map<string, number>;
   initialHeading?: Heading;
   initialAlgo?: AlgorithmType;
+  initialMaxTraversableSlope?: number;
   domAdapter?: SimulationDomAdapter;
 }
 
@@ -192,7 +193,8 @@ export class SimulationEngine {
   private cellSize: number;
   private isFixedDimensions: boolean = false;
   private loadedScenarioName: string | null = null;
-  private maxTraversableSlope: number | null = null;
+  private defaultMaxTraversableSlope: number;
+  private maxTraversableSlope: number;
   private initialScenarioHeading: Heading = VEHICLE_CONFIG.defaultHeading;
   private initialHeading: Heading = VEHICLE_CONFIG.defaultHeading;
   private freeformCols: number;
@@ -269,6 +271,9 @@ export class SimulationEngine {
     this.terrainFactors = new Map(options.initialTerrainFactors ?? []);
     this.terrainTypes = new Map(options.initialTerrainTypes ?? []);
     this.elevations = new Map(options.initialElevations ?? []);
+    this.defaultMaxTraversableSlope =
+      options.initialMaxTraversableSlope ?? VEHICLE_CONFIG.maxTraversableSlope;
+    this.maxTraversableSlope = this.defaultMaxTraversableSlope;
     this.robotHeading = this.initialHeading;
     this.selectedAlgo = options.initialAlgo ?? "energyAware";
     this.domAdapter = options.domAdapter ?? createDefaultDomAdapter();
@@ -306,6 +311,7 @@ export class SimulationEngine {
       elevationBrushValue: this.elevationBrushValue,
       dirtBrushValue: this.dirtBrushValue,
       waterBrushValue: this.waterBrushValue,
+      maxTraversableSlope: this.maxTraversableSlope,
       showGradients: this.showGradients,
       robotHeading: this.robotHeading,
       selectedAlgo: this.selectedAlgo,
@@ -393,13 +399,13 @@ export class SimulationEngine {
       elevations: this.elevations,
       climbingFactor: ENERGY_CONFIG.climbingFactor,
       turnPenalty: ENERGY_CONFIG.turnPenalty,
-      maxTraversableSlope:
-        this.maxTraversableSlope ??
-        VEHICLE_CONFIG.maxTraversableSlope ??
-        TERRAIN_CONFIG.defaultMaxTraversableSlope,
+      maxTraversableSlope: this.maxTraversableSlope,
       initialHeading: this.robotHeading,
       showGradients: this.showGradients,
-      robotPhysics: VEHICLE_CONFIG,
+      robotPhysics: {
+        ...VEHICLE_CONFIG,
+        maxTraversableSlope: this.maxTraversableSlope,
+      },
     };
   }
 
@@ -470,9 +476,28 @@ export class SimulationEngine {
   }
 
   public setMaxTraversableSlope(slope: number | null): void {
-    if (this.maxTraversableSlope === slope) return;
-    this.maxTraversableSlope = slope;
-    this.notify();
+    const nextSlope = slope ?? this.defaultMaxTraversableSlope;
+    if (this.maxTraversableSlope === nextSlope) return;
+    this.maxTraversableSlope = nextSlope;
+    if (slope !== null && !this.isFixedDimensions) {
+      this.defaultMaxTraversableSlope = nextSlope;
+    }
+    if (this.isPathVisible && !this.isAnimating && !this.isWalking) {
+      this.solveInstantly(this.selectedAlgo);
+    } else {
+      this.notify();
+    }
+  }
+
+  public getDefaultMaxTraversableSlope(): number {
+    return this.defaultMaxTraversableSlope;
+  }
+
+  public setDefaultMaxTraversableSlope(slope: number): void {
+    this.defaultMaxTraversableSlope = slope;
+    if (!this.isFixedDimensions) {
+      this.setMaxTraversableSlope(slope);
+    }
   }
 
   public setSelectedAlgo(algo: AlgorithmType, instantSolveIfPathVisible = true): void {
@@ -927,7 +952,7 @@ export class SimulationEngine {
     this.maxTraversableSlope =
       scenario.maxTraversableSlope ??
       scenario.robotPhysics?.maxTraversableSlope ??
-      VEHICLE_CONFIG.maxTraversableSlope;
+      this.defaultMaxTraversableSlope;
 
     if (this.elevations.size > 0) {
       this.showGradients = true;
@@ -1012,7 +1037,7 @@ export class SimulationEngine {
   public resetToFreeform(cols?: number, rows?: number, cellSize?: number): void {
     this.isFixedDimensions = false;
     this.loadedScenarioName = null;
-    this.maxTraversableSlope = null;
+    this.maxTraversableSlope = this.defaultMaxTraversableSlope;
     this.initialScenarioHeading = VEHICLE_CONFIG.defaultHeading;
     this.robotHeading = this.initialHeading;
     this.showGradients = false;
@@ -1077,7 +1102,7 @@ export class SimulationEngine {
     this.clearWallsInternal();
 
     if (!this.isFixedDimensions) {
-      this.maxTraversableSlope = null;
+      this.maxTraversableSlope = this.defaultMaxTraversableSlope;
       this.initialScenarioHeading = VEHICLE_CONFIG.defaultHeading;
     }
 

@@ -111,4 +111,30 @@ describe("simulationHooks - Sliced Selectors & Re-render Isolation", () => {
     // Terrain grid cells do not re-render
     expect(shallowEqual(terrainSlice1, terrainSlice2)).toBe(true);
   });
+
+  it("isolates slope updates: maxTraversableSlope updates brush slice without affecting grid dimensions", () => {
+    const engine = new SimulationEngine({ cols: 20, rows: 20 });
+    const s1 = engine.getSnapshot();
+
+    const brushSlice1 = {
+      activeBrush: s1.activeBrush,
+      elevationBrushValue: s1.elevationBrushValue,
+      maxTraversableSlope: s1.maxTraversableSlope,
+    };
+    const gridSlice1 = { cols: s1.cols, rows: s1.rows, cellSize: s1.cellSize };
+
+    engine.setMaxTraversableSlope(45);
+    const s2 = engine.getSnapshot();
+
+    const brushSlice2 = {
+      activeBrush: s2.activeBrush,
+      elevationBrushValue: s2.elevationBrushValue,
+      maxTraversableSlope: s2.maxTraversableSlope,
+    };
+    const gridSlice2 = { cols: s2.cols, rows: s2.rows, cellSize: s2.cellSize };
+
+    expect(shallowEqual(brushSlice1, brushSlice2)).toBe(false);
+    expect(brushSlice2.maxTraversableSlope).toBe(45);
+    expect(shallowEqual(gridSlice1, gridSlice2)).toBe(true);
+  });
 });

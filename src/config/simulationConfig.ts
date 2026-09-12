@@ -82,6 +82,13 @@ export const BRUSH_CONFIG = {
     step: 1,
     defaultValue: 5,
   },
+  maxTraversableSlope: {
+    min: 5,
+    max: 90,
+    step: 1,
+    defaultValue: VEHICLE_CONFIG.maxTraversableSlope,
+    checkpoints: [15, 30, 45],
+  },
 } as const;
 
 export const UI_CONFIG = {

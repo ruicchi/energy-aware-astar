@@ -771,6 +771,73 @@ describe("SimulationEngine", () => {
       expect(snapshot.robotNode).toBe("14-19");
       expect(snapshot.destinationNode).toBe("14-19");
     });
+
+    it("configures max traversable slope, propagates to scenario physics, and preserves default across reset", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 20,
+        rows: 20,
+        initialRobotNode: "2-2",
+        initialDestinationNode: "10-10",
+        domAdapter,
+      });
+
+      // Starts at default vehicle max traversable slope (30 deg)
+      expect(engine.getSnapshot().maxTraversableSlope).toBe(30);
+      expect(engine.getDefaultMaxTraversableSlope()).toBe(30);
+      expect(engine.getScenario().maxTraversableSlope).toBe(30);
+      expect(engine.getScenario().robotPhysics?.maxTraversableSlope).toBe(30);
+
+      // Updates configurable slope to 45 deg
+      engine.setMaxTraversableSlope(45);
+      expect(engine.getSnapshot().maxTraversableSlope).toBe(45);
+      expect(engine.getDefaultMaxTraversableSlope()).toBe(45);
+      expect(engine.getScenario().maxTraversableSlope).toBe(45);
+      expect(engine.getScenario().robotPhysics?.maxTraversableSlope).toBe(45);
+
+      // Reset retains configured default max slope
+      engine.reset();
+      expect(engine.getSnapshot().maxTraversableSlope).toBe(45);
+      expect(engine.getDefaultMaxTraversableSlope()).toBe(45);
+
+      // Reset to freeform retains configured default max slope
+      engine.resetToFreeform();
+      expect(engine.getSnapshot().maxTraversableSlope).toBe(45);
+    });
+
+    it("re-solves path immediately when maxTraversableSlope changes while a path is visible", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "2-0",
+        initialMaxTraversableSlope: 20,
+        domAdapter,
+      });
+
+      // Place an elevation step of 1 on 1-0.
+      // Nominal slope for elevation 1 is ~26.6 deg, exceeding initial 20 deg max slope.
+      engine.setActiveBrush("elevation");
+      engine.setElevationBrushValue(1);
+      engine.startPaint("1-0");
+      engine.endPaint();
+
+      // Solve instantly with energyAware
+      engine.solveInstantly("energyAware");
+      const pathWith20Deg = engine.getSnapshot().currentPath;
+      // Because slope (26.6 deg) exceeds 20 deg, path must steer around 1-0 or avoid direct traversal
+      expect(pathWith20Deg).not.toBeNull();
+      expect(pathWith20Deg).not.toContain("1-0");
+
+      // Now increase max traversable slope to 35 deg (which accommodates 26.6 deg)
+      engine.setMaxTraversableSlope(35);
+      const snapshotAfterUpdate = engine.getSnapshot();
+      expect(snapshotAfterUpdate.maxTraversableSlope).toBe(35);
+      expect(snapshotAfterUpdate.isPathVisible).toBe(true);
+      // Path now traverses directly through 1-0 since slope <= 35 deg is allowed!
+      expect(snapshotAfterUpdate.currentPath).toContain("1-0");
+    });
   });
 });
 

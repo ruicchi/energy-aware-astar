@@ -150,6 +150,7 @@ export function useBrushState() {
       elevationBrushValue: s.elevationBrushValue,
       dirtBrushValue: s.dirtBrushValue,
       waterBrushValue: s.waterBrushValue,
+      maxTraversableSlope: s.maxTraversableSlope,
       showGradients: s.showGradients,
       robotHeading: s.robotHeading,
       activeStrokeBrush: s.activeStrokeBrush,
