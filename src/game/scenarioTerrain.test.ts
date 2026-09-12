@@ -1,57 +1,36 @@
 import { describe, it, expect, vi } from "vitest";
 import { ScenarioTerrain, type PaintContext } from "./scenarioTerrain";
 import { GridPaintBuffer } from "./gridPaintBuffer";
-import type { SimulationDomAdapter, SimulationDomElement } from "./simulationEngine";
+import {
+  MemoryVisualizer,
+  type SimulationVisualizer,
+} from "./simulationVisualizer";
 import { TERRAIN_CONFIG } from "../config/simulationConfig";
 
 describe("ScenarioTerrain (Deep Terrain Model)", () => {
   function createMockDomAdapter() {
-    const domStore = new Map<
-      string,
-      { bg: string; classes: Set<string>; dataset: Record<string, string | undefined> }
-    >();
+    const visualizer = new MemoryVisualizer();
+    const resetRobot = vi.spyOn(visualizer, "resetRobot");
 
-    function getCellElement(key: string): SimulationDomElement {
-      if (!domStore.has(key)) {
-        domStore.set(key, { bg: "", classes: new Set(), dataset: {} });
-      }
-      const record = domStore.get(key)!;
-
-      return {
-        style: {
-          get backgroundColor() {
-            return record.bg;
+    const domStore = {
+      get(key: string) {
+        const p = visualizer.previews.get(key);
+        if (!p) return undefined;
+        return {
+          bg: p.color,
+          classes: {
+            has: (c: string) => (c === "is-wall" ? Boolean(p.isWall) : false),
           },
-          set backgroundColor(val: string) {
-            record.bg = val;
-          },
-        },
-        classList: {
-          add(c: string) {
-            record.classes.add(c);
-          },
-          remove(c: string) {
-            record.classes.delete(c);
-          },
-        },
-        dataset: record.dataset,
-      };
-    }
-
-    const clearAllSearchVisuals = vi.fn();
-    const setRobotPosition = vi.fn();
-    const setRobotHeading = vi.fn();
-    const resetRobot = vi.fn();
-
-    const domAdapter: SimulationDomAdapter = {
-      getCellElement,
-      clearAllSearchVisuals,
-      setRobotPosition,
-      setRobotHeading,
-      resetRobot,
+        };
+      },
     };
 
-    return { domAdapter, domStore, resetRobot };
+    return {
+      visualizer,
+      domAdapter: visualizer as SimulationVisualizer,
+      domStore,
+      resetRobot,
+    };
   }
 
   function createContext(overrides: Partial<PaintContext> = {}): PaintContext {

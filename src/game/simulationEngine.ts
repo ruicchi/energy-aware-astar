@@ -10,11 +10,8 @@ import {
   ANIMATION_CONFIG,
   GRID_CONFIG,
   BRUSH_CONFIG,
-  getHeadingRotation,
 } from "../config/simulationConfig";
 import {
-  getHeading,
-  isTraversableSlope,
   evaluatePathSafety,
 } from "../physics/terrainPhysics";
 import { findPath } from "../algorithms/astar";
@@ -29,6 +26,23 @@ import {
   ScenarioTerrain,
   type PaintContext,
 } from "./scenarioTerrain";
+import {
+  SimulationPlayback,
+  compileSearchTimeline,
+  compileWalkTimeline,
+  type TimelineFrame,
+  type PlaybackStatus,
+} from "./simulationPlayback";
+import {
+  type SimulationVisualizer,
+  DomVisualizer,
+  NullVisualizer,
+  MemoryVisualizer,
+  createDefaultVisualizer,
+  type SimulationDomAdapter,
+  type SimulationDomElement,
+  createDefaultDomAdapter,
+} from "./simulationVisualizer";
 
 export {
   SCENARIO_PRESETS,
@@ -36,75 +50,20 @@ export {
   type ScenarioPresetDescriptor,
   ScenarioTerrain,
   ScenarioTerrain as GridPaintBuffer,
+  SimulationPlayback,
+  compileSearchTimeline,
+  compileWalkTimeline,
+  type TimelineFrame,
+  type PlaybackStatus,
+  type SimulationVisualizer,
+  DomVisualizer,
+  NullVisualizer,
+  MemoryVisualizer,
+  createDefaultVisualizer,
+  type SimulationDomAdapter,
+  type SimulationDomElement,
+  createDefaultDomAdapter,
 };
-
-export interface SimulationDomElement {
-  style: { backgroundColor: string };
-  classList: {
-    add: (className: string) => void;
-    remove: (className: string) => void;
-  };
-  dataset: Record<string, string | undefined>;
-}
-
-export interface SimulationDomAdapter {
-  getCellElement: (key: string) => SimulationDomElement | null;
-  clearAllSearchVisuals: () => void;
-  setRobotPosition: (col: number, row: number, cellSize: number, animated?: boolean) => void;
-  setRobotHeading: (heading: Heading, animated?: boolean) => void;
-  resetRobot: (col: number, row: number, heading: Heading, cellSize: number) => void;
-}
-
-export function createDefaultDomAdapter(): SimulationDomAdapter {
-  return {
-    getCellElement(key: string) {
-      if (typeof document === "undefined") return null;
-      return document.getElementById(`cell-${key}`) as unknown as SimulationDomElement | null;
-    },
-    clearAllSearchVisuals() {
-      if (typeof document === "undefined") return;
-      document.querySelectorAll("[data-manhattan], [data-energy], [data-path]").forEach((el) => {
-        const node = el as HTMLElement;
-        delete node.dataset.manhattan;
-        delete node.dataset.energy;
-        delete node.dataset.path;
-      });
-    },
-    setRobotPosition(col: number, row: number, cellSize: number, animated = false) {
-      if (typeof document === "undefined") return;
-      const node = document.getElementById("robot-actor");
-      if (node) {
-        node.style.transition = animated ? "transform 0.2s linear" : "none";
-        node.style.willChange = animated ? "transform" : "auto";
-        node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
-      }
-    },
-    setRobotHeading(heading: Heading, animated = false) {
-      if (typeof document === "undefined") return;
-      const node = document.getElementById("robot-actor-arrow");
-      if (node) {
-        node.style.display = heading && heading !== "NONE" ? "block" : "none";
-        node.style.transition = animated ? "transform 0.2s ease-in-out" : "none";
-        node.style.transform = `rotate(${getHeadingRotation(heading)})`;
-      }
-    },
-    resetRobot(col: number, row: number, heading: Heading, cellSize: number) {
-      if (typeof document === "undefined") return;
-      const node = document.getElementById("robot-actor");
-      if (node) {
-        node.style.transition = "none";
-        node.style.willChange = "auto";
-        node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
-      }
-      const arrowNode = document.getElementById("robot-actor-arrow");
-      if (arrowNode) {
-        arrowNode.style.display = heading && heading !== "NONE" ? "block" : "none";
-        arrowNode.style.transition = "none";
-        arrowNode.style.transform = `rotate(${getHeadingRotation(heading)})`;
-      }
-    },
-  };
-}
 
 export interface SimulationState {
   // Dimensions
@@ -138,6 +97,7 @@ export interface SimulationState {
   isWalking: boolean;
   hasFinishedWalking: boolean;
   isLocked: boolean;
+  isPaused: boolean;
 
   // Search & Path Telemetry State
   isManhattanFinished: boolean;
@@ -173,7 +133,9 @@ export interface SimulationEngineOptions {
   initialHeading?: Heading;
   initialAlgo?: AlgorithmType;
   initialMaxTraversableSlope?: number;
-  domAdapter?: SimulationDomAdapter;
+  visualizer?: SimulationVisualizer;
+  /** Backwards compatibility alias for visualizer */
+  domAdapter?: SimulationVisualizer;
 }
 
 
@@ -234,10 +196,9 @@ export class SimulationEngine {
     isSafe?: boolean;
     safetyFailureReason?: string;
   } | null = null;
-  private domAdapter: SimulationDomAdapter;
+  private visualizer: SimulationVisualizer;
   private listeners: Set<() => void> = new Set();
-  private activeTimeouts: ReturnType<typeof setTimeout>[] = [];
-  private currentRunId: number = 0;
+  private playback: SimulationPlayback = new SimulationPlayback();
   private cachedSnapshot: SimulationState | null = null;
 
   constructor(options: SimulationEngineOptions = {}) {
@@ -253,8 +214,7 @@ export class SimulationEngine {
     this.initialDestinationNode = options.initialDestinationNode ?? null;
     this.initialHeading = options.initialHeading ?? VEHICLE_CONFIG.defaultHeading;
 
-
-    this.domAdapter = options.domAdapter ?? createDefaultDomAdapter();
+    this.visualizer = options.visualizer ?? options.domAdapter ?? createDefaultVisualizer();
     this.terrain = new ScenarioTerrain({
       cols: this.cols,
       rows: this.rows,
@@ -264,7 +224,7 @@ export class SimulationEngine {
       initialTerrainFactors: options.initialTerrainFactors,
       initialTerrainTypes: options.initialTerrainTypes,
       initialElevations: options.initialElevations,
-      domAdapter: this.domAdapter,
+      visualizer: this.visualizer,
     });
     this.defaultMaxTraversableSlope =
       options.initialMaxTraversableSlope ?? VEHICLE_CONFIG.maxTraversableSlope;
@@ -315,6 +275,7 @@ export class SimulationEngine {
       isWalking: this.isWalking,
       hasFinishedWalking: this.hasFinishedWalking,
       isLocked: this.isAnimating || this.isWalking,
+      isPaused: this.playback.isPaused(),
       isManhattanFinished: this.isManhattanFinished,
       isEnergyFinished: this.isEnergyFinished,
       showManhattanSearch: this.showManhattanSearch,
@@ -351,7 +312,7 @@ export class SimulationEngine {
       if (this.cellSize !== cellSize) {
         this.cellSize = cellSize;
         const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-        this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+        this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
         this.notify();
       }
       return;
@@ -367,7 +328,7 @@ export class SimulationEngine {
     this.cellSize = cellSize;
 
     const { clampedRobotR, clampedRobotC } = this.terrain.setDimensions(cols, rows);
-    this.domAdapter.resetRobot(clampedRobotC, clampedRobotR, this.robotHeading, this.cellSize);
+    this.visualizer.resetRobot(clampedRobotC, clampedRobotR, this.robotHeading, this.cellSize);
     this.notify();
   }
 
@@ -426,7 +387,7 @@ export class SimulationEngine {
   public setRobotHeading(heading: Heading): void {
     if (this.robotHeading === heading) return;
     this.robotHeading = heading;
-    this.domAdapter.setRobotHeading(heading, false);
+    this.visualizer.setRobotHeading(heading, false);
     this.notify();
   }
 
@@ -460,10 +421,10 @@ export class SimulationEngine {
     this.selectedAlgo = algo;
     if (algo !== "energyAware") {
       this.robotHeading = "NONE";
-      this.domAdapter.setRobotHeading("NONE", false);
+      this.visualizer.setRobotHeading("NONE", false);
     } else if (this.loadedScenarioName && this.initialScenarioHeading !== "NONE") {
       this.robotHeading = this.initialScenarioHeading;
-      this.domAdapter.setRobotHeading(this.robotHeading, false);
+      this.visualizer.setRobotHeading(this.robotHeading, false);
     }
 
     if (
@@ -572,18 +533,51 @@ export class SimulationEngine {
   }
 
 
-  // --- Animation & Timer Management ---
+  // --- Animation & Simulation Playback Management ---
 
   private clearTimers(): void {
-    for (const id of this.activeTimeouts) {
-      clearTimeout(id);
+    this.playback.stop();
+  }
+
+  public getPlayback(): SimulationPlayback {
+    return this.playback;
+  }
+
+  public getVisualizer(): SimulationVisualizer {
+    return this.visualizer;
+  }
+
+  public pausePlayback(): void {
+    if (this.playback.isPlaying()) {
+      this.playback.pause();
+      this.notify();
     }
-    this.activeTimeouts = [];
+  }
+
+  public resumePlayback(): void {
+    if (this.playback.isPaused()) {
+      this.playback.resume();
+      this.notify();
+    }
+  }
+
+  public stepPlayback(): boolean {
+    const stepped = this.playback.step();
+    if (stepped) {
+      this.notify();
+    }
+    return stepped;
+  }
+
+  public flushPlayback(): void {
+    if (this.playback.isPlaying() || this.playback.isPaused()) {
+      this.playback.flush();
+    }
   }
 
   public clearAnimations(): void {
     this.clearTimers();
-    this.domAdapter.clearAllSearchVisuals();
+    this.visualizer.clearSearchVisuals();
 
     this.isManhattanFinished = false;
     this.isEnergyFinished = false;
@@ -602,7 +596,7 @@ export class SimulationEngine {
     this.pathMetrics = null;
 
     const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     this.notify();
   }
@@ -611,11 +605,9 @@ export class SimulationEngine {
 
   public visualize(algoToRun?: AlgorithmType): void {
     const algo = algoToRun ?? this.selectedAlgo;
-    this.currentRunId += 1;
-    const runId = this.currentRunId;
 
     this.clearTimers();
-    this.domAdapter.clearAllSearchVisuals();
+    this.visualizer.clearSearchVisuals();
 
     this.isManhattanFinished = false;
     this.isEnergyFinished = false;
@@ -625,7 +617,7 @@ export class SimulationEngine {
     this.walkingStep = -1;
 
     const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     const scenario = this.getScenario();
 
@@ -664,23 +656,15 @@ export class SimulationEngine {
 
     const searchAttr = theme === "manhattan" ? "manhattan" : "energy";
 
-    // Schedule visited search node animations
-    for (let i = 0; i < visitedNodesInOrder.length; i++) {
-      const timeout = setTimeout(() => {
-        if (runId !== this.currentRunId) return;
-        const { key, type } = visitedNodesInOrder[i];
-        const node = this.domAdapter.getCellElement(key);
-        if (node) {
-          node.dataset[searchAttr] = type;
-        }
-      }, ANIMATION_CONFIG.searchStepDelayMs * i);
-      this.activeTimeouts.push(timeout);
-    }
+    const frames = compileSearchTimeline({
+      visitedNodes: visitedNodesInOrder,
+      delayMs: ANIMATION_CONFIG.searchStepDelayMs,
+      onVisit: (node) => {
+        this.visualizer.renderSearchNode(node.key, node.type, searchAttr);
+      },
+    });
 
-    const pathDelay = visitedNodesInOrder.length * ANIMATION_CONFIG.searchStepDelayMs;
-
-    const finishTimeout = setTimeout(() => {
-      if (runId !== this.currentRunId) return;
+    this.playback.play(frames, () => {
       if (shortestPath.length > 0) {
         this.isPathVisible = true;
       }
@@ -692,8 +676,7 @@ export class SimulationEngine {
         this.isEnergyFinished = true;
       }
       this.notify();
-    }, pathDelay);
-    this.activeTimeouts.push(finishTimeout);
+    });
   }
 
   // --- Kinematic Path Traversal (Robot Walk) ---
@@ -710,9 +693,7 @@ export class SimulationEngine {
       return;
     }
 
-    this.currentRunId += 1;
-    const runId = this.currentRunId;
-
+    this.clearTimers();
     this.isWalking = true;
     this.hasFinishedWalking = false;
     this.walkFailure = null;
@@ -720,75 +701,42 @@ export class SimulationEngine {
     this.playbackStatus = "walking";
     this.notify();
 
-    let cumulativeDelay = ANIMATION_CONFIG.walkStepDelayMs;
-    let currentRobotHeading: Heading = this.robotHeading;
-    const path = this.currentPath;
     const scenario = this.getScenario();
 
-    for (let i = 1; i < path.length; i++) {
-      const [prevR, prevC] = path[i - 1].split("-").map(Number);
-      const [currR, currC] = path[i].split("-").map(Number);
-      const nextHeading = getHeading(path[i - 1], path[i]);
+    const frames = compileWalkTimeline({
+      path: this.currentPath,
+      initialHeading: this.robotHeading,
+      scenario,
+      stepDelayMs: ANIMATION_CONFIG.walkStepDelayMs,
+      rotateDelayMs: ANIMATION_CONFIG.walkRotateDelayMs,
+      onRotate: (heading) => {
+        this.robotHeading = heading;
+        this.visualizer.setRobotHeading(heading, true);
+      },
+      onStep: (col, row, stepIndex) => {
+        this.walkingStep = stepIndex;
+        this.visualizer.setRobotPosition(col, row, this.cellSize, true);
+      },
+      onFailure: (failure) => {
+        this.walkFailure = failure;
+      },
+    });
 
-      const isSafe = isTraversableSlope(
-        { row: prevR, col: prevC },
-        { row: currR, col: currC, heading: nextHeading },
-        scenario,
-      );
-
-      if (!isSafe) {
-        const failTimeout = setTimeout(() => {
-          if (runId !== this.currentRunId) return;
-          this.isWalking = false;
-          this.hasFinishedWalking = true;
-          this.playbackStatus = "idle";
-          this.walkFailure = {
-            row: currR,
-            col: currC,
-            reason: "ROBOT TIPPED OVER",
-          };
-          this.notify();
-        }, cumulativeDelay);
-        this.activeTimeouts.push(failTimeout);
-        break;
-      }
-
-      if (
-        currentRobotHeading !== "NONE" &&
-        nextHeading !== "NONE" &&
-        nextHeading !== currentRobotHeading
-      ) {
-        const rotateTimeout = setTimeout(() => {
-          if (runId !== this.currentRunId) return;
-          this.robotHeading = nextHeading;
-          this.domAdapter.setRobotHeading(nextHeading, true);
-        }, cumulativeDelay);
-        this.activeTimeouts.push(rotateTimeout);
-
-        cumulativeDelay += ANIMATION_CONFIG.walkRotateDelayMs;
-        currentRobotHeading = nextHeading;
-      }
-
-      const moveTimeout = setTimeout(() => {
-        if (runId !== this.currentRunId) return;
-        this.walkingStep = i;
-        this.domAdapter.setRobotPosition(currC, currR, this.cellSize, true);
-
-        if (i === path.length - 1) {
-          const finishTimeout = setTimeout(() => {
-            if (runId !== this.currentRunId) return;
-            this.isWalking = false;
-            this.hasFinishedWalking = true;
-            this.playbackStatus = "idle";
-            this.notify();
-          }, ANIMATION_CONFIG.walkStepDelayMs);
-          this.activeTimeouts.push(finishTimeout);
-        }
-      }, cumulativeDelay);
-
-      this.activeTimeouts.push(moveTimeout);
-      cumulativeDelay += ANIMATION_CONFIG.walkStepDelayMs;
+    // If walk completed safely, append settle frame matching robot kinematic slide duration
+    if (frames.length > 0 && !frames[frames.length - 1].tag?.startsWith("walk-fail")) {
+      frames.push({
+        delayMs: ANIMATION_CONFIG.walkStepDelayMs,
+        execute: () => {},
+        tag: "walk-settle",
+      });
     }
+
+    this.playback.play(frames, () => {
+      this.isWalking = false;
+      this.hasFinishedWalking = true;
+      this.playbackStatus = "idle";
+      this.notify();
+    });
   }
 
   // --- Scenario Loading & Instant Solving ---
@@ -832,9 +780,8 @@ export class SimulationEngine {
   ): void {
     const { name = "Test Scenario", instantSolve = true } = options;
 
-    this.currentRunId += 1;
     this.clearTimers();
-    this.domAdapter.clearAllSearchVisuals();
+    this.visualizer.clearSearchVisuals();
 
     this.isFixedDimensions = true;
     this.loadedScenarioName = name;
@@ -860,7 +807,7 @@ export class SimulationEngine {
     this.walkFailure = null;
 
     const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     if (instantSolve) {
       this.solveInstantly(this.selectedAlgo);
@@ -878,7 +825,7 @@ export class SimulationEngine {
   public solveInstantly(algoToRun?: AlgorithmType): void {
     const algo = algoToRun ?? this.selectedAlgo;
     this.clearTimers();
-    this.domAdapter.clearAllSearchVisuals();
+    this.visualizer.clearSearchVisuals();
 
     this.isWalking = false;
     this.hasFinishedWalking = false;
@@ -886,7 +833,7 @@ export class SimulationEngine {
     this.walkingStep = -1;
 
     const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     const scenario = this.getScenario();
 
@@ -972,9 +919,8 @@ export class SimulationEngine {
   // --- Reset Simulation State ---
 
   public reset(): void {
-    this.currentRunId += 1;
     this.clearTimers();
-    this.domAdapter.clearAllSearchVisuals();
+    this.visualizer.clearSearchVisuals();
 
     this.terrain.clearAll();
 
@@ -1000,7 +946,7 @@ export class SimulationEngine {
     this.pathMetrics = null;
 
     const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-    this.domAdapter.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     this.notify();
   }

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   SimulationEngine,
-  type SimulationDomAdapter,
-  type SimulationDomElement,
+  type SimulationVisualizer,
+  MemoryVisualizer,
 } from "./simulationEngine";
 import type { Scenario } from "../shared/types";
 
@@ -16,60 +16,65 @@ describe("SimulationEngine", () => {
   });
 
   function createMockDomAdapter() {
-    const domStore = new Map<
-      string,
-      { bg: string; classes: Set<string>; dataset: Record<string, string | undefined> }
-    >();
+    const visualizer = new MemoryVisualizer();
+    const setRobotPosition = vi.spyOn(visualizer, "setRobotPosition");
+    const setRobotHeading = vi.spyOn(visualizer, "setRobotHeading");
+    const resetRobot = vi.spyOn(visualizer, "resetRobot");
 
-    function getCellElement(key: string): SimulationDomElement {
-      if (!domStore.has(key)) {
-        domStore.set(key, { bg: "", classes: new Set(), dataset: {} });
-      }
-      const record = domStore.get(key)!;
-
-      return {
-        style: {
-          get backgroundColor() {
-            return record.bg;
+    const domStore = {
+      get(key: string) {
+        const p = visualizer.previews.get(key);
+        const searchNodes = visualizer.searchNodes.filter((n) => n.key === key);
+        const dataset: Record<string, string | undefined> = {};
+        for (const s of searchNodes) {
+          dataset[s.theme] = s.type;
+        }
+        const classes = {
+          _set: new Set(p?.isWall ? ["is-wall"] : []),
+          has(c: string) {
+            if (c === "is-wall") {
+              if (p?.isWall !== undefined) return p.isWall;
+            }
+            return this._set.has(c);
           },
-          set backgroundColor(val: string) {
-            record.bg = val;
-          },
-        },
-        classList: {
           add(c: string) {
-            record.classes.add(c);
+            this._set.add(c);
+            if (c === "is-wall") {
+              visualizer.previewCell(key, p?.color ?? "", true);
+            }
           },
-          remove(c: string) {
-            record.classes.delete(c);
+          delete(c: string) {
+            this._set.delete(c);
+            if (c === "is-wall") {
+              visualizer.previewCell(key, p?.color ?? "", false);
+            }
           },
-        },
-        dataset: record.dataset,
-      };
-    }
+        };
+        return {
+          bg: p?.color ?? "",
+          classes,
+          dataset,
+        };
+      },
+      values() {
+        const byKey = new Map<string, Record<string, string | undefined>>();
+        for (const s of visualizer.searchNodes) {
+          if (!byKey.has(s.key)) byKey.set(s.key, {});
+          byKey.get(s.key)![s.theme] = s.type;
+        }
+        return Array.from(byKey.values()).map((dataset) => ({ dataset }));
+      },
+    };
 
-    function clearAllSearchVisuals() {
-      for (const record of domStore.values()) {
-        delete record.dataset.manhattan;
-        delete record.dataset.energy;
-        delete record.dataset.path;
-      }
-    }
-
-    const setRobotPosition = vi.fn();
-    const setRobotHeading = vi.fn();
-    const resetRobot = vi.fn();
-
-    const domAdapter: SimulationDomAdapter = {
-      getCellElement,
-      clearAllSearchVisuals,
+    return {
+      visualizer,
+      domAdapter: visualizer as SimulationVisualizer,
+      domStore,
       setRobotPosition,
       setRobotHeading,
       resetRobot,
     };
-
-    return { domAdapter, domStore, setRobotPosition, setRobotHeading, resetRobot };
-  };
+  }
 
   it("notifies subscribers and provides immutable snapshots", () => {
     const engine = new SimulationEngine({ cols: 10, rows: 10 });
@@ -476,6 +481,91 @@ describe("SimulationEngine", () => {
       expect(listener).toHaveBeenCalledTimes(2);
       expect(engine.getSnapshot().isWalking).toBe(false);
       expect(engine.getSnapshot().hasFinishedWalking).toBe(true);
+    });
+  });
+
+  describe("Simulation Playback Controls", () => {
+    it("pauses and resumes search animation with subscriber notification", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "0-4",
+        domAdapter,
+      });
+
+      const listener = vi.fn();
+      engine.subscribe(listener);
+
+      engine.visualize("manhattan");
+      expect(engine.getSnapshot().isAnimating).toBe(true);
+      expect(engine.getSnapshot().isPaused).toBe(false);
+
+      // Pause playback
+      engine.pausePlayback();
+      expect(engine.getSnapshot().isPaused).toBe(true);
+      expect(engine.getSnapshot().isAnimating).toBe(true);
+
+      // Advancing timers should not progress while paused
+      vi.advanceTimersByTime(1000);
+      expect(engine.getSnapshot().isAnimating).toBe(true);
+      expect(engine.getSnapshot().isPathVisible).toBe(false);
+
+      // Resume playback
+      engine.resumePlayback();
+      expect(engine.getSnapshot().isPaused).toBe(false);
+
+      // Finish playback
+      vi.runAllTimers();
+      expect(engine.getSnapshot().isAnimating).toBe(false);
+      expect(engine.getSnapshot().isPathVisible).toBe(true);
+    });
+
+    it("steps search animation manually without timers", () => {
+      const { domAdapter, domStore } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "0-2",
+        domAdapter,
+      });
+
+      engine.visualize("manhattan");
+      expect(engine.getSnapshot().isAnimating).toBe(true);
+
+      // Step manually
+      const stepped = engine.stepPlayback();
+      expect(stepped).toBe(true);
+      // At least one cell element received search visuals
+      const hasVisuals = Array.from(domStore.values()).some((r) => r.dataset.manhattan !== undefined);
+      expect(hasVisuals).toBe(true);
+    });
+
+    it("flushes walking traversal synchronously to immediate completion via flushPlayback", () => {
+      const { domAdapter, setRobotPosition } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "0-3",
+        domAdapter,
+      });
+
+      engine.visualize("manhattan");
+      vi.runAllTimers();
+
+      engine.walk();
+      expect(engine.getSnapshot().isWalking).toBe(true);
+
+      // Flush immediately without running any timers
+      engine.flushPlayback();
+      const state = engine.getSnapshot();
+      expect(state.isWalking).toBe(false);
+      expect(state.hasFinishedWalking).toBe(true);
+      expect(state.playbackStatus).toBe("idle");
+      expect(setRobotPosition).toHaveBeenCalled();
     });
   });
 

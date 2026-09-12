@@ -6,7 +6,10 @@ import {
   GRID_CONFIG,
 } from "../config/simulationConfig";
 import { getElevationGradient } from "../physics/terrainPhysics";
-import type { SimulationDomAdapter } from "./simulationEngine";
+import {
+  type SimulationVisualizer,
+  NullVisualizer,
+} from "./simulationVisualizer";
 
 export interface TerrainSnapshot {
   wallNodes: Set<string>;
@@ -42,7 +45,9 @@ export interface ScenarioTerrainOptions {
   initialTerrainFactors?: Map<string, number>;
   initialTerrainTypes?: Map<string, "dirt" | "water">;
   initialElevations?: Map<string, number>;
-  domAdapter?: SimulationDomAdapter;
+  visualizer?: SimulationVisualizer;
+  /** Backwards compatibility alias for visualizer */
+  domAdapter?: SimulationVisualizer;
 }
 
 function parseCoordinates(key: string): [number, number] {
@@ -54,7 +59,7 @@ function parseCoordinates(key: string): [number, number] {
  * The deep ScenarioTerrain module.
  * Encapsulates persistent grid topology, obstacle boundaries, terrain friction factors,
  * elevation distributions, actor placements, transient pointer drawing sessions,
- * temporary DOM feedback styling, and atomic commit/rollback semantics across all grid layers.
+ * temporary visual preview styling via the visualizer seam, and atomic commit/rollback semantics across all grid layers.
  */
 export class ScenarioTerrain {
   private cols: number;
@@ -67,7 +72,7 @@ export class ScenarioTerrain {
   private destinationNode: string;
 
   private strokeSession: ActiveStrokeSession | null = null;
-  private domAdapter?: SimulationDomAdapter;
+  private visualizer: SimulationVisualizer;
 
   constructor(options: ScenarioTerrainOptions = {}) {
     this.cols = options.cols ?? GRID_CONFIG.defaultCols;
@@ -83,7 +88,7 @@ export class ScenarioTerrain {
     this.terrainFactors = new Map(options.initialTerrainFactors ?? []);
     this.terrainTypes = new Map(options.initialTerrainTypes ?? []);
     this.elevations = new Map(options.initialElevations ?? []);
-    this.domAdapter = options.domAdapter;
+    this.visualizer = options.visualizer ?? options.domAdapter ?? new NullVisualizer();
   }
 
   // --- Snapshot and Query Interface ---
@@ -287,15 +292,7 @@ export class ScenarioTerrain {
       ...(this.strokeSession ? this.strokeSession.modifiedCells : []),
     ]);
 
-    if (this.domAdapter) {
-      for (const key of keysToClean) {
-        const element = this.domAdapter.getCellElement(key);
-        if (element) {
-          element.style.backgroundColor = "";
-          element.classList.remove("is-wall");
-        }
-      }
-    }
+    this.visualizer.clearAllCellPreviews(keysToClean);
 
     this.strokeSession = null;
     this.wallNodes = new Set();
@@ -391,9 +388,7 @@ export class ScenarioTerrain {
         const [r, c] = parseCoordinates(key);
         if (!getElevationGradient(r, c, this.elevations).isUnstable) {
           this.robotNode = key;
-          if (this.domAdapter) {
-            this.domAdapter.resetRobot(c, r, context.robotHeading, context.cellSize);
-          }
+          this.visualizer.resetRobot(c, r, context.robotHeading, context.cellSize);
           return true;
         }
       }
@@ -436,13 +431,8 @@ export class ScenarioTerrain {
     if (!this.strokeSession) return false;
 
     // Clear inline preview styles so React declarative state styling takes over
-    if (this.domAdapter) {
-      for (const key of this.strokeSession.modifiedCells) {
-        const element = this.domAdapter.getCellElement(key);
-        if (element) {
-          element.style.backgroundColor = "";
-        }
-      }
+    for (const key of this.strokeSession.modifiedCells) {
+      this.visualizer.clearCellPreview(key);
     }
 
     this.strokeSession = null;
@@ -465,18 +455,8 @@ export class ScenarioTerrain {
     this.robotNode = snapshot.robotNode;
     this.destinationNode = snapshot.destinationNode;
 
-    if (this.domAdapter) {
-      for (const key of this.strokeSession.modifiedCells) {
-        const element = this.domAdapter.getCellElement(key);
-        if (element) {
-          element.style.backgroundColor = "";
-          if (this.wallNodes.has(key)) {
-            element.classList.add("is-wall");
-          } else {
-            element.classList.remove("is-wall");
-          }
-        }
-      }
+    for (const key of this.strokeSession.modifiedCells) {
+      this.visualizer.clearCellPreview(key, this.wallNodes.has(key));
     }
 
     this.strokeSession = null;
@@ -680,38 +660,29 @@ export class ScenarioTerrain {
     mode: "wall" | "dirt" | "water" | "elevation",
     value: number | boolean,
   ): void {
-    if (!this.domAdapter) return;
-    const element = this.domAdapter.getCellElement(key);
-    if (!element) return;
-
     if (mode === "wall") {
       if (value) {
-        element.classList.add("is-wall");
-        element.style.backgroundColor = TERRAIN_CONFIG.types.wall.color;
+        this.visualizer.previewCell(key, TERRAIN_CONFIG.types.wall.color, true);
       } else {
-        element.classList.remove("is-wall");
-        element.style.backgroundColor = "transparent";
+        this.visualizer.previewCell(key, "transparent", false);
       }
     } else if (mode === "dirt") {
-      element.classList.remove("is-wall");
       if (value) {
-        element.style.backgroundColor = TERRAIN_CONFIG.types.dirt.color;
+        this.visualizer.previewCell(key, TERRAIN_CONFIG.types.dirt.color, false);
       } else {
-        element.style.backgroundColor = "transparent";
+        this.visualizer.previewCell(key, "transparent", false);
       }
     } else if (mode === "water") {
-      element.classList.remove("is-wall");
       if (value) {
-        element.style.backgroundColor = TERRAIN_CONFIG.types.water.color;
+        this.visualizer.previewCell(key, TERRAIN_CONFIG.types.water.color, false);
       } else {
-        element.style.backgroundColor = "transparent";
+        this.visualizer.previewCell(key, "transparent", false);
       }
     } else if (mode === "elevation") {
-      element.classList.remove("is-wall");
       if (value) {
-        element.style.backgroundColor = TERRAIN_CONFIG.getElevationColor(Number(value));
+        this.visualizer.previewCell(key, TERRAIN_CONFIG.getElevationColor(Number(value)), false);
       } else {
-        element.style.backgroundColor = "transparent";
+        this.visualizer.previewCell(key, "transparent", false);
       }
     }
   }

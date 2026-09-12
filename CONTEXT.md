@@ -36,6 +36,14 @@ _Avoid_: SearchOutput, PlanResult
 The deep module coordinating grid terrain state, vehicle parameters, path planning triggers, and locomotion playback across the interface.
 _Avoid_: SimulationContext, Store, GameManager
 
+**Simulation Playback**:
+The deep module executing discrete animation timelines, managing time progression, cancellation tokens, manual stepping, and playback lifecycle states across path searches and vehicle locomotion.
+_Avoid_: AnimationManager, TimerService, PlaybackController, Scheduler
+
+**Simulation Visualizer**:
+The deep module providing a coarse-grained seam between simulation logic and visual rendering targets, encapsulating search progress styling, actor kinematic posing, and transient stroke preview effects across browser DOM and headless environments.
+_Avoid_: DomAdapter, RenderService, UIController, ViewportHelper
+
 **Terrain Physics**:
 The deep module computing spatial elevation gradients, vehicle posture (roll, pitch), and Santos center-of-mass stability constraints across terrain.
 _Avoid_: TerrainUtils, PhysicsEngine, MathUtils

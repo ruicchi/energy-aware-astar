@@ -113,6 +113,7 @@ export function usePlaybackState() {
       isWalking: s.isWalking,
       hasFinishedWalking: s.hasFinishedWalking,
       isLocked: s.isLocked,
+      isPaused: s.isPaused,
       walkFailure: s.walkFailure,
     }),
     shallowEqual,
