@@ -77,7 +77,9 @@ export function resolveCellDisplayState({
 
   const elevationLabel =
     elevation > 0 && !isRobot && !isDestination && !isWall && terrainFactor === 0
-      ? elevation
+      ? Number.isInteger(elevation)
+        ? elevation
+        : Number(elevation.toFixed(1))
       : undefined;
 
   return {

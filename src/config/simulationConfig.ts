@@ -29,7 +29,7 @@ export const TERRAIN_CONFIG = {
   },
   getElevationColor(level: number): string {
     if (level <= 0) return "";
-    const brightness = Math.max(0, 255 - level * 20);
+    const brightness = Math.max(25, Math.round(255 - Math.min(level, 11.5) * 20));
     return `rgb(0, ${brightness}, 0)`;
   },
 } as const;
@@ -77,10 +77,10 @@ export const BRUSH_CONFIG = {
     defaultValue: TERRAIN_CONFIG.types.water.cost,
   },
   elevation: {
-    min: 1,
-    max: 10,
+    min: 5,
+    max: 90,
     step: 1,
-    defaultValue: 5,
+    defaultValue: 1.1547,
   },
   maxTraversableSlope: {
     min: 5,

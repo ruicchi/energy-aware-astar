@@ -8,6 +8,7 @@ import {
   isStablePosture,
   isTraversableSlope,
   getElevationSlopeDegrees,
+  getElevationFromSlopeDegrees,
   SQRT2,
 } from "./terrainPhysics"
 import type { Scenario } from "../shared/types"
@@ -158,6 +159,15 @@ describe("Terrain Physics", () => {
       expect(getElevationSlopeDegrees(0)).toBeCloseTo(0, 1)
       expect(getElevationSlopeDegrees(1)).toBeCloseTo(26.6, 1)
       expect(getElevationSlopeDegrees(2)).toBeCloseTo(45.0, 1)
+    })
+
+    it("calculates elevation height from target slope angle in degrees", () => {
+      expect(getElevationFromSlopeDegrees(0)).toBe(0)
+      expect(getElevationFromSlopeDegrees(45)).toBeCloseTo(2.0, 2)
+      expect(getElevationSlopeDegrees(getElevationFromSlopeDegrees(5))).toBeCloseTo(5.0, 1)
+      expect(getElevationSlopeDegrees(getElevationFromSlopeDegrees(30))).toBeCloseTo(30.0, 1)
+      expect(getElevationSlopeDegrees(getElevationFromSlopeDegrees(60))).toBeCloseTo(60.0, 1)
+      expect(getElevationSlopeDegrees(getElevationFromSlopeDegrees(90))).toBeCloseTo(90.0, 1)
     })
   })
 })

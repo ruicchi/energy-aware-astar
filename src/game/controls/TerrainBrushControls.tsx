@@ -1,6 +1,9 @@
 import { Box, Typography, Button, Tooltip, Slider } from "@mui/material";
 import { TERRAIN_CONFIG, BRUSH_CONFIG, THEME_CONFIG } from "../../config/simulationConfig";
-import { getElevationSlopeDegrees } from "../../physics/terrainPhysics";
+import {
+  getElevationSlopeDegrees,
+  getElevationFromSlopeDegrees,
+} from "../../physics/terrainPhysics";
 import { useSimulationEngine, useBrushState } from "../simulationHooks";
 
 const SLOPE_MARKS = [
@@ -22,7 +25,17 @@ export function TerrainBrushControls() {
     showGradients,
   } = useBrushState();
 
+  const currentSlopeAngle = Math.min(
+    BRUSH_CONFIG.elevation.max,
+    Math.max(BRUSH_CONFIG.elevation.min, Math.round(getElevationSlopeDegrees(elevationBrushValue))),
+  );
   const elevationAngle = getElevationSlopeDegrees(elevationBrushValue).toFixed(1);
+  const displayElevationHeight =
+    elevationBrushValue >= 100
+      ? "Max"
+      : Number.isInteger(elevationBrushValue)
+        ? String(elevationBrushValue)
+        : elevationBrushValue.toFixed(2);
 
   return (
     <Box>
@@ -220,17 +233,19 @@ export function TerrainBrushControls() {
               placement="top"
             >
               <Typography variant="caption" color="textSecondary" sx={{ cursor: "default" }}>
-                Brush Height: {elevationBrushValue} ({elevationAngle}°)
+                Brush Height: {displayElevationHeight} ({elevationAngle}°)
               </Typography>
             </Tooltip>
             <Slider
               size="small"
-              value={elevationBrushValue}
+              value={currentSlopeAngle}
               min={BRUSH_CONFIG.elevation.min}
               max={BRUSH_CONFIG.elevation.max}
               step={BRUSH_CONFIG.elevation.step}
-              marks
-              onChange={(_, value) => engine.setElevationBrushValue(value as number)}
+              onChange={(_, value) => {
+                const angle = value as number;
+                engine.setElevationBrushValue(getElevationFromSlopeDegrees(angle));
+              }}
               onPointerDown={(e) => e.stopPropagation()}
             />
           </Box>
@@ -252,8 +267,6 @@ export function TerrainBrushControls() {
               max={BRUSH_CONFIG.maxTraversableSlope.max}
               step={BRUSH_CONFIG.maxTraversableSlope.step}
               marks={SLOPE_MARKS}
-              valueLabelDisplay="auto"
-              valueLabelFormat={(v) => `${v}°`}
               onChange={(_, value) => engine.setMaxTraversableSlope(value as number)}
               onPointerDown={(e) => e.stopPropagation()}
               sx={{

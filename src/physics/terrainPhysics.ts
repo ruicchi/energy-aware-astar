@@ -189,6 +189,19 @@ export function getElevationSlopeDegrees(elevationLevel: number, stepDistance = 
   return Math.atan((Math.abs(elevationLevel) * ELEVATION_SCALE) / stepDistance) * (180 / Math.PI);
 }
 
+/**
+ * Calculates the elevation level required to achieve a nominal slope angle (in degrees)
+ * relative to flat ground across a single grid step.
+ */
+export function getElevationFromSlopeDegrees(slopeDegrees: number, stepDistance = 1.0): number {
+  const clamped = Math.max(0, Math.min(slopeDegrees, 90));
+  if (clamped >= 90) {
+    return 2292;
+  }
+  const radians = (clamped * Math.PI) / 180;
+  return Number(((Math.tan(radians) * stepDistance) / ELEVATION_SCALE).toFixed(4));
+}
+
 export function isTraversableSlope(
   current: { row: number; col: number },
   target: { row: number; col: number; heading: Heading },
