@@ -177,5 +177,43 @@ describe("Pathfinding Engine", () => {
 
       expect(result.shortestPath).toEqual([])
     })
+
+    it("reports no path found when robot start node is on an untraversable elevation gradient", () => {
+      const scenario = createTestScenario({
+        rows: 5,
+        cols: 5,
+        robotNode: "2-2",
+        destinationNode: "2-4",
+        maxTraversableSlope: 25,
+        elevations: new Map([
+          ["2-2", 0],
+          ["2-3", 10],
+          ["2-1", 0],
+        ]),
+      })
+
+      const result = findPath(scenario, { algorithm: "energyAware" })
+
+      expect(result.shortestPath).toEqual([])
+    })
+
+    it("reports no path found when destination node is on an untraversable elevation gradient", () => {
+      const scenario = createTestScenario({
+        rows: 5,
+        cols: 5,
+        robotNode: "2-0",
+        destinationNode: "2-2",
+        maxTraversableSlope: 25,
+        elevations: new Map([
+          ["2-2", 0],
+          ["2-3", 10],
+          ["2-1", 0],
+        ]),
+      })
+
+      const result = findPath(scenario, { algorithm: "energyAware" })
+
+      expect(result.shortestPath).toEqual([])
+    })
   })
 })

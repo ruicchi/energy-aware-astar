@@ -7,6 +7,7 @@ import {
   getPosture,
   isStablePosture,
   isTraversableSlope,
+  evaluatePathSafety,
   getElevationSlopeDegrees,
   getElevationFromSlopeDegrees,
   SQRT2,
@@ -169,6 +170,39 @@ describe("Terrain Physics", () => {
       )
 
       expect(isTraversable).toBe(false)
+    })
+
+    it("detects untraversable departure when current position has an unstable elevation gradient", () => {
+      // 5-5 is next to a steep cliff at 5-4, making 5-5 unstable
+      const elevations = new Map<string, number>([
+        ["5-4", 20],
+        ["5-5", 0],
+        ["5-6", 0],
+      ])
+      const scenario = createScenario({ elevations, maxTraversableSlope: 20 })
+
+      // Even though moving from 5-5 to 5-6 has slope 0, departing an unstable cell is blocked
+      const isTraversable = isTraversableSlope(
+        { row: 5, col: 5 },
+        { row: 5, col: 6, heading: "RIGHT" },
+        scenario,
+      )
+
+      expect(isTraversable).toBe(false)
+    })
+
+    it("evaluates path as unsafe when the start node itself has an unstable gradient", () => {
+      const elevations = new Map<string, number>([
+        ["1-2", 20],
+        ["1-1", 0],
+        ["1-0", 0],
+      ])
+      const scenario = createScenario({ elevations, maxTraversableSlope: 20 })
+
+      const safety = evaluatePathSafety(["1-1", "1-0"], scenario)
+      expect(safety.isSafe).toBe(false)
+      expect(safety.failureReason).toBe("UNSTABLE_ELEVATION_GRADIENT")
+      expect(safety.failureStep).toBe(0)
     })
 
     it("calculates nominal elevation slope angle in degrees", () => {

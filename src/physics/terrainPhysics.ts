@@ -257,6 +257,9 @@ export function isTraversableSlope(
 
   if (ignoreStability) return true;
 
+  const currentGrad = getElevationGradient(current.row, current.col, scenario.elevations, maxTraversableSlope);
+  if (currentGrad.isUnstable) return false;
+
   const { isUnstable } = getElevationGradient(target.row, target.col, scenario.elevations, maxTraversableSlope);
   if (isUnstable) return false;
 
@@ -280,6 +283,22 @@ export function evaluatePathSafety(
 ): PathSafetyResult {
   if (!path || path.length === 0) {
     return { isSafe: false, failureReason: "NO_PATH_FOUND", maxSlopeEncountered: 0 };
+  }
+
+  const maxTraversableSlope =
+    scenario.maxTraversableSlope ??
+    scenario.robotPhysics?.maxTraversableSlope ??
+    DEFAULT_MAX_TRAVERSABLE_SLOPE;
+
+  const [startR, startC] = path[0].split("-").map(Number);
+  const startGrad = getElevationGradient(startR, startC, scenario.elevations, maxTraversableSlope);
+  if (startGrad.isUnstable) {
+    return {
+      isSafe: false,
+      failureReason: "UNSTABLE_ELEVATION_GRADIENT",
+      failureStep: 0,
+      maxSlopeEncountered: 0,
+    };
   }
 
   let maxSlopeEncountered = 0;

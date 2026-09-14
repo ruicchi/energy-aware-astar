@@ -288,7 +288,8 @@ describe("SimulationEngine", () => {
       expect(engine.getSnapshot().destinationNode).toBe("5-4");
     });
 
-    it("prevents dragging robot onto an unstable elevation slope", () => {
+
+    it("allows dragging robot onto an untraversable elevation slope", () => {
       const { domAdapter } = createMockDomAdapter();
       const engine = new SimulationEngine({
         cols: 10,
@@ -300,13 +301,31 @@ describe("SimulationEngine", () => {
       });
 
       engine.startPaint("2-1");
-      engine.continuePaint("2-2"); // Unstable due to cliff at 2-3
+      engine.continuePaint("2-2"); // Untraversable due to cliff at 2-3
       engine.endPaint();
 
-      expect(engine.getSnapshot().robotNode).toBe("2-1");
+      expect(engine.getSnapshot().robotNode).toBe("2-2");
     });
 
-    it("skips painting elevation over robot node if it would cause instability", () => {
+    it("allows dragging destination onto an untraversable elevation slope", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "5-5",
+        initialElevations: new Map([["2-3", 10]]),
+        domAdapter,
+      });
+
+      engine.startPaint("5-5");
+      engine.continuePaint("2-2"); // Untraversable due to cliff at 2-3
+      engine.endPaint();
+
+      expect(engine.getSnapshot().destinationNode).toBe("2-2");
+    });
+
+    it("allows painting elevation over robot node even if it causes an untraversable gradient", () => {
       const { domAdapter } = createMockDomAdapter();
       const engine = new SimulationEngine({
         cols: 10,
@@ -324,7 +343,7 @@ describe("SimulationEngine", () => {
       engine.endPaint();
 
       expect(engine.getSnapshot().elevations.get("0-0")).toBe(10);
-      expect(engine.getSnapshot().elevations.has("2-2")).toBe(false);
+      expect(engine.getSnapshot().elevations.get("2-2")).toBe(10);
     });
 
     it("aborts stroke and restores previous snapshot", () => {

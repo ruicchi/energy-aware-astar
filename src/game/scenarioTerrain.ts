@@ -5,7 +5,6 @@ import {
   VEHICLE_CONFIG,
   GRID_CONFIG,
 } from "../config/simulationConfig";
-import { getElevationGradient } from "../physics/terrainPhysics";
 import {
   type SimulationVisualizer,
   NullVisualizer,
@@ -401,11 +400,9 @@ export class ScenarioTerrain {
       if (key !== this.destinationNode && !this.wallNodes.has(key)) {
         if (this.robotNode === key) return false;
         const [r, c] = parseCoordinates(key);
-        if (!getElevationGradient(r, c, this.elevations).isUnstable) {
-          this.robotNode = key;
-          this.visualizer.resetRobot(c, r, context.robotHeading, context.cellSize);
-          return true;
-        }
+        this.robotNode = key;
+        this.visualizer.resetRobot(c, r, context.robotHeading, context.cellSize);
+        return true;
       }
       return false;
     }
@@ -413,24 +410,14 @@ export class ScenarioTerrain {
     if (brush === "destination") {
       if (key !== this.robotNode && !this.wallNodes.has(key)) {
         if (this.destinationNode === key) return false;
-        const [r, c] = parseCoordinates(key);
-        if (!getElevationGradient(r, c, this.elevations).isUnstable) {
-          this.destinationNode = key;
-          return true;
-        }
+        this.destinationNode = key;
+        return true;
       }
       return false;
     }
 
     if (key === this.robotNode || key === this.destinationNode) {
-      if (brush === "elevation") {
-        const testElevations = new Map(this.elevations);
-        testElevations.set(key, this.strokeSession.drawValue as number);
-        const [r, c] = parseCoordinates(key);
-        if (getElevationGradient(r, c, testElevations).isUnstable) {
-          return false;
-        }
-      } else {
+      if (brush !== "elevation") {
         return false;
       }
     }

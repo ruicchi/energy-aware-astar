@@ -203,6 +203,71 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     terrain.commitStroke();
   });
 
+  it("allows dragging robot and destination nodes onto untraversable elevation gradients", () => {
+    const { domAdapter } = createMockDomAdapter();
+    const terrain = new ScenarioTerrain({
+      domAdapter,
+      initialRobotNode: "0-0",
+      initialDestinationNode: "5-5",
+      initialElevations: new Map([["1-2", 20]]),
+    });
+    const context = createContext({ robotHeading: "UP", cellSize: 30 });
+
+    // Drag robot onto untraversable gradient cell 1-1
+    terrain.startStroke("0-0", context);
+    const robotMoved = terrain.continueStroke("1-1", context);
+    expect(robotMoved).toBe(true);
+    expect(terrain.getRobotNode()).toBe("1-1");
+    terrain.commitStroke();
+
+    // Drag destination onto untraversable gradient cell 1-1 (move robot to 0-0 first)
+    terrain.startStroke("1-1", context);
+    terrain.continueStroke("0-0", context);
+    terrain.commitStroke();
+
+    terrain.startStroke("5-5", context);
+    const destMoved = terrain.continueStroke("1-1", context);
+    expect(destMoved).toBe(true);
+    expect(terrain.getDestinationNode()).toBe("1-1");
+    terrain.commitStroke();
+  });
+
+  it("allows painting elevation directly over robot and destination nodes even if untraversable", () => {
+    const { domAdapter } = createMockDomAdapter();
+    const terrain = new ScenarioTerrain({
+      domAdapter,
+      initialRobotNode: "1-1",
+      initialDestinationNode: "3-3",
+      initialElevations: new Map([["1-2", 20], ["3-4", 20]]),
+    });
+
+    const elevContext = createContext({
+      activeBrush: "elevation",
+      elevationBrushValue: 15,
+    });
+
+    // Start painting from 0-0 and continue over robot node 1-1
+    terrain.startStroke("0-0", elevContext);
+    const paintedOverRobot = terrain.continueStroke("1-1", elevContext);
+    expect(paintedOverRobot).toBe(true);
+    expect(terrain.getElevation("1-1")).toBe(15);
+
+    // Continue over destination node 3-3
+    const paintedOverDest = terrain.continueStroke("3-3", elevContext);
+    expect(paintedOverDest).toBe(true);
+    expect(terrain.getElevation("3-3")).toBe(15);
+    terrain.commitStroke();
+
+    // Wall brush still cannot overwrite robot or destination
+    const wallContext = createContext({ activeBrush: "wall" });
+    terrain.startStroke("0-0", wallContext);
+    expect(terrain.continueStroke("1-1", wallContext)).toBe(false);
+    expect(terrain.hasWall("1-1")).toBe(false);
+    expect(terrain.continueStroke("3-3", wallContext)).toBe(false);
+    expect(terrain.hasWall("3-3")).toBe(false);
+    terrain.commitStroke();
+  });
+
   it("aborts active stroke and restores snapshot perfectly", () => {
     const { domAdapter, domStore } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
