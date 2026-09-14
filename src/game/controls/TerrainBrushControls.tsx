@@ -29,13 +29,6 @@ export function TerrainBrushControls() {
     BRUSH_CONFIG.elevation.max,
     Math.max(BRUSH_CONFIG.elevation.min, Math.round(getElevationSlopeDegrees(elevationBrushValue))),
   );
-  const elevationAngle = getElevationSlopeDegrees(elevationBrushValue).toFixed(1);
-  const displayElevationHeight =
-    elevationBrushValue >= 100
-      ? "Max"
-      : Number.isInteger(elevationBrushValue)
-        ? String(elevationBrushValue)
-        : elevationBrushValue.toFixed(2);
 
   return (
     <Box>
@@ -228,12 +221,12 @@ export function TerrainBrushControls() {
         >
           <Box>
             <Tooltip
-              title={`Nominal slope angle: ${elevationAngle}° from flat terrain`}
+              title={`Nominal slope angle: ${currentSlopeAngle}° from flat terrain`}
               arrow
               placement="top"
             >
               <Typography variant="caption" color="textSecondary" sx={{ cursor: "default" }}>
-                Brush Height: {displayElevationHeight} ({elevationAngle}°)
+                Brush Height: {currentSlopeAngle}°
               </Typography>
             </Tooltip>
             <Slider

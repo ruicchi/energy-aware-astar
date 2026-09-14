@@ -54,13 +54,19 @@ describe("Cell Display Resolver", () => {
     expect(waterState.bgColor).toBe(TERRAIN_CONFIG.types.water.color);
   });
 
-  it("resolves elevation coloring and label", () => {
+  it("resolves elevation coloring and label in slope degrees", () => {
     const elevationState = resolveCellDisplayState({
       ...baseParams,
       elevation: 5,
     });
     expect(elevationState.bgColor).toBe(TERRAIN_CONFIG.getElevationColor(5));
-    expect(elevationState.elevationLabel).toBe(5);
+    expect(elevationState.elevationLabel).toBe(68);
+
+    const slope30State = resolveCellDisplayState({
+      ...baseParams,
+      elevation: 1.1547,
+    });
+    expect(slope30State.elevationLabel).toBe(30);
   });
 
   it("omits elevation label when terrain factor is non-zero or cell is robot/destination/wall", () => {

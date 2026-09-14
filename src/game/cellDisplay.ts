@@ -1,5 +1,6 @@
 import type { Heading } from "../shared/types";
 import { TERRAIN_CONFIG, THEME_CONFIG } from "../config/simulationConfig";
+import { getElevationSlopeDegrees } from "../physics/terrainPhysics";
 
 export interface GradientArrowDisplay {
   rotationDeg: number;
@@ -77,9 +78,7 @@ export function resolveCellDisplayState({
 
   const elevationLabel =
     elevation > 0 && !isRobot && !isDestination && !isWall && terrainFactor === 0
-      ? Number.isInteger(elevation)
-        ? elevation
-        : Number(elevation.toFixed(1))
+      ? Math.round(getElevationSlopeDegrees(elevation))
       : undefined;
 
   return {
