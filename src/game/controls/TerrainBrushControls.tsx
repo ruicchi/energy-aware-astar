@@ -14,6 +14,24 @@ const SLOPE_MARKS = [
   { value: 90, label: "90°" },
 ];
 
+const sliderMarksSx = {
+  "& .MuiSlider-markLabel": {
+    fontSize: "0.68rem",
+    color: "text.secondary",
+  },
+  "& .MuiSlider-markLabelActive": {
+    color: "text.secondary",
+  },
+  "& .MuiSlider-mark": {
+    backgroundColor: "currentColor",
+    opacity: 0.38,
+  },
+  "& .MuiSlider-markActive": {
+    backgroundColor: "currentColor",
+    opacity: 0.38,
+  },
+};
+
 export function TerrainBrushControls() {
   const engine = useSimulationEngine();
   const {
@@ -161,6 +179,7 @@ export function TerrainBrushControls() {
                 engine.setDirtBrushValue(Number((value as number).toFixed(1)))
               }
               onPointerDown={(e) => e.stopPropagation()}
+              sx={sliderMarksSx}
             />
           </Box>
         </Box>
@@ -203,6 +222,7 @@ export function TerrainBrushControls() {
                 engine.setWaterBrushValue(Number((value as number).toFixed(1)))
               }
               onPointerDown={(e) => e.stopPropagation()}
+              sx={sliderMarksSx}
             />
           </Box>
         </Box>
@@ -262,11 +282,7 @@ export function TerrainBrushControls() {
               marks={SLOPE_MARKS}
               onChange={(_, value) => engine.setMaxTraversableSlope(value as number)}
               onPointerDown={(e) => e.stopPropagation()}
-              sx={{
-                "& .MuiSlider-markLabel": {
-                  fontSize: "0.68rem",
-                },
-              }}
+              sx={sliderMarksSx}
             />
           </Box>
 
