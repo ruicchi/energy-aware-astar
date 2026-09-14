@@ -196,6 +196,18 @@ describe("simulationHooks - Unified Grid Canvas Seam", () => {
 
     // The canvas selector is shallowly identical: 0 re-renders for GameGrid!
     expect(shallowEqual(canvas1, canvas2)).toBe(true);
+
+    // When showGradients is true, maxTraversableSlope changes trigger canvas update
+    engine.setShowGradients(true);
+    const sGradients1 = engine.getSnapshot();
+    const canvasG1 = selectGridCanvas(sGradients1);
+
+    engine.setMaxTraversableSlope(45);
+    const sGradients2 = engine.getSnapshot();
+    const canvasG2 = selectGridCanvas(sGradients2);
+
+    expect(shallowEqual(canvasG1, canvasG2)).toBe(false);
+    expect(canvasG2.maxTraversableSlope).toBe(45);
   });
 
   it("re-renders canvas when terrain or dimensions change", () => {

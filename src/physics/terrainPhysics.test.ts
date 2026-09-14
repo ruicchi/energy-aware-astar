@@ -87,6 +87,25 @@ describe("Terrain Physics", () => {
       expect(field.get("5-5")?.magnitude).toBeGreaterThan(1.0)
       expect(field.get("5-5")?.isUnstable).toBe(true)
     })
+
+    it("dynamically evaluates instability when maxTraversableSlope changes", () => {
+      // Nominal 30° elevation tile
+      const slope30Elev = getElevationFromSlopeDegrees(30)
+      const elevations = new Map<string, number>([["5-5", slope30Elev]])
+
+      // When max slope is 30°, the 30° tile is stable
+      const stableAt30 = getElevationGradient(5, 5, elevations, 30)
+      expect(stableAt30.isUnstable).toBe(false)
+      expect(Math.atan(stableAt30.magnitude) * (180 / Math.PI)).toBeCloseTo(30, 1)
+
+      // When max slope is reduced to 25°, the 30° tile becomes unstable
+      const unstableAt25 = getElevationGradient(5, 5, elevations, 25)
+      expect(unstableAt25.isUnstable).toBe(true)
+
+      // When max slope is increased to 45°, it remains stable
+      const stableAt45 = getElevationGradient(5, 5, elevations, 45)
+      expect(stableAt45.isUnstable).toBe(false)
+    })
   })
 
   describe("Vehicle Posture & Santos Stability", () => {

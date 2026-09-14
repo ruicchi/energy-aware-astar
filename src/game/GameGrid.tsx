@@ -19,6 +19,7 @@ export default function GameGrid() {
     terrainTypes,
     elevations,
     showGradients,
+    maxTraversableSlope,
     robotNode,
     destinationNode,
     robotHeading,
@@ -89,6 +90,7 @@ export default function GameGrid() {
             terrainTypes={terrainTypes}
             elevations={elevations}
             showGradients={showGradients}
+            maxTraversableSlope={maxTraversableSlope}
             onMouseDown={handleMouseDown}
             onMouseEnter={handleMouseEnter}
           />

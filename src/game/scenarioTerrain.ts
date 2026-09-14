@@ -283,6 +283,21 @@ export class ScenarioTerrain {
     return changed;
   }
 
+  public updateElevation(newElevation: number): boolean {
+    let changed = false;
+    const next = new Map(this.elevations);
+    for (const [k, elev] of this.elevations.entries()) {
+      if (elev > 0 && elev !== newElevation) {
+        next.set(k, newElevation);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.elevations = next;
+    }
+    return changed;
+  }
+
   public clearAll(): void {
     const keysToClean = new Set<string>([
       ...this.wallNodes,

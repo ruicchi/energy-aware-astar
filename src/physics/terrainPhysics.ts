@@ -59,11 +59,13 @@ export function getElevationGradient(
   row: number,
   col: number,
   elevations: Map<string, number>,
+  maxTraversableSlope?: number,
 ): ElevationGradient {
   function getElevation(r: number, c: number) {
     return (elevations.get(`${r}-${c}`) || 0) * ELEVATION_SCALE;
   }
 
+  const zC = getElevation(row, col);
   const zTL = getElevation(row - 1, col - 1);
   const zT = getElevation(row - 1, col);
   const zTR = getElevation(row - 1, col + 1);
@@ -77,9 +79,46 @@ export function getElevationGradient(
   const zx = (zR + INV_SQRT2 * (zTR + zBR) - (zL + INV_SQRT2 * (zTL + zBL))) / weight;
   const zy = (zB + INV_SQRT2 * (zBL + zBR) - (zT + INV_SQRT2 * (zTL + zTR))) / weight;
 
-  const magnitude = Math.sqrt(zx * zx + zy * zy);
-  const angle = magnitude > TERRAIN_CONFIG.minGradientMagnitude ? Math.atan2(zy, zx) : 0;
-  const isUnstable = magnitude > MAX_STABLE_GRADIENT;
+  let magnitude = Math.sqrt(zx * zx + zy * zy);
+  let angle = magnitude > TERRAIN_CONFIG.minGradientMagnitude ? Math.atan2(zy, zx) : 0;
+
+  if (zC > 0) {
+    const neighbors = [
+      { dz: zR - zC, dx: 1, dy: 0, dist: 1.0 },
+      { dz: zL - zC, dx: -1, dy: 0, dist: 1.0 },
+      { dz: zB - zC, dx: 0, dy: 1, dist: 1.0 },
+      { dz: zT - zC, dx: 0, dy: -1, dist: 1.0 },
+      { dz: zTR - zC, dx: 1, dy: -1, dist: SQRT2 },
+      { dz: zTL - zC, dx: -1, dy: -1, dist: SQRT2 },
+      { dz: zBR - zC, dx: 1, dy: 1, dist: SQRT2 },
+      { dz: zBL - zC, dx: -1, dy: 1, dist: SQRT2 },
+    ];
+
+    let maxSlope = 0;
+    let maxDx = 0;
+    let maxDy = 0;
+
+    for (const n of neighbors) {
+      const slope = Math.abs(n.dz) / n.dist;
+      if (slope > maxSlope) {
+        maxSlope = slope;
+        maxDx = n.dz >= 0 ? n.dx : -n.dx;
+        maxDy = n.dz >= 0 ? n.dy : -n.dy;
+      }
+    }
+
+    if (maxSlope > magnitude) {
+      magnitude = maxSlope;
+      if (magnitude > TERRAIN_CONFIG.minGradientMagnitude) {
+        angle = Math.atan2(maxDy, maxDx);
+      }
+    }
+  }
+
+  const slopeLimit = maxTraversableSlope ?? DEFAULT_MAX_TRAVERSABLE_SLOPE;
+  const maxGradient =
+    slopeLimit >= 90 ? Infinity : Math.tan((Math.max(0, slopeLimit) * Math.PI) / 180);
+  const isUnstable = magnitude > maxGradient;
 
   return { zx, zy, magnitude, angle, isUnstable };
 }
@@ -94,13 +133,14 @@ export function computeGradientField(
   rows: number,
   cols: number,
   elevations: Map<string, number>,
+  maxTraversableSlope?: number,
 ): Map<string, GradientFieldEntry> {
   const field = new Map<string, GradientFieldEntry>();
   if (!elevations || elevations.size === 0) return field;
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const grad = getElevationGradient(r, c, elevations);
+      const grad = getElevationGradient(r, c, elevations, maxTraversableSlope);
       if (grad.magnitude > TERRAIN_CONFIG.minGradientMagnitude || grad.isUnstable) {
         field.set(`${r}-${c}`, {
           angle: grad.angle,
@@ -217,7 +257,7 @@ export function isTraversableSlope(
 
   if (ignoreStability) return true;
 
-  const { isUnstable } = getElevationGradient(target.row, target.col, scenario.elevations);
+  const { isUnstable } = getElevationGradient(target.row, target.col, scenario.elevations, maxTraversableSlope);
   if (isUnstable) return false;
 
   return isStablePosture(target.row, target.col, target.heading, scenario);
@@ -270,7 +310,7 @@ export function evaluatePathSafety(
       };
     }
 
-    const { isUnstable } = getElevationGradient(currR, currC, scenario.elevations);
+    const { isUnstable } = getElevationGradient(currR, currC, scenario.elevations, maxTraversableSlope);
     if (isUnstable) {
       return {
         isSafe: false,

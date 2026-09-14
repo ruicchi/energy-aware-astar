@@ -217,6 +217,10 @@ describe("SimulationEngine", () => {
 
       expect(engine.getSnapshot().wallNodes.has("1-1")).toBe(false);
       expect(engine.getSnapshot().elevations.get("1-1")).toBe(4);
+
+      // Updating elevation brush value updates existing elevation in freeform mode
+      engine.setElevationBrushValue(6);
+      expect(engine.getSnapshot().elevations.get("1-1")).toBe(6);
     });
 
     it("instantly updates cell visuals to transparent when deleting on mouse drag", () => {

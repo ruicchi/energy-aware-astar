@@ -356,7 +356,14 @@ export class SimulationEngine {
   public setElevationBrushValue(val: number): void {
     if (this.elevationBrushValue === val) return;
     this.elevationBrushValue = val;
-    this.notify();
+    if (!this.isFixedDimensions) {
+      this.terrain.updateElevation(val);
+    }
+    if (this.isPathVisible && !this.isAnimating && !this.isWalking) {
+      this.solveInstantly(this.selectedAlgo);
+    } else {
+      this.notify();
+    }
   }
 
   public setDirtBrushValue(val: number): void {

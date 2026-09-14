@@ -13,6 +13,7 @@ export interface TerrainGridProps {
   terrainTypes: Map<string, "dirt" | "water">;
   elevations: Map<string, number>;
   showGradients: boolean;
+  maxTraversableSlope?: number;
   onMouseDown: (key: string) => void;
   onMouseEnter: (key: string) => void;
 }
@@ -28,6 +29,7 @@ export const TerrainGrid = memo(
     terrainTypes,
     elevations,
     showGradients,
+    maxTraversableSlope,
     onMouseDown,
     onMouseEnter,
   }: TerrainGridProps) {
@@ -42,8 +44,8 @@ export const TerrainGrid = memo(
 
     const gradientField = useMemo(() => {
       if (!showGradients) return null;
-      return computeGradientField(rows, cols, elevations);
-    }, [rows, cols, elevations, showGradients]);
+      return computeGradientField(rows, cols, elevations, maxTraversableSlope);
+    }, [rows, cols, elevations, showGradients, maxTraversableSlope]);
 
     return (
       <>

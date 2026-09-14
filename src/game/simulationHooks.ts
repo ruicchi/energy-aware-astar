@@ -141,6 +141,7 @@ export interface GridCanvasState {
   terrainTypes: Map<string, "dirt" | "water">;
   elevations: Map<string, number>;
   showGradients: boolean;
+  maxTraversableSlope?: number;
   robotNode: string;
   destinationNode: string;
   robotHeading: Heading;
@@ -190,6 +191,7 @@ export function selectGridCanvas(s: SimulationState): GridCanvasState {
     terrainTypes: s.terrainTypes,
     elevations: s.elevations,
     showGradients: s.showGradients,
+    maxTraversableSlope: s.showGradients ? s.maxTraversableSlope : undefined,
     robotNode: s.robotNode,
     destinationNode: s.destinationNode,
     robotHeading: s.robotHeading,

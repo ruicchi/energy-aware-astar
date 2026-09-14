@@ -368,6 +368,10 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     terrain.updateTypeCost("dirt", 2.5);
     expect(terrain.getTerrainFactor("1-2")).toBe(2.5);
 
+    // Update elevation height
+    terrain.updateElevation(4.5);
+    expect(terrain.getElevation("1-3")).toBe(4.5);
+
     // Dimension clamping
     const clampResult = terrain.setDimensions(4, 4);
     expect(clampResult.clamped).toBe(true);
