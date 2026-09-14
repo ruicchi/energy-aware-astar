@@ -226,7 +226,7 @@ export function TerrainBrushControls() {
               placement="top"
             >
               <Typography variant="caption" color="textSecondary" sx={{ cursor: "default" }}>
-                Brush Height: {currentSlopeAngle}°
+                Slope Height: {currentSlopeAngle}°
               </Typography>
             </Tooltip>
             <Slider
