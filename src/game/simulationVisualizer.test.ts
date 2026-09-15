@@ -17,6 +17,7 @@ describe("SimulationVisualizer (Coarse-Grained Visualizer Seam)", () => {
         visualizer.setRobotPosition(2, 3, 20, true);
         visualizer.setRobotHeading("UP", true);
         visualizer.resetRobot(0, 0, "RIGHT", 20);
+        visualizer.setDestinationPosition(5, 5, 20);
         visualizer.previewCell("1-1", "#ff0000", true);
         visualizer.clearCellPreview("1-1", false);
         visualizer.clearAllCellPreviews(["1-1", "1-2"]);
@@ -48,6 +49,7 @@ describe("SimulationVisualizer (Coarse-Grained Visualizer Seam)", () => {
       visualizer.setRobotPosition(2, 4, 30, true);
       visualizer.setRobotHeading("DOWN", true);
       visualizer.resetRobot(0, 0, "RIGHT", 30);
+      visualizer.setDestinationPosition(6, 7, 30);
 
       expect(visualizer.robotPositions).toEqual([
         { col: 2, row: 4, cellSize: 30, animated: true },
@@ -57,6 +59,9 @@ describe("SimulationVisualizer (Coarse-Grained Visualizer Seam)", () => {
       ]);
       expect(visualizer.robotResets).toEqual([
         { col: 0, row: 0, heading: "RIGHT", cellSize: 30 },
+      ]);
+      expect(visualizer.destinationPositions).toEqual([
+        { col: 6, row: 7, cellSize: 30 },
       ]);
     });
 
@@ -146,7 +151,7 @@ describe("SimulationVisualizer (Coarse-Grained Visualizer Seam)", () => {
       expect(mockElements.get("cell-4-5")?.classList.has("is-wall")).toBe(false);
     });
 
-    it("manipulates robot-actor and robot-actor-arrow elements", () => {
+    it("manipulates robot-actor, robot-actor-arrow, and destination-actor elements", () => {
       const visualizer = new DomVisualizer();
       visualizer.setRobotPosition(3, 5, 20, true);
       expect(mockElements.get("robot-actor")?.style.transform).toBe("translate3d(60px, 100px, 0)");
@@ -159,6 +164,10 @@ describe("SimulationVisualizer (Coarse-Grained Visualizer Seam)", () => {
       expect(mockElements.get("robot-actor")?.style.transform).toBe("translate3d(20px, 40px, 0)");
       expect(mockElements.get("robot-actor")?.style.transition).toBe("none");
       expect(mockElements.get("robot-actor-arrow")?.style.transform).toBe("rotate(-90deg)");
+
+      visualizer.setDestinationPosition(7, 8, 20);
+      expect(mockElements.get("destination-actor")?.style.transform).toBe("translate3d(140px, 160px, 0)");
+      expect(mockElements.get("destination-actor")?.style.transition).toBe("none");
     });
   });
 

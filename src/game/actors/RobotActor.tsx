@@ -1,4 +1,4 @@
-import { memo, useLayoutEffect } from "react";
+import { memo } from "react";
 import Box from "@mui/material/Box";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import type { Heading } from "../../shared/types";
@@ -26,15 +26,6 @@ export const RobotActor = memo(
     const row = Number(parts[0]);
     const col = Number(parts[1]);
 
-    useLayoutEffect(() => {
-      if (typeof document === "undefined") return;
-      const node = document.getElementById("robot-actor");
-      if (node && !isWalking) {
-        node.style.transition = "none";
-        node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
-      }
-    }, [row, col, cellSize, isWalking]);
-
     return (
       <Box
         id="robot-actor"
@@ -44,6 +35,14 @@ export const RobotActor = memo(
           e.stopPropagation();
           onMouseDown(robotNode);
         }}
+        style={
+          isWalking
+            ? undefined
+            : {
+                transform: `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`,
+                transition: "none",
+              }
+        }
         sx={{
           position: "absolute",
           top: 0,

@@ -17,6 +17,7 @@ export interface SimulationVisualizer {
   setRobotPosition(col: number, row: number, cellSize: number, animated?: boolean): void;
   setRobotHeading(heading: Heading, animated?: boolean): void;
   resetRobot(col: number, row: number, heading: Heading, cellSize: number): void;
+  setDestinationPosition(col: number, row: number, cellSize: number): void;
 
   // --- Transient Terrain Stroke Previews ---
   previewCell(key: string, color: string, isWall?: boolean): void;
@@ -88,6 +89,16 @@ export class DomVisualizer implements SimulationVisualizer {
     }
   }
 
+  public setDestinationPosition(col: number, row: number, cellSize: number): void {
+    if (typeof document === "undefined") return;
+    const node = document.getElementById("destination-actor");
+    if (node) {
+      node.style.transition = "none";
+      node.style.willChange = "auto";
+      node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
+    }
+  }
+
   public previewCell(key: string, color: string, isWall?: boolean): void {
     if (typeof document === "undefined") return;
     const node = document.getElementById(`cell-${key}`);
@@ -138,6 +149,7 @@ export class NullVisualizer implements SimulationVisualizer {
   public setRobotPosition(): void {}
   public setRobotHeading(): void {}
   public resetRobot(): void {}
+  public setDestinationPosition(): void {}
   public previewCell(): void {}
   public clearCellPreview(): void {}
   public clearAllCellPreviews(): void {}
@@ -154,6 +166,7 @@ export class MemoryVisualizer implements SimulationVisualizer {
   public robotPositions: { col: number; row: number; cellSize: number; animated?: boolean }[] = [];
   public robotHeadings: { heading: Heading; animated?: boolean }[] = [];
   public robotResets: { col: number; row: number; heading: Heading; cellSize: number }[] = [];
+  public destinationPositions: { col: number; row: number; cellSize: number }[] = [];
   public previews: Map<string, { color: string; isWall?: boolean }> = new Map();
 
   public renderSearchNode(key: string, type: "open" | "closed", theme: "manhattan" | "energy"): void {
@@ -179,6 +192,10 @@ export class MemoryVisualizer implements SimulationVisualizer {
 
   public resetRobot(col: number, row: number, heading: Heading, cellSize: number): void {
     this.robotResets.push({ col, row, heading, cellSize });
+  }
+
+  public setDestinationPosition(col: number, row: number, cellSize: number): void {
+    this.destinationPositions.push({ col, row, cellSize });
   }
 
   public previewCell(key: string, color: string, isWall?: boolean): void {

@@ -20,6 +20,7 @@ describe("SimulationEngine", () => {
     const setRobotPosition = vi.spyOn(visualizer, "setRobotPosition");
     const setRobotHeading = vi.spyOn(visualizer, "setRobotHeading");
     const resetRobot = vi.spyOn(visualizer, "resetRobot");
+    const setDestinationPosition = vi.spyOn(visualizer, "setDestinationPosition");
 
     const domStore = {
       get(key: string) {
@@ -73,6 +74,7 @@ describe("SimulationEngine", () => {
       setRobotPosition,
       setRobotHeading,
       resetRobot,
+      setDestinationPosition,
     };
   }
 
@@ -271,10 +273,11 @@ describe("SimulationEngine", () => {
     });
 
     it("moves robot and destination on drag and respects boundaries and walls", () => {
-      const { domAdapter } = createMockDomAdapter();
+      const { domAdapter, resetRobot, setDestinationPosition } = createMockDomAdapter();
       const engine = new SimulationEngine({
         cols: 10,
         rows: 10,
+        cellSize: 25,
         initialRobotNode: "0-0",
         initialDestinationNode: "5-5",
         initialWallNodes: new Set(["0-2"]),
@@ -289,6 +292,7 @@ describe("SimulationEngine", () => {
       engine.endPaint();
 
       expect(engine.getSnapshot().robotNode).toBe("0-1");
+      expect(resetRobot).toHaveBeenCalledWith(1, 0, "NONE", 25);
 
       // Drag destination
       engine.startPaint("5-5");
@@ -296,6 +300,7 @@ describe("SimulationEngine", () => {
       engine.endPaint();
 
       expect(engine.getSnapshot().destinationNode).toBe("5-4");
+      expect(setDestinationPosition).toHaveBeenCalledWith(4, 5, 25);
     });
 
 

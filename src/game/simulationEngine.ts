@@ -308,12 +308,18 @@ export class SimulationEngine {
     this.freeformCellSize = cellSize;
   }
 
+  private resetActorsVisuals(): void {
+    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
+    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    const [destR, destC] = this.terrain.getDestinationNode().split("-").map(Number);
+    this.visualizer.setDestinationPosition(destC, destR, this.cellSize);
+  }
+
   public setDimensions(cols: number, rows: number, cellSize: number): void {
     if (this.isFixedDimensions) {
       if (this.cellSize !== cellSize) {
         this.cellSize = cellSize;
-        const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-        this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+        this.resetActorsVisuals();
         this.notify();
       }
       return;
@@ -328,8 +334,9 @@ export class SimulationEngine {
     this.rows = rows;
     this.cellSize = cellSize;
 
-    const { clampedRobotR, clampedRobotC } = this.terrain.setDimensions(cols, rows);
+    const { clampedRobotR, clampedRobotC, clampedDestR, clampedDestC } = this.terrain.setDimensions(cols, rows);
     this.visualizer.resetRobot(clampedRobotC, clampedRobotR, this.robotHeading, this.cellSize);
+    this.visualizer.setDestinationPosition(clampedDestC, clampedDestR, this.cellSize);
     this.notify();
   }
 
@@ -488,7 +495,13 @@ export class SimulationEngine {
     const context = this.getPaintContext();
     const result = this.terrain.startStroke(key, context);
     if (result.modified) {
-      if (result.brush === "robot" || result.brush === "destination") {
+      if (result.brush === "robot") {
+        const [r, c] = key.split("-").map(Number);
+        this.visualizer.resetRobot(c, r, this.robotHeading, this.cellSize);
+        this.notify();
+      } else if (result.brush === "destination") {
+        const [r, c] = key.split("-").map(Number);
+        this.visualizer.setDestinationPosition(c, r, this.cellSize);
         this.notify();
       } else if (result.mutation && result.cellKey) {
         const preview = resolveMutationPreview(result.mutation);
@@ -505,6 +518,8 @@ export class SimulationEngine {
         this.visualizer.resetRobot(c, r, this.robotHeading, this.cellSize);
         this.notify();
       } else if (result.brush === "destination") {
+        const [r, c] = key.split("-").map(Number);
+        this.visualizer.setDestinationPosition(c, r, this.cellSize);
         this.notify();
       } else if (result.mutation && result.cellKey) {
         const preview = resolveMutationPreview(result.mutation);
@@ -610,8 +625,7 @@ export class SimulationEngine {
     this.walkFailure = null;
     this.pathMetrics = null;
 
-    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    this.resetActorsVisuals();
 
     this.notify();
   }
@@ -631,8 +645,7 @@ export class SimulationEngine {
     this.walkFailure = null;
     this.walkingStep = -1;
 
-    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    this.resetActorsVisuals();
 
     const scenario = this.getScenario();
 
@@ -821,8 +834,7 @@ export class SimulationEngine {
     this.hasFinishedWalking = false;
     this.walkFailure = null;
 
-    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    this.resetActorsVisuals();
 
     if (instantSolve) {
       this.solveInstantly(this.selectedAlgo);
@@ -847,8 +859,7 @@ export class SimulationEngine {
     this.walkFailure = null;
     this.walkingStep = -1;
 
-    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    this.resetActorsVisuals();
 
     const scenario = this.getScenario();
 
@@ -961,8 +972,7 @@ export class SimulationEngine {
     this.walkFailure = null;
     this.pathMetrics = null;
 
-    const [startR, startC] = this.terrain.getRobotNode().split("-").map(Number);
-    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+    this.resetActorsVisuals();
 
     this.notify();
   }
