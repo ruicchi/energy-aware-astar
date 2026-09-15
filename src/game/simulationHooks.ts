@@ -231,109 +231,81 @@ export function useGridCanvas(): GridCanvasModel {
 }
 
 /**
- * State required by simulation control panels.
+ * State required by simulation navigation, algorithm execution, and scenario control panels.
  */
-export interface ControlBarState {
+export interface SimulationControlsState {
+  loadedScenarioName: string | null;
   isFixedDimensions: boolean;
   isLocked: boolean;
-  loadedScenarioName: string | null;
-  activeBrush: BrushMode;
-  dirtBrushValue: number;
-  waterBrushValue: number;
-  elevationBrushValue: number;
-  maxTraversableSlope: number;
-  showGradients: boolean;
-  robotHeading: Heading;
-  isEnergyAware: boolean;
   selectedAlgo: AlgorithmType;
+  isEnergyAware: boolean;
   isManhattanFinished: boolean;
   isEnergyFinished: boolean;
   showManhattanSearch: boolean;
   showEnergySearch: boolean;
   hasPath: boolean;
   pathMetrics: SimulationState["pathMetrics"];
+  playbackStatus: PlaybackStatus;
   isWalking: boolean;
   walkFailure: { row: number; col: number; reason: string } | null;
-  playbackStatus: PlaybackStatus;
 }
 
 /**
- * Domain model returned by `useControlBar`, combining simulation controls state with bound commands.
+ * Domain model returned by `useSimulationControls`, pairing control state with bound commands.
  */
-export interface ControlBarModel extends ControlBarState {
+export interface SimulationControlsModel extends SimulationControlsState {
   loadPreset: (preset: ScenarioPresetId) => void;
   loadProcedural: (seed?: number) => void;
   resetToFreeform: () => void;
-  setActiveBrush: (brush: BrushMode) => void;
-  setDirtBrushValue: (val: number) => void;
-  setWaterBrushValue: (val: number) => void;
-  setElevationBrushValue: (val: number) => void;
-  setMaxTraversableSlope: (val: number) => void;
-  setShowGradients: (val: boolean) => void;
-  setRobotHeading: (heading: Heading) => void;
   setSelectedAlgo: (algo: AlgorithmType, runImmediate?: boolean) => void;
   visualize: (algo?: AlgorithmType) => void;
+  solveInstantly: (algo?: AlgorithmType) => void;
   walk: () => void;
   reset: () => void;
-  solveInstantly: (algo?: AlgorithmType) => void;
-  runSearch: (algo?: AlgorithmType) => void;
-  walkPath: () => void;
-  resetPath: () => void;
   toggleManhattanSearch: () => void;
   toggleEnergySearch: () => void;
 }
 
 /**
- * Pure selector projecting SimulationState into ControlBarState.
+ * Pure selector projecting SimulationState into SimulationControlsState.
  */
-export function selectControlBar(s: SimulationState): ControlBarState {
+export function selectSimulationControls(s: SimulationState): SimulationControlsState {
   return {
+    loadedScenarioName: s.loadedScenarioName,
     isFixedDimensions: s.isFixedDimensions,
     isLocked: s.isLocked,
-    loadedScenarioName: s.loadedScenarioName,
-    activeBrush: s.activeBrush,
-    dirtBrushValue: s.dirtBrushValue,
-    waterBrushValue: s.waterBrushValue,
-    elevationBrushValue: s.elevationBrushValue,
-    maxTraversableSlope: s.maxTraversableSlope,
-    showGradients: s.showGradients,
-    robotHeading: s.robotHeading,
-    isEnergyAware: s.selectedAlgo === "energyAware",
     selectedAlgo: s.selectedAlgo,
+    isEnergyAware: s.selectedAlgo === "energyAware",
     isManhattanFinished: s.isManhattanFinished,
     isEnergyFinished: s.isEnergyFinished,
     showManhattanSearch: s.showManhattanSearch,
     showEnergySearch: s.showEnergySearch,
     hasPath: Boolean(s.currentPath && s.currentPath.length > 0),
     pathMetrics: s.pathMetrics,
+    playbackStatus: s.playbackStatus,
     isWalking: s.isWalking,
     walkFailure: s.walkFailure,
-    playbackStatus: s.playbackStatus,
   };
 }
 
 /**
- * Unified domain hook for the simulation control ribbons and toolbars.
+ * Unified domain seam for scenario loading, algorithm selection, and simulation playback controls.
  */
-export function useControlBar(): ControlBarModel {
+export function useSimulationControls(): SimulationControlsModel {
   const engine = useSimulationEngine();
-  const state = useSimulationSelector(selectControlBar, shallowEqual);
+  const state = useSimulationSelector(selectSimulationControls, shallowEqual);
 
   const loadPreset = useCallback((preset: ScenarioPresetId) => engine.loadPreset(preset), [engine]);
   const loadProcedural = useCallback((seed?: number) => engine.loadProcedural(seed), [engine]);
   const resetToFreeform = useCallback(() => engine.resetToFreeform(), [engine]);
-  const setActiveBrush = useCallback((brush: BrushMode) => engine.setActiveBrush(brush), [engine]);
-  const setDirtBrushValue = useCallback((val: number) => engine.setDirtBrushValue(val), [engine]);
-  const setWaterBrushValue = useCallback((val: number) => engine.setWaterBrushValue(val), [engine]);
-  const setElevationBrushValue = useCallback((val: number) => engine.setElevationBrushValue(val), [engine]);
-  const setMaxTraversableSlope = useCallback((val: number) => engine.setMaxTraversableSlope(val), [engine]);
-  const setShowGradients = useCallback((val: boolean) => engine.setShowGradients(val), [engine]);
-  const setRobotHeading = useCallback((heading: Heading) => engine.setRobotHeading(heading), [engine]);
-  const setSelectedAlgo = useCallback((algo: AlgorithmType, runImmediate?: boolean) => engine.setSelectedAlgo(algo, runImmediate), [engine]);
+  const setSelectedAlgo = useCallback(
+    (algo: AlgorithmType, runImmediate?: boolean) => engine.setSelectedAlgo(algo, runImmediate),
+    [engine],
+  );
   const visualize = useCallback((algo?: AlgorithmType) => engine.visualize(algo), [engine]);
+  const solveInstantly = useCallback((algo?: AlgorithmType) => engine.solveInstantly(algo), [engine]);
   const walk = useCallback(() => engine.walk(), [engine]);
   const reset = useCallback(() => engine.reset(), [engine]);
-  const solveInstantly = useCallback((algo?: AlgorithmType) => engine.solveInstantly(algo), [engine]);
   const toggleManhattanSearch = useCallback(() => engine.toggleManhattanSearch(), [engine]);
   const toggleEnergySearch = useCallback(() => engine.toggleEnergySearch(), [engine]);
 
@@ -343,21 +315,11 @@ export function useControlBar(): ControlBarModel {
       loadPreset,
       loadProcedural,
       resetToFreeform,
-      setActiveBrush,
-      setDirtBrushValue,
-      setWaterBrushValue,
-      setElevationBrushValue,
-      setMaxTraversableSlope,
-      setShowGradients,
-      setRobotHeading,
       setSelectedAlgo,
       visualize,
+      solveInstantly,
       walk,
       reset,
-      solveInstantly,
-      runSearch: visualize,
-      walkPath: walk,
-      resetPath: reset,
       toggleManhattanSearch,
       toggleEnergySearch,
     }),
@@ -366,20 +328,99 @@ export function useControlBar(): ControlBarModel {
       loadPreset,
       loadProcedural,
       resetToFreeform,
+      setSelectedAlgo,
+      visualize,
+      solveInstantly,
+      walk,
+      reset,
+      toggleManhattanSearch,
+      toggleEnergySearch,
+    ],
+  );
+}
+
+/**
+ * State required by interactive terrain tool ribbons and brush sliders.
+ */
+export interface BrushControlsState {
+  activeBrush: BrushMode;
+  dirtBrushValue: number;
+  waterBrushValue: number;
+  elevationBrushValue: number;
+  maxTraversableSlope: number;
+  showGradients: boolean;
+}
+
+/**
+ * Domain model returned by `useBrushControls`, combining brush parameters with bound actions.
+ */
+export interface BrushControlsModel extends BrushControlsState {
+  setActiveBrush: (brush: BrushMode) => void;
+  setDirtBrushValue: (val: number) => void;
+  setWaterBrushValue: (val: number) => void;
+  setElevationBrushValue: (val: number) => void;
+  setMaxTraversableSlope: (val: number) => void;
+  setShowGradients: (val: boolean) => void;
+  toggleGradients: () => void;
+  clearWalls: () => void;
+  reset: () => void;
+}
+
+/**
+ * Pure selector projecting SimulationState into BrushControlsState.
+ */
+export function selectBrushControls(s: SimulationState): BrushControlsState {
+  return {
+    activeBrush: s.activeBrush,
+    dirtBrushValue: s.dirtBrushValue,
+    waterBrushValue: s.waterBrushValue,
+    elevationBrushValue: s.elevationBrushValue,
+    maxTraversableSlope: s.maxTraversableSlope,
+    showGradients: s.showGradients,
+  };
+}
+
+/**
+ * Unified domain seam for active terrain brushes, friction costs, and slope controls.
+ */
+export function useBrushControls(): BrushControlsModel {
+  const engine = useSimulationEngine();
+  const state = useSimulationSelector(selectBrushControls, shallowEqual);
+
+  const setActiveBrush = useCallback((brush: BrushMode) => engine.setActiveBrush(brush), [engine]);
+  const setDirtBrushValue = useCallback((val: number) => engine.setDirtBrushValue(val), [engine]);
+  const setWaterBrushValue = useCallback((val: number) => engine.setWaterBrushValue(val), [engine]);
+  const setElevationBrushValue = useCallback((val: number) => engine.setElevationBrushValue(val), [engine]);
+  const setMaxTraversableSlope = useCallback((val: number) => engine.setMaxTraversableSlope(val), [engine]);
+  const setShowGradients = useCallback((val: boolean) => engine.setShowGradients(val), [engine]);
+  const toggleGradients = useCallback(() => engine.toggleGradients(), [engine]);
+  const clearWalls = useCallback(() => engine.clearWalls(), [engine]);
+  const reset = useCallback(() => engine.reset(), [engine]);
+
+  return useMemo(
+    () => ({
+      ...state,
       setActiveBrush,
       setDirtBrushValue,
       setWaterBrushValue,
       setElevationBrushValue,
       setMaxTraversableSlope,
       setShowGradients,
-      setRobotHeading,
-      setSelectedAlgo,
-      visualize,
-      walk,
+      toggleGradients,
+      clearWalls,
       reset,
-      solveInstantly,
-      toggleManhattanSearch,
-      toggleEnergySearch,
+    }),
+    [
+      state,
+      setActiveBrush,
+      setDirtBrushValue,
+      setWaterBrushValue,
+      setElevationBrushValue,
+      setMaxTraversableSlope,
+      setShowGradients,
+      toggleGradients,
+      clearWalls,
+      reset,
     ],
   );
 }
@@ -425,110 +466,4 @@ export function useHeadingControls(): HeadingControlsModel {
  */
 export function usePathMetrics(): SimulationState["pathMetrics"] {
   return useSimulationSelector((s) => s.pathMetrics);
-}
-
-/**
- * Sliced hook for grid viewport & dimension parameters.
- */
-export function useGridDimensions() {
-  return useSimulationSelector(
-    (s) => ({
-      cols: s.cols,
-      rows: s.rows,
-      cellSize: s.cellSize,
-      isFixedDimensions: s.isFixedDimensions,
-    }),
-    shallowEqual,
-  );
-}
-
-/**
- * Sliced hook for playback & kinematic traversal status.
- */
-export function usePlaybackState() {
-  return useSimulationSelector(
-    (s) => ({
-      playbackStatus: s.playbackStatus,
-      isAnimating: s.isAnimating,
-      isWalking: s.isWalking,
-      hasFinishedWalking: s.hasFinishedWalking,
-      isLocked: s.isLocked,
-      isPaused: s.isPaused,
-      walkFailure: s.walkFailure,
-    }),
-    shallowEqual,
-  );
-}
-
-/**
- * Sliced hook for search policies, path visualization, and energy metrics.
- */
-export function useSearchTelemetry() {
-  return useSimulationSelector(
-    (s) => ({
-      selectedAlgo: s.selectedAlgo,
-      isManhattanFinished: s.isManhattanFinished,
-      isEnergyFinished: s.isEnergyFinished,
-      showManhattanSearch: s.showManhattanSearch,
-      showEnergySearch: s.showEnergySearch,
-      isPathVisible: s.isPathVisible,
-      pathTheme: s.pathTheme,
-      currentPath: s.currentPath,
-      hasPath: Boolean(s.currentPath && s.currentPath.length > 0),
-      pathMetrics: s.pathMetrics,
-    }),
-    shallowEqual,
-  );
-}
-
-/**
- * Sliced hook for active terrain tool & brush settings.
- */
-export function useBrushState() {
-  return useSimulationSelector(
-    (s) => ({
-      activeBrush: s.activeBrush,
-      elevationBrushValue: s.elevationBrushValue,
-      dirtBrushValue: s.dirtBrushValue,
-      waterBrushValue: s.waterBrushValue,
-      maxTraversableSlope: s.maxTraversableSlope,
-      showGradients: s.showGradients,
-      robotHeading: s.robotHeading,
-      activeStrokeBrush: s.activeStrokeBrush,
-    }),
-    shallowEqual,
-  );
-}
-
-/**
- * Sliced hook for scenario terrain maps and actor placements.
- */
-export function useTerrainState() {
-  return useSimulationSelector(
-    (s) => ({
-      wallNodes: s.wallNodes,
-      wallNode: s.wallNodes,
-      terrainFactors: s.terrainFactors,
-      terrainTypes: s.terrainTypes,
-      elevations: s.elevations,
-      showGradients: s.showGradients,
-      robotNode: s.robotNode,
-      destinationNode: s.destinationNode,
-    }),
-    shallowEqual,
-  );
-}
-
-/**
- * Sliced hook for scenario catalog & loading status.
- */
-export function useScenarioState() {
-  return useSimulationSelector(
-    (s) => ({
-      isFixedDimensions: s.isFixedDimensions,
-      loadedScenarioName: s.loadedScenarioName,
-      isLocked: s.isLocked,
-    }),
-    shallowEqual,
-  );
 }

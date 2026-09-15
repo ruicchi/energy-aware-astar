@@ -11,60 +11,77 @@ import {
 } from "@mui/material";
 import { Casino, Refresh } from "@mui/icons-material";
 import {
-  useSimulationEngine,
-  useScenarioState,
+  useSimulationControls,
   SCENARIO_PRESETS,
   type ScenarioPresetId,
 } from "../simulationHooks";
 
 type ScenarioKey = "freeform" | ScenarioPresetId | "procedural";
 
-export function ScenarioControls() {
-  const engine = useSimulationEngine();
-  const { isFixedDimensions, isLocked } = useScenarioState();
+function resolveActiveScenarioKey(
+  isFixedDimensions: boolean,
+  loadedScenarioName: string | null,
+): ScenarioKey {
+  if (!isFixedDimensions || !loadedScenarioName) {
+    return "freeform";
+  }
+  if (loadedScenarioName.startsWith("Seed #")) {
+    return "procedural";
+  }
+  const preset = SCENARIO_PRESETS.find((p) => p.name === loadedScenarioName);
+  return preset ? preset.id : "freeform";
+}
 
-  const [selectedKey, setSelectedKey] = useState<ScenarioKey>("freeform");
+export function ScenarioControls() {
+  const {
+    isFixedDimensions,
+    isLocked,
+    loadedScenarioName,
+    loadPreset,
+    loadProcedural,
+    resetToFreeform,
+  } = useSimulationControls();
+
   const [seed, setSeed] = useState<number>(1);
 
-  const activeKey: ScenarioKey = isFixedDimensions ? selectedKey : "freeform";
-
-  function applyScenario(key: ScenarioKey, currentSeed = seed) {
-    if (key === "freeform") {
-      engine.resetToFreeform();
-      return;
-    }
-
-    if (key === "procedural") {
-      engine.loadProcedural(currentSeed);
-      return;
-    }
-
-    engine.loadPreset(key);
-  }
+  const activeKey: ScenarioKey = resolveActiveScenarioKey(
+    isFixedDimensions,
+    loadedScenarioName,
+  );
 
   function handleSelectChange(e: SelectChangeEvent<ScenarioKey>) {
     const key = e.target.value as ScenarioKey;
-    setSelectedKey(key);
-    applyScenario(key);
+    if (key === "freeform") {
+      resetToFreeform();
+    } else if (key === "procedural") {
+      loadProcedural(seed);
+    } else {
+      loadPreset(key);
+    }
   }
 
   function handleSeedChange(e: React.ChangeEvent<HTMLInputElement>) {
     const nextSeed = Math.max(1, parseInt(e.target.value, 10) || 1);
     setSeed(nextSeed);
     if (activeKey === "procedural") {
-      applyScenario("procedural", nextSeed);
+      loadProcedural(nextSeed);
     }
   }
 
   function handleRandomSeed() {
     const randomSeed = Math.floor(Math.random() * 50) + 1;
     setSeed(randomSeed);
-    setSelectedKey("procedural");
-    applyScenario("procedural", randomSeed);
+    loadProcedural(randomSeed);
   }
 
   function handleReload() {
-    applyScenario(activeKey);
+    if (activeKey === "procedural") {
+      loadProcedural(seed);
+    } else if (activeKey !== "freeform") {
+      loadPreset(activeKey);
+    } else {
+      resetToFreeform();
+    }
   }
 
   return (

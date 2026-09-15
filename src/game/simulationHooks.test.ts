@@ -3,7 +3,8 @@ import {
   shallowEqual,
   computePolylinePoints,
   selectGridCanvas,
-  selectControlBar,
+  selectSimulationControls,
+  selectBrushControls,
 } from "./simulationHooks";
 import { SimulationEngine } from "./simulationEngine";
 
@@ -240,21 +241,50 @@ describe("simulationHooks - Unified Grid Canvas Seam", () => {
   });
 });
 
-describe("simulationHooks - Unified Control Bar Seam", () => {
-  it("projects simulation control state and responds to brush updates", () => {
+describe("simulationHooks - Consolidated Control Seams", () => {
+  it("projects simulation control state and responds to algorithm changes without affecting brush slice", () => {
     const engine = new SimulationEngine({ cols: 20, rows: 20 });
     const s1 = engine.getSnapshot();
-    const control1 = selectControlBar(s1);
+    const simControls1 = selectSimulationControls(s1);
+    const brushControls1 = selectBrushControls(s1);
 
-    expect(control1.activeBrush).toBe("wall");
-    expect(control1.isEnergyAware).toBe(true);
+    expect(simControls1.selectedAlgo).toBe("energyAware");
+    expect(simControls1.isEnergyAware).toBe(true);
+    expect(brushControls1.activeBrush).toBe("wall");
 
+    // Change algorithm
+    engine.setSelectedAlgo("manhattan", false);
+    const s2 = engine.getSnapshot();
+    const simControls2 = selectSimulationControls(s2);
+    const brushControls2 = selectBrushControls(s2);
+
+    expect(shallowEqual(simControls1, simControls2)).toBe(false);
+    expect(simControls2.selectedAlgo).toBe("manhattan");
+    expect(simControls2.isEnergyAware).toBe(false);
+
+    // Brush slice remains identical
+    expect(shallowEqual(brushControls1, brushControls2)).toBe(true);
+  });
+
+  it("projects brush controls and responds to brush adjustments without affecting simulation controls", () => {
+    const engine = new SimulationEngine({ cols: 20, rows: 20 });
+    const s1 = engine.getSnapshot();
+    const simControls1 = selectSimulationControls(s1);
+    const brushControls1 = selectBrushControls(s1);
+
+    expect(brushControls1.dirtBrushValue).toBe(0.5);
+
+    // Adjust dirt brush value
     engine.setDirtBrushValue(7);
     const s2 = engine.getSnapshot();
-    const control2 = selectControlBar(s2);
+    const simControls2 = selectSimulationControls(s2);
+    const brushControls2 = selectBrushControls(s2);
 
-    expect(shallowEqual(control1, control2)).toBe(false);
-    expect(control2.dirtBrushValue).toBe(7);
+    expect(shallowEqual(brushControls1, brushControls2)).toBe(false);
+    expect(brushControls2.dirtBrushValue).toBe(7);
+
+    // Simulation controls remain identical
+    expect(shallowEqual(simControls1, simControls2)).toBe(true);
   });
 });
 

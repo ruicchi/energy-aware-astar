@@ -73,6 +73,6 @@ The unified domain hook and selector projection (`useGridCanvas`) consolidating 
 _Avoid_: ViewportHooks, CanvasStore, GridSelectors
 
 **Simulation Control Seam**:
-The cohesive domain hooks (`useControlBar`, `useHeadingControls`, `usePathMetrics`) aggregating scenario configuration, brush parameters, algorithm selection, and playback commands across control panels.
+The cohesive domain hooks (`useSimulationControls`, `useBrushControls`, `useHeadingControls`, `usePathMetrics`) aggregating scenario configuration, brush parameters, algorithm selection, and playback commands across control panels.
 _Avoid_: ControlHooks, ToolRibbonManager, PanelState
 

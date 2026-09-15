@@ -4,7 +4,7 @@ import {
   getElevationSlopeDegrees,
   getElevationFromSlopeDegrees,
 } from "../../physics/terrainPhysics";
-import { useSimulationEngine, useBrushState } from "../simulationHooks";
+import { useBrushControls } from "../simulationHooks";
 
 const SLOPE_MARKS = [
   { value: 5, label: "5°" },
@@ -33,7 +33,6 @@ const sliderMarksSx = {
 };
 
 export function TerrainBrushControls() {
-  const engine = useSimulationEngine();
   const {
     activeBrush,
     dirtBrushValue,
@@ -41,7 +40,15 @@ export function TerrainBrushControls() {
     elevationBrushValue,
     maxTraversableSlope,
     showGradients,
-  } = useBrushState();
+    setActiveBrush,
+    setDirtBrushValue,
+    setWaterBrushValue,
+    setElevationBrushValue,
+    setMaxTraversableSlope,
+    toggleGradients,
+    clearWalls,
+    reset,
+  } = useBrushControls();
 
   const currentSlopeAngle = Math.min(
     BRUSH_CONFIG.elevation.max,
@@ -61,7 +68,7 @@ export function TerrainBrushControls() {
           variant="contained"
           size="small"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => engine.setActiveBrush("wall")}
+          onClick={() => setActiveBrush("wall")}
           sx={{
             backgroundColor: TERRAIN_CONFIG.types.wall.color,
             color: "#ffffff",
@@ -82,7 +89,7 @@ export function TerrainBrushControls() {
             variant="contained"
             size="small"
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => engine.setActiveBrush("dirt")}
+            onClick={() => setActiveBrush("dirt")}
             sx={{
               backgroundColor: TERRAIN_CONFIG.types.dirt.color,
               color: "#3e2723",
@@ -104,7 +111,7 @@ export function TerrainBrushControls() {
             variant="contained"
             size="small"
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => engine.setActiveBrush("water")}
+            onClick={() => setActiveBrush("water")}
             sx={{
               backgroundColor: TERRAIN_CONFIG.types.water.color,
               color: "#004d40",
@@ -125,7 +132,7 @@ export function TerrainBrushControls() {
           variant="contained"
           size="small"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => engine.setActiveBrush("elevation")}
+          onClick={() => setActiveBrush("elevation")}
           sx={{
             backgroundColor: TERRAIN_CONFIG.getElevationColor(elevationBrushValue),
             color: "#ffffff",
@@ -176,7 +183,7 @@ export function TerrainBrushControls() {
                 },
               ]}
               onChange={(_, value) =>
-                engine.setDirtBrushValue(Number((value as number).toFixed(1)))
+                setDirtBrushValue(Number((value as number).toFixed(1)))
               }
               onPointerDown={(e) => e.stopPropagation()}
               sx={sliderMarksSx}
@@ -219,7 +226,7 @@ export function TerrainBrushControls() {
                 },
               ]}
               onChange={(_, value) =>
-                engine.setWaterBrushValue(Number((value as number).toFixed(1)))
+                setWaterBrushValue(Number((value as number).toFixed(1)))
               }
               onPointerDown={(e) => e.stopPropagation()}
               sx={sliderMarksSx}
@@ -257,7 +264,7 @@ export function TerrainBrushControls() {
               step={BRUSH_CONFIG.elevation.step}
               onChange={(_, value) => {
                 const angle = value as number;
-                engine.setElevationBrushValue(getElevationFromSlopeDegrees(angle));
+                setElevationBrushValue(getElevationFromSlopeDegrees(angle));
               }}
               onPointerDown={(e) => e.stopPropagation()}
             />
@@ -280,7 +287,7 @@ export function TerrainBrushControls() {
               max={BRUSH_CONFIG.maxTraversableSlope.max}
               step={BRUSH_CONFIG.maxTraversableSlope.step}
               marks={SLOPE_MARKS}
-              onChange={(_, value) => engine.setMaxTraversableSlope(value as number)}
+              onChange={(_, value) => setMaxTraversableSlope(value as number)}
               onPointerDown={(e) => e.stopPropagation()}
               sx={sliderMarksSx}
             />
@@ -292,7 +299,7 @@ export function TerrainBrushControls() {
             fullWidth
             color="secondary"
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => engine.toggleGradients()}
+            onClick={() => toggleGradients()}
           >
             {showGradients ? "Hide Gradients" : "Show Gradients"}
           </Button>
@@ -315,7 +322,7 @@ export function TerrainBrushControls() {
           fullWidth
           size="small"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => engine.clearWalls()}
+          onClick={() => clearWalls()}
         >
           Clear
         </Button>
@@ -325,7 +332,7 @@ export function TerrainBrushControls() {
           fullWidth
           size="small"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => engine.reset()}
+          onClick={() => reset()}
         >
           Reset
         </Button>
