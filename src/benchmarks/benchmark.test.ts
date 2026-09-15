@@ -97,4 +97,33 @@ describe("Benchmark: Energy-Aware A* vs Standard Heuristics", () => {
       }
     }
   });
+
+  it("supports in-memory artifact retrieval and virtual filesystem adapter seam", () => {
+    const report = runDeterministicBenchmarkSuite();
+    const bundle = report.getBundle();
+
+    expect(bundle.table1DeterministicTex).toBeDefined();
+    expect(bundle.table1DeterministicTex).toContain("Deterministic Benchmark Scenarios");
+    expect(bundle.table3EnergyBreakdownTex).toBeDefined();
+    expect(bundle.table3EnergyBreakdownTex).toContain("Component-Wise Energy Breakdown");
+
+    // In-memory virtual filesystem adapter (Ports & Adapters)
+    const virtualFiles = new Map<string, string>();
+    const virtualDirs = new Set<string>();
+
+    const mockFs = {
+      mkdirSync: (dir: string) => {
+        virtualDirs.add(dir);
+      },
+      writeFileSync: (filePath: string, content: string) => {
+        virtualFiles.set(filePath, content);
+      },
+      existsSync: (dir: string) => virtualDirs.has(dir),
+    };
+
+    const written = report.saveToDisk("/virtual/output", mockFs);
+    expect(written.table1Path).toBe(path.join("/virtual/output", "thesis_tables", "table1_deterministic.tex"));
+    expect(virtualFiles.has(written.table1Path!)).toBe(true);
+    expect(virtualFiles.get(written.table1Path!)).toBe(bundle.table1DeterministicTex);
+  });
 });
