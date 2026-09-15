@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveCellDisplayState } from "./cellDisplay";
+import { resolveCellDisplayState, resolveMutationPreview } from "./cellDisplay";
 import { TERRAIN_CONFIG, THEME_CONFIG } from "../config/simulationConfig";
 
 describe("Cell Display Resolver", () => {
@@ -111,5 +111,79 @@ describe("Cell Display Resolver", () => {
     });
     expect(unstableState.bgColor).toBe(THEME_CONFIG.unstableOverlayColor);
     expect(unstableState.gradientArrow?.isUnstable).toBe(true);
+  });
+
+  describe("resolveMutationPreview", () => {
+    it("resolves wall layer mutations", () => {
+      expect(
+        resolveMutationPreview({ key: "1-1", layer: "wall", value: true }),
+      ).toEqual({
+        color: TERRAIN_CONFIG.types.wall.color,
+        isWall: true,
+      });
+
+      expect(
+        resolveMutationPreview({ key: "1-1", layer: "wall", value: false }),
+      ).toEqual({
+        color: "transparent",
+        isWall: false,
+      });
+    });
+
+    it("resolves dirt layer mutations", () => {
+      expect(
+        resolveMutationPreview({
+          key: "1-1",
+          layer: "dirt",
+          value: TERRAIN_CONFIG.types.dirt.cost,
+        }),
+      ).toEqual({
+        color: TERRAIN_CONFIG.types.dirt.color,
+        isWall: false,
+      });
+
+      expect(
+        resolveMutationPreview({ key: "1-1", layer: "dirt", value: 0 }),
+      ).toEqual({
+        color: "transparent",
+        isWall: false,
+      });
+    });
+
+    it("resolves water layer mutations", () => {
+      expect(
+        resolveMutationPreview({
+          key: "1-1",
+          layer: "water",
+          value: TERRAIN_CONFIG.types.water.cost,
+        }),
+      ).toEqual({
+        color: TERRAIN_CONFIG.types.water.color,
+        isWall: false,
+      });
+
+      expect(
+        resolveMutationPreview({ key: "1-1", layer: "water", value: 0 }),
+      ).toEqual({
+        color: "transparent",
+        isWall: false,
+      });
+    });
+
+    it("resolves elevation layer mutations", () => {
+      expect(
+        resolveMutationPreview({ key: "1-1", layer: "elevation", value: 4 }),
+      ).toEqual({
+        color: TERRAIN_CONFIG.getElevationColor(4),
+        isWall: false,
+      });
+
+      expect(
+        resolveMutationPreview({ key: "1-1", layer: "elevation", value: 0 }),
+      ).toEqual({
+        color: "transparent",
+        isWall: false,
+      });
+    });
   });
 });

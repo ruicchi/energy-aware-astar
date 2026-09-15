@@ -31,21 +31,17 @@ export interface ActiveStrokeSession {
   previousSnapshot: TerrainSnapshot;
 }
 
-export interface CellPreview {
-  color: string;
-  isWall?: boolean;
+export interface CellMutation {
+  key: string;
+  layer: "wall" | "dirt" | "water" | "elevation";
+  value: number | boolean;
 }
 
 export interface StrokeResult {
   modified: boolean;
   brush?: BrushMode | "robot" | "destination";
   cellKey?: string;
-  preview?: CellPreview;
-}
-
-export interface RollbackCell {
-  key: string;
-  restoreWall: boolean;
+  mutation?: CellMutation;
 }
 
 export interface ScenarioTerrainOptions {
@@ -401,7 +397,7 @@ export class ScenarioTerrain {
       modified: applied.modified,
       brush: context.activeBrush,
       cellKey: key,
-      preview: applied.preview,
+      mutation: applied.mutation,
     };
   }
 
@@ -443,7 +439,7 @@ export class ScenarioTerrain {
       modified: applied.modified,
       brush,
       cellKey: key,
-      preview: applied.preview,
+      mutation: applied.mutation,
     };
   }
 
@@ -459,7 +455,7 @@ export class ScenarioTerrain {
     return this.commitStroke();
   }
 
-  public abortStroke(): RollbackCell[] | null {
+  public abortStroke(): string[] | null {
     if (!this.strokeSession) return null;
 
     const snapshot = this.strokeSession.previousSnapshot;
@@ -471,14 +467,7 @@ export class ScenarioTerrain {
     this.robotNode = snapshot.robotNode;
     this.destinationNode = snapshot.destinationNode;
 
-    const rolledBack: RollbackCell[] = [];
-    for (const key of this.strokeSession.modifiedCells) {
-      rolledBack.push({
-        key,
-        restoreWall: this.wallNodes.has(key),
-      });
-    }
-
+    const rolledBack = Array.from(this.strokeSession.modifiedCells);
     this.strokeSession = null;
     return rolledBack;
   }
@@ -510,7 +499,7 @@ export class ScenarioTerrain {
     return (this.elevations.get(key) ?? 0) > 0;
   }
 
-  private applyStrokeToCell(key: string): { modified: boolean; preview?: CellPreview } {
+  private applyStrokeToCell(key: string): { modified: boolean; mutation?: CellMutation } {
     if (!this.strokeSession) return { modified: false };
 
     const { brush, drawValue } = this.strokeSession;
@@ -528,7 +517,7 @@ export class ScenarioTerrain {
         this.strokeSession.modifiedCells.add(key);
         return {
           modified: true,
-          preview: { color: "transparent", isWall: false },
+          mutation: { key, layer: "wall", value: false },
         };
       }
 
@@ -555,7 +544,7 @@ export class ScenarioTerrain {
       this.strokeSession.modifiedCells.add(key);
       return {
         modified: true,
-        preview: { color: TERRAIN_CONFIG.types.wall.color, isWall: true },
+        mutation: { key, layer: "wall", value: true },
       };
     }
 
@@ -575,7 +564,7 @@ export class ScenarioTerrain {
         this.strokeSession.modifiedCells.add(key);
         return {
           modified: true,
-          preview: { color: "transparent", isWall: false },
+          mutation: { key, layer: "dirt", value: 0 },
         };
       }
 
@@ -599,7 +588,7 @@ export class ScenarioTerrain {
       this.strokeSession.modifiedCells.add(key);
       return {
         modified: true,
-        preview: { color: TERRAIN_CONFIG.types.dirt.color, isWall: false },
+        mutation: { key, layer: "dirt", value: val },
       };
     }
 
@@ -619,7 +608,7 @@ export class ScenarioTerrain {
         this.strokeSession.modifiedCells.add(key);
         return {
           modified: true,
-          preview: { color: "transparent", isWall: false },
+          mutation: { key, layer: "water", value: 0 },
         };
       }
 
@@ -643,7 +632,7 @@ export class ScenarioTerrain {
       this.strokeSession.modifiedCells.add(key);
       return {
         modified: true,
-        preview: { color: TERRAIN_CONFIG.types.water.color, isWall: false },
+        mutation: { key, layer: "water", value: val },
       };
     }
 
@@ -660,7 +649,7 @@ export class ScenarioTerrain {
         this.strokeSession.modifiedCells.add(key);
         return {
           modified: true,
-          preview: { color: "transparent", isWall: false },
+          mutation: { key, layer: "elevation", value: 0 },
         };
       }
 
@@ -684,7 +673,7 @@ export class ScenarioTerrain {
       this.strokeSession.modifiedCells.add(key);
       return {
         modified: true,
-        preview: { color: TERRAIN_CONFIG.getElevationColor(val), isWall: false },
+        mutation: { key, layer: "elevation", value: val },
       };
     }
 

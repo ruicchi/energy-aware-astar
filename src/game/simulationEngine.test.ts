@@ -218,8 +218,18 @@ describe("SimulationEngine", () => {
       expect(engine.getSnapshot().wallNodes.has("1-1")).toBe(false);
       expect(engine.getSnapshot().elevations.get("1-1")).toBe(4);
 
-      // Updating elevation brush value updates existing elevation in freeform mode
+      // Updating elevation brush value does NOT change already painted elevation tiles
       engine.setElevationBrushValue(6);
+      expect(engine.getSnapshot().elevations.get("1-1")).toBe(4);
+
+      // New tiles painted use the updated elevation brush value
+      engine.startPaint("1-2");
+      engine.endPaint();
+      expect(engine.getSnapshot().elevations.get("1-2")).toBe(6);
+
+      // Painting over an existing tile with the brush updates it to the new elevation value
+      engine.startPaint("1-1");
+      engine.endPaint();
       expect(engine.getSnapshot().elevations.get("1-1")).toBe(6);
     });
 

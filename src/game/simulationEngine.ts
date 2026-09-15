@@ -25,7 +25,9 @@ import {
 import {
   ScenarioTerrain,
   type PaintContext,
+  type CellMutation,
 } from "./scenarioTerrain";
+import { resolveMutationPreview } from "./cellDisplay";
 import {
   SimulationPlayback,
   compileSearchTimeline,
@@ -49,7 +51,7 @@ export {
   type ScenarioPresetId,
   type ScenarioPresetDescriptor,
   ScenarioTerrain,
-  ScenarioTerrain as GridPaintBuffer,
+  type CellMutation,
   SimulationPlayback,
   compileSearchTimeline,
   compileWalkTimeline,
@@ -355,14 +357,7 @@ export class SimulationEngine {
   public setElevationBrushValue(val: number): void {
     if (this.elevationBrushValue === val) return;
     this.elevationBrushValue = val;
-    if (!this.isFixedDimensions) {
-      this.terrain.updateElevation(val);
-    }
-    if (this.isPathVisible && !this.isAnimating && !this.isWalking) {
-      this.solveInstantly(this.selectedAlgo);
-    } else {
-      this.notify();
-    }
+    this.notify();
   }
 
   public setDirtBrushValue(val: number): void {
@@ -495,8 +490,9 @@ export class SimulationEngine {
     if (result.modified) {
       if (result.brush === "robot" || result.brush === "destination") {
         this.notify();
-      } else if (result.preview && result.cellKey) {
-        this.visualizer.previewCell(result.cellKey, result.preview.color, result.preview.isWall);
+      } else if (result.mutation && result.cellKey) {
+        const preview = resolveMutationPreview(result.mutation);
+        this.visualizer.previewCell(result.cellKey, preview.color, preview.isWall);
       }
     }
   }
@@ -510,8 +506,9 @@ export class SimulationEngine {
         this.notify();
       } else if (result.brush === "destination") {
         this.notify();
-      } else if (result.preview && result.cellKey) {
-        this.visualizer.previewCell(result.cellKey, result.preview.color, result.preview.isWall);
+      } else if (result.mutation && result.cellKey) {
+        const preview = resolveMutationPreview(result.mutation);
+        this.visualizer.previewCell(result.cellKey, preview.color, preview.isWall);
       }
     }
   }
@@ -533,8 +530,8 @@ export class SimulationEngine {
   public abortPaint(): void {
     const rolledBack = this.terrain.abortStroke();
     if (rolledBack && rolledBack.length > 0) {
-      for (const item of rolledBack) {
-        this.visualizer.clearCellPreview(item.key, item.restoreWall);
+      for (const key of rolledBack) {
+        this.visualizer.clearCellPreview(key, this.terrain.hasWall(key));
       }
       if (this.isPathVisible) {
         this.solveInstantly(this.selectedAlgo);

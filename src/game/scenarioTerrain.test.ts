@@ -1,7 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { ScenarioTerrain, type PaintContext } from "./scenarioTerrain";
-import { GridPaintBuffer } from "./gridPaintBuffer";
-import { TERRAIN_CONFIG } from "../config/simulationConfig";
 
 describe("ScenarioTerrain (Deep Terrain Model)", () => {
   function createContext(overrides: Partial<PaintContext> = {}): PaintContext {
@@ -15,10 +13,6 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
       ...overrides,
     };
   }
-
-  it("exports ScenarioTerrain as GridPaintBuffer alias for backward compatibility", () => {
-    expect(GridPaintBuffer).toBe(ScenarioTerrain);
-  });
 
   it("paints walls and toggles off existing walls with pure stroke descriptors", () => {
     const terrain = new ScenarioTerrain({
@@ -34,8 +28,7 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(terrain.hasWall("1-1")).toBe(true);
     expect(terrain.getSnapshot().wallNodes.has("1-1")).toBe(true);
     expect(startResult.modified).toBe(true);
-    expect(startResult.preview?.color).toBe(TERRAIN_CONFIG.types.wall.color);
-    expect(startResult.preview?.isWall).toBe(true);
+    expect(startResult.mutation).toEqual({ key: "1-1", layer: "wall", value: true });
 
     // Continue painting wall at 1-2
     const continueResult = terrain.continueStroke("1-2");
@@ -51,8 +44,7 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     const toggleResult = terrain.startStroke("1-1", context);
     expect(terrain.hasWall("1-1")).toBe(false);
     expect(toggleResult.modified).toBe(true);
-    expect(toggleResult.preview?.color).toBe("transparent");
-    expect(toggleResult.preview?.isWall).toBe(false);
+    expect(toggleResult.mutation).toEqual({ key: "1-1", layer: "wall", value: false });
 
     const toggleModified = terrain.commitStroke();
     expect(toggleModified).toEqual(["1-1"]);
@@ -70,8 +62,7 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
 
     const result = terrain.startStroke("2-2", context);
     expect(result.modified).toBe(true);
-    expect(result.preview?.color).toBe(TERRAIN_CONFIG.types.dirt.color);
-    expect(result.preview?.isWall).toBe(false);
+    expect(result.mutation).toEqual({ key: "2-2", layer: "dirt", value: 1.8 });
 
     expect(terrain.getTerrainFactor("2-2")).toBe(1.8);
     expect(terrain.getTerrainType("2-2")).toBe("dirt");
@@ -92,8 +83,7 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
 
     const result = terrain.startStroke("3-3", context);
     expect(result.modified).toBe(true);
-    expect(result.preview?.color).toBe(TERRAIN_CONFIG.types.water.color);
-    expect(result.preview?.isWall).toBe(false);
+    expect(result.mutation).toEqual({ key: "3-3", layer: "water", value: 2.5 });
 
     expect(terrain.getTerrainFactor("3-3")).toBe(2.5);
     expect(terrain.getTerrainType("3-3")).toBe("water");
@@ -115,7 +105,7 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
 
     const result = terrain.startStroke("4-4", context);
     expect(result.modified).toBe(true);
-    expect(result.preview?.color).toBe(TERRAIN_CONFIG.getElevationColor(5));
+    expect(result.mutation).toEqual({ key: "4-4", layer: "elevation", value: 5 });
 
     expect(terrain.getElevation("4-4")).toBe(5);
     expect(terrain.hasWall("4-4")).toBe(false);
@@ -260,13 +250,10 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(terrain.isSessionActive()).toBe(false);
     expect(terrain.hasWall("2-2")).toBe(false);
     expect(terrain.hasWall("2-3")).toBe(false);
-    expect(rolledBack).toEqual([
-      { key: "2-2", restoreWall: false },
-      { key: "2-3", restoreWall: false },
-    ]);
+    expect(rolledBack).toEqual(["2-2", "2-3"]);
   });
 
-  it("deletes dirt during drag stroke and returns transparent preview", () => {
+  it("deletes dirt during drag stroke and returns domain mutation descriptor", () => {
     const terrain = new ScenarioTerrain({
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
@@ -281,19 +268,19 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(terrain.getTerrainFactor("2-2")).toBe(0);
     expect(terrain.getTerrainType("2-2")).toBeUndefined();
     expect(startResult.modified).toBe(true);
-    expect(startResult.preview?.color).toBe("transparent");
+    expect(startResult.mutation).toEqual({ key: "2-2", layer: "dirt", value: 0 });
 
     // Drag to 2-3 to delete it too
     const moveResult = terrain.continueStroke("2-3");
     expect(terrain.getTerrainFactor("2-3")).toBe(0);
     expect(moveResult.modified).toBe(true);
-    expect(moveResult.preview?.color).toBe("transparent");
+    expect(moveResult.mutation).toEqual({ key: "2-3", layer: "dirt", value: 0 });
 
     const modified = terrain.commitStroke();
     expect(modified).toEqual(["2-2", "2-3"]);
   });
 
-  it("deletes water and elevation during drag stroke with transparent preview", () => {
+  it("deletes water and elevation during drag stroke with domain mutation descriptor", () => {
     const terrain = new ScenarioTerrain({
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
@@ -309,13 +296,13 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(terrain.getTerrainFactor("3-1")).toBe(0);
     expect(terrain.getTerrainType("3-1")).toBeUndefined();
     expect(waterResult.modified).toBe(true);
-    expect(waterResult.preview?.color).toBe("transparent");
+    expect(waterResult.mutation).toEqual({ key: "3-1", layer: "water", value: 0 });
     terrain.commitStroke();
 
     const elevResult = terrain.startStroke("3-2", elevContext);
     expect(terrain.getElevation("3-2")).toBe(0);
     expect(elevResult.modified).toBe(true);
-    expect(elevResult.preview?.color).toBe("transparent");
+    expect(elevResult.mutation).toEqual({ key: "3-2", layer: "elevation", value: 0 });
     terrain.commitStroke();
   });
 
@@ -335,7 +322,7 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     const startResult = terrain.startStroke("1-1", context);
     expect(terrain.hasWall("1-1")).toBe(false);
     expect(startResult.modified).toBe(true);
-    expect(startResult.preview?.color).toBe("transparent");
+    expect(startResult.mutation).toEqual({ key: "1-1", layer: "wall", value: false });
 
     // Dragging over dirt, water, elevation should NOT modify or delete them
     const dragDirt = terrain.continueStroke("1-2");
@@ -370,7 +357,7 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(terrain.getTerrainFactor("2-1")).toBe(0);
     expect(terrain.getTerrainType("2-1")).toBeUndefined();
     expect(startResult.modified).toBe(true);
-    expect(startResult.preview?.color).toBe("transparent");
+    expect(startResult.mutation).toEqual({ key: "2-1", layer: "dirt", value: 0 });
 
     // Dragging over wall, water, elevation should NOT modify them
     const dragWall = terrain.continueStroke("2-2");

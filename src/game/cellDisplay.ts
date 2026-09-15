@@ -1,5 +1,39 @@
 import { TERRAIN_CONFIG, THEME_CONFIG } from "../config/simulationConfig";
 import { getElevationSlopeDegrees } from "../physics/terrainPhysics";
+import type { CellMutation } from "./scenarioTerrain";
+
+export interface CellPreview {
+  color: string;
+  isWall?: boolean;
+}
+
+/**
+ * Resolves transient DOM preview styles (background color and wall boundary class)
+ * from a semantic domain mutation during pointer drawing strokes.
+ */
+export function resolveMutationPreview(mutation: CellMutation): CellPreview {
+  if (mutation.layer === "wall") {
+    return mutation.value
+      ? { color: TERRAIN_CONFIG.types.wall.color, isWall: true }
+      : { color: "transparent", isWall: false };
+  }
+  if (mutation.layer === "dirt") {
+    return Number(mutation.value) !== 0
+      ? { color: TERRAIN_CONFIG.types.dirt.color, isWall: false }
+      : { color: "transparent", isWall: false };
+  }
+  if (mutation.layer === "water") {
+    return Number(mutation.value) !== 0
+      ? { color: TERRAIN_CONFIG.types.water.color, isWall: false }
+      : { color: "transparent", isWall: false };
+  }
+  if (mutation.layer === "elevation") {
+    return Number(mutation.value) > 0
+      ? { color: TERRAIN_CONFIG.getElevationColor(Number(mutation.value)), isWall: false }
+      : { color: "transparent", isWall: false };
+  }
+  return { color: "transparent", isWall: false };
+}
 
 export interface GradientArrowDisplay {
   rotationDeg: number;
