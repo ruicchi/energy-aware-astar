@@ -10,8 +10,8 @@ import { GRID_CONFIG } from "../config/simulationConfig";
  */
 export function useViewport() {
   const [viewport, setViewport] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: typeof window !== "undefined" ? window.innerWidth : 1200,
+    height: typeof window !== "undefined" ? window.innerHeight : 800,
   });
 
   useEffect(() => {

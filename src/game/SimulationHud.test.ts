@@ -26,6 +26,9 @@ describe("SimulationHud - resolveHudLayout", () => {
 
     // Metrics modal
     expect(layout.metrics.width).toBe(UI_CONFIG.panelWidth.metrics);
+    expect(layout.metrics.maxWidth).toBe("calc(100vw - 24px)");
+    expect(layout.metrics.zIndex).toBe(UI_CONFIG.zIndex.modal);
+    expect(layout.metrics.elevation).toBe(UI_CONFIG.elevation.modal);
     expect(layout.metrics.initialPosition).toEqual({ x: 240, y: 240 });
   });
 
@@ -43,6 +46,9 @@ describe("SimulationHud - resolveHudLayout", () => {
     expect(layout.manual.initialPosition).toEqual({ x: 20, y: 20 });
 
     expect(layout.metrics.width).toBe(UI_CONFIG.panelWidth.metricsMobile);
+    expect(layout.metrics.maxWidth).toBe("calc(100vw - 24px)");
+    expect(layout.metrics.zIndex).toBe(UI_CONFIG.zIndex.modal);
+    expect(layout.metrics.elevation).toBe(UI_CONFIG.elevation.modal);
     expect(layout.metrics.initialPosition).toEqual({ x: 20, y: 240 });
   });
 

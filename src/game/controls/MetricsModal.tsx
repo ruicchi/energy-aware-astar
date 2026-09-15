@@ -1,16 +1,17 @@
-import { Box, Typography, useTheme, useMediaQuery } from "@mui/material";
-import { FloatingPanel } from "../FloatingPanel";
+import { Box, Typography } from "@mui/material";
 import { usePathMetrics } from "../simulationHooks";
-import { UI_CONFIG, THEME_CONFIG } from "../../config/simulationConfig";
+import { THEME_CONFIG } from "../../config/simulationConfig";
 
-interface MetricsModalProps {
-  onClose: () => void;
+export interface MetricsModalProps {
+  onClose?: () => void;
 }
 
-export function MetricsModal({ onClose }: MetricsModalProps) {
+/**
+ * Pure presentation view rendering path calculation metrics and energy breakdown.
+ * Layout chrome, positioning, and dialog lifecycle are managed by SimulationHud.
+ */
+export function MetricsModal() {
   const pathMetrics = usePathMetrics();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   if (!pathMetrics) return null;
 
@@ -19,19 +20,7 @@ export function MetricsModal({ onClose }: MetricsModalProps) {
   const energyBreakdown = pathMetrics.energyBreakdown;
 
   return (
-    <FloatingPanel
-      title="Calculation"
-      initialPosition={{
-        x: isMobile ? UI_CONFIG.initialPosition.x : 240,
-        y: 240,
-      }}
-      zIndex={UI_CONFIG.zIndex.modal}
-      elevation={UI_CONFIG.elevation.modal}
-      width={isMobile ? UI_CONFIG.panelWidth.metricsMobile : UI_CONFIG.panelWidth.metrics}
-      maxWidth="calc(100vw - 24px)"
-      onClose={onClose}
-    >
-      <Box sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
+    <Box sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
         <Box>
           <Typography variant="caption" color="textSecondary" display="block">
             Heuristic
@@ -146,6 +135,5 @@ export function MetricsModal({ onClose }: MetricsModalProps) {
           </Box>
         )}
       </Box>
-    </FloatingPanel>
-  );
-}
+    );
+  }

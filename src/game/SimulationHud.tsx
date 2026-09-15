@@ -1,5 +1,6 @@
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { Box, Divider, useTheme, useMediaQuery } from "@mui/material";
+import { useViewport } from "../hooks/useViewport";
 import { FloatingPanel } from "./FloatingPanel";
 import { ScenarioControls } from "./controls/ScenarioControls";
 import { HeuristicControls } from "./controls/HeuristicControls";
@@ -8,26 +9,39 @@ import { TerrainBrushControls } from "./controls/TerrainBrushControls";
 import { SimulationManual } from "./controls/SimulationManual";
 import { MetricsModal } from "./controls/MetricsModal";
 import { resolveHudLayout } from "./hudLayout";
+import { HudContext, type HudContextValue } from "./hudContext";
 
 /**
  * Unified Heads-Up Display (HUD) overlay module.
- * Consolidates controls, terrain tools, instructional manual, and calculation metrics modal
- * into a single coordinated layout seam with responsive positioning.
+ * Deep seam that consolidates controls, terrain tools, instructional manual,
+ * and calculation metrics modal into a coordinated layout with reactive positioning.
  */
 export const SimulationHud = memo(function SimulationHud() {
-  const [isResultsOpen, setIsResultsOpen] = useState(false);
+  const [isMetricsOpen, setIsMetricsOpen] = useState(false);
+  const viewport = useViewport();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTiny = useMediaQuery("(max-width:400px)");
 
-  const windowWidth = typeof window !== "undefined" ? window.innerWidth : 1200;
+  const openMetrics = useCallback(() => setIsMetricsOpen(true), []);
+  const closeMetrics = useCallback(() => setIsMetricsOpen(false), []);
+
+  const hudContextValue = useMemo<HudContextValue>(
+    () => ({
+      isMetricsOpen,
+      openMetrics,
+      closeMetrics,
+    }),
+    [isMetricsOpen, openMetrics, closeMetrics],
+  );
+
   const layout = useMemo(
-    () => resolveHudLayout(windowWidth, isMobile, isTiny),
-    [windowWidth, isMobile, isTiny],
+    () => resolveHudLayout(viewport.width, isMobile, isTiny),
+    [viewport.width, isMobile, isTiny],
   );
 
   return (
-    <>
+    <HudContext.Provider value={hudContextValue}>
       {/* Simulation Controls: Scenarios, Heuristics, Initial Heading */}
       <FloatingPanel
         title="Controls"
@@ -38,7 +52,7 @@ export const SimulationHud = memo(function SimulationHud() {
         <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
           <ScenarioControls />
           <Divider sx={{ my: 0.5 }} />
-          <HeuristicControls onOpenResults={() => setIsResultsOpen(true)} />
+          <HeuristicControls />
           <HeadingControls />
         </Box>
       </FloatingPanel>
@@ -67,7 +81,19 @@ export const SimulationHud = memo(function SimulationHud() {
       </FloatingPanel>
 
       {/* Pop-Out Calculation Metrics Modal */}
-      {isResultsOpen && <MetricsModal onClose={() => setIsResultsOpen(false)} />}
-    </>
+      {isMetricsOpen && (
+        <FloatingPanel
+          title="Calculation"
+          initialPosition={layout.metrics.initialPosition}
+          zIndex={layout.metrics.zIndex}
+          elevation={layout.metrics.elevation}
+          width={layout.metrics.width}
+          maxWidth={layout.metrics.maxWidth}
+          onClose={closeMetrics}
+        >
+          <MetricsModal />
+        </FloatingPanel>
+      )}
+    </HudContext.Provider>
   );
 });

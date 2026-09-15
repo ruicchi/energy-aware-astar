@@ -2,12 +2,15 @@ import { Box, Typography, Button, IconButton, Tooltip } from "@mui/material";
 import { OpenInNew } from "@mui/icons-material";
 import { THEME_CONFIG } from "../../config/simulationConfig";
 import { useSimulationControls } from "../simulationHooks";
+import { useHud } from "../hudContext";
 
-interface HeuristicControlsProps {
-  onOpenResults: () => void;
+export interface HeuristicControlsProps {
+  onOpenResults?: () => void;
 }
 
-export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
+export function HeuristicControls({ onOpenResults }: HeuristicControlsProps = {}) {
+  const hud = useHud();
+  const handleOpenResults = onOpenResults ?? hud.openMetrics;
   const {
     selectedAlgo,
     setSelectedAlgo,
@@ -177,7 +180,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps) {
               <IconButton
                 size="small"
                 onPointerDown={(e) => e.stopPropagation()}
-                onClick={onOpenResults}
+                onClick={handleOpenResults}
               >
                 <OpenInNew fontSize="inherit" />
               </IconButton>
