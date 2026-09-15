@@ -1,7 +1,5 @@
 import Box from "@mui/material/Box";
-import { FloatingMenu } from "./FloatingMenu";
-import { FloatingBrushes } from "./FloatingBrushes";
-import { FloatingManual } from "./FloatingManual";
+import { SimulationHud } from "./SimulationHud";
 import { useGridCanvas } from "./simulationHooks";
 import { TerrainGrid } from "./TerrainGrid";
 import { RobotActor } from "./actors/RobotActor";
@@ -56,9 +54,7 @@ export default function GameGrid() {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      <FloatingMenu />
-      <FloatingBrushes />
-      <FloatingManual />
+      <SimulationHud />
 
       <Box
         sx={{

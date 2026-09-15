@@ -76,3 +76,7 @@ _Avoid_: ViewportHooks, CanvasStore, GridSelectors
 The cohesive domain hooks (`useSimulationControls`, `useBrushControls`, `useHeadingControls`, `usePathMetrics`) aggregating scenario configuration, brush parameters, algorithm selection, and playback commands across control panels.
 _Avoid_: ControlHooks, ToolRibbonManager, PanelState
 
+**Simulation HUD Seam**:
+The unified layout module (`SimulationHud`) and pure placement resolver (`resolveHudLayout`) orchestrating floating control panels, terrain brushes, interactive instructions, and calculation modals with responsive, non-colliding coordinates across viewports.
+_Avoid_: FloatingMenu, OverlayManager, DialogService, WindowManager
+
