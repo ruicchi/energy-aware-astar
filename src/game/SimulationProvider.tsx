@@ -1,7 +1,6 @@
 import { useState, useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { useViewport } from "../hooks/useViewport";
 import { SimulationEngine } from "./simulationEngine";
-import { GRID_CONFIG } from "../config/simulationConfig";
 import { SimulationEngineContext } from "./simulationHooks";
 
 export interface SimulationProviderProps {
@@ -13,16 +12,10 @@ export function SimulationProvider({ children, engine: externalEngine }: Simulat
   const viewport = useViewport();
   const [internalEngine] = useState(() => {
     if (externalEngine) return externalEngine;
-    const defaultCellSize =
-      viewport.width < GRID_CONFIG.mobileBreakpoint
-        ? GRID_CONFIG.mobileCellSize
-        : GRID_CONFIG.defaultCellSize;
-    const initialCols = Math.floor(viewport.width / defaultCellSize);
-    const initialRows = Math.floor(viewport.height / defaultCellSize);
     return new SimulationEngine({
-      cols: initialCols,
-      rows: initialRows,
-      cellSize: defaultCellSize,
+      cols: viewport.cols,
+      rows: viewport.rows,
+      cellSize: viewport.cellSize,
     });
   });
 
@@ -36,34 +29,18 @@ export function SimulationProvider({ children, engine: externalEngine }: Simulat
   // Keep grid dimensions synchronized with responsive viewport
   useEffect(() => {
     const snapshot = engine.getSnapshot();
-    const freeformCellSize =
-      viewport.width < GRID_CONFIG.mobileBreakpoint
-        ? GRID_CONFIG.mobileCellSize
-        : GRID_CONFIG.defaultCellSize;
-    const freeformCols = Math.floor(viewport.width / freeformCellSize);
-    const freeformRows = Math.floor(viewport.height / freeformCellSize);
-
-    engine.setFreeformDimensions(freeformCols, freeformRows, freeformCellSize);
+    engine.setFreeformDimensions(viewport.cols, viewport.rows, viewport.cellSize);
 
     const targetCellSize = snapshot.isFixedDimensions
-      ? Math.min(
-          GRID_CONFIG.defaultCellSize,
-          Math.max(
-            12,
-            Math.floor(
-              Math.min(viewport.width - 24, viewport.height - 24) /
-                Math.max(snapshot.cols, snapshot.rows, 1),
-            ),
-          ),
-        )
-      : freeformCellSize;
+      ? viewport.calculateFixedCellSize(snapshot.cols, snapshot.rows)
+      : viewport.cellSize;
 
     if (snapshot.isFixedDimensions) {
       engine.setDimensions(snapshot.cols, snapshot.rows, targetCellSize);
     } else {
-      engine.setDimensions(freeformCols, freeformRows, targetCellSize);
+      engine.setDimensions(viewport.cols, viewport.rows, targetCellSize);
     }
-  }, [engine, viewport.width, viewport.height, isFixedDimensions]);
+  }, [engine, viewport, isFixedDimensions]);
 
   useEffect(() => {
     return () => {

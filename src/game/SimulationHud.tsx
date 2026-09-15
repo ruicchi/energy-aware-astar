@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, memo } from "react";
-import { Box, Divider, useTheme, useMediaQuery } from "@mui/material";
+import { Box, Divider } from "@mui/material";
 import { useViewport } from "../hooks/useViewport";
 import { FloatingPanel } from "./FloatingPanel";
 import { ScenarioControls } from "./controls/ScenarioControls";
@@ -19,9 +19,6 @@ import { HudContext, type HudContextValue } from "./hudContext";
 export const SimulationHud = memo(function SimulationHud() {
   const [isMetricsOpen, setIsMetricsOpen] = useState(false);
   const viewport = useViewport();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTiny = useMediaQuery("(max-width:400px)");
 
   const openMetrics = useCallback(() => setIsMetricsOpen(true), []);
   const closeMetrics = useCallback(() => setIsMetricsOpen(false), []);
@@ -36,8 +33,8 @@ export const SimulationHud = memo(function SimulationHud() {
   );
 
   const layout = useMemo(
-    () => resolveHudLayout(viewport.width, isMobile, isTiny),
-    [viewport.width, isMobile, isTiny],
+    () => resolveHudLayout(viewport.width, viewport.isMobile, viewport.isTiny),
+    [viewport.width, viewport.isMobile, viewport.isTiny],
   );
 
   return (
