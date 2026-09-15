@@ -224,7 +224,6 @@ export class SimulationEngine {
       initialTerrainFactors: options.initialTerrainFactors,
       initialTerrainTypes: options.initialTerrainTypes,
       initialElevations: options.initialElevations,
-      visualizer: this.visualizer,
     });
     this.defaultMaxTraversableSlope =
       options.initialMaxTraversableSlope ?? VEHICLE_CONFIG.maxTraversableSlope;
@@ -492,29 +491,37 @@ export class SimulationEngine {
     }
 
     const context = this.getPaintContext();
-    const started = this.terrain.startStroke(key, context);
-    if (started) {
-      const brush = this.terrain.getActiveStrokeBrush();
-      if (brush === "robot" || brush === "destination") {
+    const result = this.terrain.startStroke(key, context);
+    if (result.modified) {
+      if (result.brush === "robot" || result.brush === "destination") {
         this.notify();
+      } else if (result.preview && result.cellKey) {
+        this.visualizer.previewCell(result.cellKey, result.preview.color, result.preview.isWall);
       }
     }
   }
 
   public continuePaint(key: string): void {
-    const context = this.getPaintContext();
-    const modified = this.terrain.continueStroke(key, context);
-    if (modified) {
-      const brush = this.terrain.getActiveStrokeBrush();
-      if (brush === "robot" || brush === "destination") {
+    const result = this.terrain.continueStroke(key);
+    if (result.modified) {
+      if (result.brush === "robot") {
+        const [r, c] = key.split("-").map(Number);
+        this.visualizer.resetRobot(c, r, this.robotHeading, this.cellSize);
         this.notify();
+      } else if (result.brush === "destination") {
+        this.notify();
+      } else if (result.preview && result.cellKey) {
+        this.visualizer.previewCell(result.cellKey, result.preview.color, result.preview.isWall);
       }
     }
   }
 
   public endPaint(): void {
-    const ended = this.terrain.commitStroke();
-    if (ended) {
+    const modifiedCells = this.terrain.commitStroke();
+    if (modifiedCells && modifiedCells.length > 0) {
+      for (const key of modifiedCells) {
+        this.visualizer.clearCellPreview(key);
+      }
       if (this.isPathVisible) {
         this.solveInstantly(this.selectedAlgo);
       } else {
@@ -524,8 +531,11 @@ export class SimulationEngine {
   }
 
   public abortPaint(): void {
-    const restoredSnapshot = this.terrain.abortStroke();
-    if (restoredSnapshot) {
+    const rolledBack = this.terrain.abortStroke();
+    if (rolledBack && rolledBack.length > 0) {
+      for (const item of rolledBack) {
+        this.visualizer.clearCellPreview(item.key, item.restoreWall);
+      }
       if (this.isPathVisible) {
         this.solveInstantly(this.selectedAlgo);
       } else {
@@ -535,7 +545,8 @@ export class SimulationEngine {
   }
 
   public clearWalls(): void {
-    this.terrain.clearAll();
+    const keysToClean = this.terrain.clearAll();
+    this.visualizer.clearAllCellPreviews(keysToClean);
     this.notify();
   }
 
@@ -929,7 +940,8 @@ export class SimulationEngine {
     this.clearTimers();
     this.visualizer.clearSearchVisuals();
 
-    this.terrain.clearAll();
+    const keysToClean = this.terrain.clearAll();
+    this.visualizer.clearAllCellPreviews(keysToClean);
 
     if (!this.isFixedDimensions) {
       this.maxTraversableSlope = this.defaultMaxTraversableSlope;

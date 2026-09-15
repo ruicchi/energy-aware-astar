@@ -5,10 +5,6 @@ import {
   VEHICLE_CONFIG,
   GRID_CONFIG,
 } from "../config/simulationConfig";
-import {
-  type SimulationVisualizer,
-  NullVisualizer,
-} from "./simulationVisualizer";
 
 export interface TerrainSnapshot {
   wallNodes: Set<string>;
@@ -24,8 +20,8 @@ export interface PaintContext {
   elevationBrushValue: number;
   dirtBrushValue: number;
   waterBrushValue: number;
-  robotHeading: Heading;
-  cellSize: number;
+  robotHeading?: Heading;
+  cellSize?: number;
 }
 
 export interface ActiveStrokeSession {
@@ -33,6 +29,23 @@ export interface ActiveStrokeSession {
   drawValue: number | boolean | null;
   modifiedCells: Set<string>;
   previousSnapshot: TerrainSnapshot;
+}
+
+export interface CellPreview {
+  color: string;
+  isWall?: boolean;
+}
+
+export interface StrokeResult {
+  modified: boolean;
+  brush?: BrushMode | "robot" | "destination";
+  cellKey?: string;
+  preview?: CellPreview;
+}
+
+export interface RollbackCell {
+  key: string;
+  restoreWall: boolean;
 }
 
 export interface ScenarioTerrainOptions {
@@ -44,9 +57,6 @@ export interface ScenarioTerrainOptions {
   initialTerrainFactors?: Map<string, number>;
   initialTerrainTypes?: Map<string, "dirt" | "water">;
   initialElevations?: Map<string, number>;
-  visualizer?: SimulationVisualizer;
-  /** Backwards compatibility alias for visualizer */
-  domAdapter?: SimulationVisualizer;
 }
 
 function parseCoordinates(key: string): [number, number] {
@@ -57,8 +67,9 @@ function parseCoordinates(key: string): [number, number] {
 /**
  * The deep ScenarioTerrain module.
  * Encapsulates persistent grid topology, obstacle boundaries, terrain friction factors,
- * elevation distributions, actor placements, transient pointer drawing sessions,
- * temporary visual preview styling via the visualizer seam, and atomic commit/rollback semantics across all grid layers.
+ * elevation distributions, actor placements, transactional pointer drawing sessions,
+ * and atomic commit/rollback semantics across all grid layers.
+ * Completely decoupled from visual rendering adapters.
  */
 export class ScenarioTerrain {
   private cols: number;
@@ -71,7 +82,6 @@ export class ScenarioTerrain {
   private destinationNode: string;
 
   private strokeSession: ActiveStrokeSession | null = null;
-  private visualizer: SimulationVisualizer;
 
   constructor(options: ScenarioTerrainOptions = {}) {
     this.cols = options.cols ?? GRID_CONFIG.defaultCols;
@@ -87,7 +97,6 @@ export class ScenarioTerrain {
     this.terrainFactors = new Map(options.initialTerrainFactors ?? []);
     this.terrainTypes = new Map(options.initialTerrainTypes ?? []);
     this.elevations = new Map(options.initialElevations ?? []);
-    this.visualizer = options.visualizer ?? options.domAdapter ?? new NullVisualizer();
   }
 
   // --- Snapshot and Query Interface ---
@@ -297,7 +306,7 @@ export class ScenarioTerrain {
     return changed;
   }
 
-  public clearAll(): void {
+  public clearAll(): Set<string> {
     const keysToClean = new Set<string>([
       ...this.wallNodes,
       ...this.terrainFactors.keys(),
@@ -306,13 +315,13 @@ export class ScenarioTerrain {
       ...(this.strokeSession ? this.strokeSession.modifiedCells : []),
     ]);
 
-    this.visualizer.clearAllCellPreviews(keysToClean);
-
     this.strokeSession = null;
     this.wallNodes = new Set();
     this.terrainFactors = new Map();
     this.terrainTypes = new Map();
     this.elevations = new Map();
+
+    return keysToClean;
   }
 
   public loadScenario(scenario: Scenario): void {
@@ -330,7 +339,7 @@ export class ScenarioTerrain {
 
   // --- Transactional Pointer Strokes ---
 
-  public startStroke(key: string, context: PaintContext): boolean {
+  public startStroke(key: string, context: PaintContext): StrokeResult {
     const previousSnapshot: TerrainSnapshot = {
       wallNodes: new Set(this.wallNodes),
       terrainFactors: new Map(this.terrainFactors),
@@ -347,7 +356,7 @@ export class ScenarioTerrain {
         modifiedCells: new Set(),
         previousSnapshot,
       };
-      return true;
+      return { modified: true, brush: "robot", cellKey: key };
     }
 
     if (key === this.destinationNode) {
@@ -357,7 +366,7 @@ export class ScenarioTerrain {
         modifiedCells: new Set(),
         previousSnapshot,
       };
-      return true;
+      return { modified: true, brush: "destination", cellKey: key };
     }
 
     let calculatedDrawValue: number | boolean | null = null;
@@ -387,66 +396,71 @@ export class ScenarioTerrain {
       previousSnapshot,
     };
 
-    this.applyStrokeToCell(key);
-    return true;
+    const applied = this.applyStrokeToCell(key);
+    return {
+      modified: applied.modified,
+      brush: context.activeBrush,
+      cellKey: key,
+      preview: applied.preview,
+    };
   }
 
-  public continueStroke(key: string, context: PaintContext): boolean {
-    if (!this.strokeSession) return false;
+  public continueStroke(key: string): StrokeResult {
+    if (!this.strokeSession) return { modified: false };
 
     const { brush } = this.strokeSession;
 
     if (brush === "robot") {
       if (key !== this.destinationNode && !this.wallNodes.has(key)) {
-        if (this.robotNode === key) return false;
-        const [r, c] = parseCoordinates(key);
+        if (this.robotNode === key) return { modified: false };
         this.robotNode = key;
-        this.visualizer.resetRobot(c, r, context.robotHeading, context.cellSize);
-        return true;
+        return { modified: true, brush: "robot", cellKey: key };
       }
-      return false;
+      return { modified: false };
     }
 
     if (brush === "destination") {
       if (key !== this.robotNode && !this.wallNodes.has(key)) {
-        if (this.destinationNode === key) return false;
+        if (this.destinationNode === key) return { modified: false };
         this.destinationNode = key;
-        return true;
+        return { modified: true, brush: "destination", cellKey: key };
       }
-      return false;
+      return { modified: false };
     }
 
     if (key === this.robotNode || key === this.destinationNode) {
       if (brush !== "elevation") {
-        return false;
+        return { modified: false };
       }
     }
 
     if (this.strokeSession.modifiedCells.has(key)) {
-      return true;
+      return { modified: true, brush, cellKey: key };
     }
 
-    return this.applyStrokeToCell(key);
+    const applied = this.applyStrokeToCell(key);
+    return {
+      modified: applied.modified,
+      brush,
+      cellKey: key,
+      preview: applied.preview,
+    };
   }
 
-  public commitStroke(): boolean {
-    if (!this.strokeSession) return false;
+  public commitStroke(): string[] | null {
+    if (!this.strokeSession) return null;
 
-    // Clear inline preview styles so React declarative state styling takes over
-    for (const key of this.strokeSession.modifiedCells) {
-      this.visualizer.clearCellPreview(key);
-    }
-
+    const modified = Array.from(this.strokeSession.modifiedCells);
     this.strokeSession = null;
-    return true;
+    return modified;
   }
 
-  public endStroke(): boolean {
+  public endStroke(): string[] | null {
     return this.commitStroke();
   }
 
-  public abortStroke(): boolean {
-    if (!this.strokeSession) return false;
+  public abortStroke(): RollbackCell[] | null {
+    if (!this.strokeSession) return null;
 
     const snapshot = this.strokeSession.previousSnapshot;
 
@@ -457,12 +471,16 @@ export class ScenarioTerrain {
     this.robotNode = snapshot.robotNode;
     this.destinationNode = snapshot.destinationNode;
 
+    const rolledBack: RollbackCell[] = [];
     for (const key of this.strokeSession.modifiedCells) {
-      this.visualizer.clearCellPreview(key, this.wallNodes.has(key));
+      rolledBack.push({
+        key,
+        restoreWall: this.wallNodes.has(key),
+      });
     }
 
     this.strokeSession = null;
-    return true;
+    return rolledBack;
   }
 
   // --- Internal Helpers ---
@@ -492,8 +510,8 @@ export class ScenarioTerrain {
     return (this.elevations.get(key) ?? 0) > 0;
   }
 
-  private applyStrokeToCell(key: string): boolean {
-    if (!this.strokeSession) return false;
+  private applyStrokeToCell(key: string): { modified: boolean; preview?: CellPreview } {
+    if (!this.strokeSession) return { modified: false };
 
     const { brush, drawValue } = this.strokeSession;
 
@@ -502,19 +520,21 @@ export class ScenarioTerrain {
       if (!isWall) {
         // Delete mode: only delete if cell is currently a wall
         if (!this.wallNodes.has(key)) {
-          return false;
+          return { modified: false };
         }
         const nextWallNodes = new Set(this.wallNodes);
         nextWallNodes.delete(key);
         this.wallNodes = nextWallNodes;
         this.strokeSession.modifiedCells.add(key);
-        this.applyVisual(key, "wall", false);
-        return true;
+        return {
+          modified: true,
+          preview: { color: "transparent", isWall: false },
+        };
       }
 
       // Paint mode: paint wall and resolve mutual exclusion
       if (this.wallNodes.has(key)) {
-        return false;
+        return { modified: false };
       }
       const nextWallNodes = new Set(this.wallNodes);
       nextWallNodes.add(key);
@@ -533,8 +553,10 @@ export class ScenarioTerrain {
         this.elevations = nextElevations;
       }
       this.strokeSession.modifiedCells.add(key);
-      this.applyVisual(key, "wall", true);
-      return true;
+      return {
+        modified: true,
+        preview: { color: TERRAIN_CONFIG.types.wall.color, isWall: true },
+      };
     }
 
     if (brush === "dirt") {
@@ -542,7 +564,7 @@ export class ScenarioTerrain {
       if (val === 0) {
         // Delete mode: only delete if currently dirt
         if (!this.isDirtCell(key)) {
-          return false;
+          return { modified: false };
         }
         const nextFactors = new Map(this.terrainFactors);
         const nextTypes = new Map(this.terrainTypes);
@@ -551,8 +573,10 @@ export class ScenarioTerrain {
         this.terrainFactors = nextFactors;
         this.terrainTypes = nextTypes;
         this.strokeSession.modifiedCells.add(key);
-        this.applyVisual(key, "dirt", 0);
-        return true;
+        return {
+          modified: true,
+          preview: { color: "transparent", isWall: false },
+        };
       }
 
       // Paint mode: paint dirt and resolve mutual exclusion
@@ -573,8 +597,10 @@ export class ScenarioTerrain {
       this.terrainFactors = nextFactors;
       this.terrainTypes = nextTypes;
       this.strokeSession.modifiedCells.add(key);
-      this.applyVisual(key, "dirt", val);
-      return true;
+      return {
+        modified: true,
+        preview: { color: TERRAIN_CONFIG.types.dirt.color, isWall: false },
+      };
     }
 
     if (brush === "water") {
@@ -582,7 +608,7 @@ export class ScenarioTerrain {
       if (val === 0) {
         // Delete mode: only delete if currently water
         if (!this.isWaterCell(key)) {
-          return false;
+          return { modified: false };
         }
         const nextFactors = new Map(this.terrainFactors);
         const nextTypes = new Map(this.terrainTypes);
@@ -591,8 +617,10 @@ export class ScenarioTerrain {
         this.terrainFactors = nextFactors;
         this.terrainTypes = nextTypes;
         this.strokeSession.modifiedCells.add(key);
-        this.applyVisual(key, "water", 0);
-        return true;
+        return {
+          modified: true,
+          preview: { color: "transparent", isWall: false },
+        };
       }
 
       // Paint mode: paint water and resolve mutual exclusion
@@ -613,8 +641,10 @@ export class ScenarioTerrain {
       this.terrainFactors = nextFactors;
       this.terrainTypes = nextTypes;
       this.strokeSession.modifiedCells.add(key);
-      this.applyVisual(key, "water", val);
-      return true;
+      return {
+        modified: true,
+        preview: { color: TERRAIN_CONFIG.types.water.color, isWall: false },
+      };
     }
 
     if (brush === "elevation") {
@@ -622,14 +652,16 @@ export class ScenarioTerrain {
       if (val === 0) {
         // Delete mode: only delete if currently elevation
         if (!this.isElevationCell(key)) {
-          return false;
+          return { modified: false };
         }
         const nextElevations = new Map(this.elevations);
         nextElevations.delete(key);
         this.elevations = nextElevations;
         this.strokeSession.modifiedCells.add(key);
-        this.applyVisual(key, "elevation", 0);
-        return true;
+        return {
+          modified: true,
+          preview: { color: "transparent", isWall: false },
+        };
       }
 
       // Paint mode: paint elevation and resolve mutual exclusion
@@ -650,42 +682,12 @@ export class ScenarioTerrain {
       nextElevations.set(key, val);
       this.elevations = nextElevations;
       this.strokeSession.modifiedCells.add(key);
-      this.applyVisual(key, "elevation", val);
-      return true;
+      return {
+        modified: true,
+        preview: { color: TERRAIN_CONFIG.getElevationColor(val), isWall: false },
+      };
     }
 
-    return false;
-  }
-
-  private applyVisual(
-    key: string,
-    mode: "wall" | "dirt" | "water" | "elevation",
-    value: number | boolean,
-  ): void {
-    if (mode === "wall") {
-      if (value) {
-        this.visualizer.previewCell(key, TERRAIN_CONFIG.types.wall.color, true);
-      } else {
-        this.visualizer.previewCell(key, "transparent", false);
-      }
-    } else if (mode === "dirt") {
-      if (value) {
-        this.visualizer.previewCell(key, TERRAIN_CONFIG.types.dirt.color, false);
-      } else {
-        this.visualizer.previewCell(key, "transparent", false);
-      }
-    } else if (mode === "water") {
-      if (value) {
-        this.visualizer.previewCell(key, TERRAIN_CONFIG.types.water.color, false);
-      } else {
-        this.visualizer.previewCell(key, "transparent", false);
-      }
-    } else if (mode === "elevation") {
-      if (value) {
-        this.visualizer.previewCell(key, TERRAIN_CONFIG.getElevationColor(Number(value)), false);
-      } else {
-        this.visualizer.previewCell(key, "transparent", false);
-      }
-    }
+    return { modified: false };
   }
 }

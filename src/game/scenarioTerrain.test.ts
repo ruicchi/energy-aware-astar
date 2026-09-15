@@ -1,38 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { ScenarioTerrain, type PaintContext } from "./scenarioTerrain";
 import { GridPaintBuffer } from "./gridPaintBuffer";
-import {
-  MemoryVisualizer,
-  type SimulationVisualizer,
-} from "./simulationVisualizer";
 import { TERRAIN_CONFIG } from "../config/simulationConfig";
 
 describe("ScenarioTerrain (Deep Terrain Model)", () => {
-  function createMockDomAdapter() {
-    const visualizer = new MemoryVisualizer();
-    const resetRobot = vi.spyOn(visualizer, "resetRobot");
-
-    const domStore = {
-      get(key: string) {
-        const p = visualizer.previews.get(key);
-        if (!p) return undefined;
-        return {
-          bg: p.color,
-          classes: {
-            has: (c: string) => (c === "is-wall" ? Boolean(p.isWall) : false),
-          },
-        };
-      },
-    };
-
-    return {
-      visualizer,
-      domAdapter: visualizer as SimulationVisualizer,
-      domStore,
-      resetRobot,
-    };
-  }
-
   function createContext(overrides: Partial<PaintContext> = {}): PaintContext {
     return {
       activeBrush: "wall",
@@ -49,46 +20,46 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(GridPaintBuffer).toBe(ScenarioTerrain);
   });
 
-  it("paints walls and toggles off existing walls", () => {
-    const { domAdapter, domStore } = createMockDomAdapter();
+  it("paints walls and toggles off existing walls with pure stroke descriptors", () => {
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
     });
     const context = createContext({ activeBrush: "wall" });
 
     // Start painting wall at 1-1
-    terrain.startStroke("1-1", context);
+    const startResult = terrain.startStroke("1-1", context);
     expect(terrain.isSessionActive()).toBe(true);
     expect(terrain.getActiveStrokeBrush()).toBe("wall");
     expect(terrain.hasWall("1-1")).toBe(true);
     expect(terrain.getSnapshot().wallNodes.has("1-1")).toBe(true);
-    expect(domStore.get("1-1")?.bg).toBe(TERRAIN_CONFIG.types.wall.color);
-    expect(domStore.get("1-1")?.classes.has("is-wall")).toBe(true);
+    expect(startResult.modified).toBe(true);
+    expect(startResult.preview?.color).toBe(TERRAIN_CONFIG.types.wall.color);
+    expect(startResult.preview?.isWall).toBe(true);
 
     // Continue painting wall at 1-2
-    terrain.continueStroke("1-2", context);
+    const continueResult = terrain.continueStroke("1-2");
+    expect(continueResult.modified).toBe(true);
     expect(terrain.hasWall("1-2")).toBe(true);
 
-    // Commit end of stroke
-    terrain.commitStroke();
+    // Commit end of stroke - returns modified cell keys for external visual cleanup
+    const modified = terrain.commitStroke();
     expect(terrain.isSessionActive()).toBe(false);
-    expect(domStore.get("1-1")?.bg).toBe(""); // Inline preview style cleared
+    expect(modified).toEqual(["1-1", "1-2"]);
 
     // Toggle wall off by starting stroke on existing wall 1-1
-    terrain.startStroke("1-1", context);
+    const toggleResult = terrain.startStroke("1-1", context);
     expect(terrain.hasWall("1-1")).toBe(false);
-    expect(domStore.get("1-1")?.classes.has("is-wall")).toBe(false);
-    expect(domStore.get("1-1")?.bg).toBe("transparent");
-    terrain.commitStroke();
-    expect(domStore.get("1-1")?.bg).toBe("");
+    expect(toggleResult.modified).toBe(true);
+    expect(toggleResult.preview?.color).toBe("transparent");
+    expect(toggleResult.preview?.isWall).toBe(false);
+
+    const toggleModified = terrain.commitStroke();
+    expect(toggleModified).toEqual(["1-1"]);
   });
 
   it("paints dirt and enforces layer mutual exclusion", () => {
-    const { domAdapter, domStore } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialWallNodes: new Set(["2-2"]),
@@ -97,20 +68,21 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
 
     const context = createContext({ activeBrush: "dirt", dirtBrushValue: 1.8 });
 
-    terrain.startStroke("2-2", context);
+    const result = terrain.startStroke("2-2", context);
+    expect(result.modified).toBe(true);
+    expect(result.preview?.color).toBe(TERRAIN_CONFIG.types.dirt.color);
+    expect(result.preview?.isWall).toBe(false);
+
     expect(terrain.getTerrainFactor("2-2")).toBe(1.8);
     expect(terrain.getTerrainType("2-2")).toBe("dirt");
     expect(terrain.hasWall("2-2")).toBe(false); // Cleared wall
     expect(terrain.getElevation("2-2")).toBe(0); // Cleared elevation
-    expect(domStore.get("2-2")?.bg).toBe(TERRAIN_CONFIG.types.dirt.color);
 
     terrain.commitStroke();
   });
 
   it("paints water and enforces layer mutual exclusion", () => {
-    const { domAdapter, domStore } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialWallNodes: new Set(["3-3"]),
@@ -118,19 +90,20 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
 
     const context = createContext({ activeBrush: "water", waterBrushValue: 2.5 });
 
-    terrain.startStroke("3-3", context);
+    const result = terrain.startStroke("3-3", context);
+    expect(result.modified).toBe(true);
+    expect(result.preview?.color).toBe(TERRAIN_CONFIG.types.water.color);
+    expect(result.preview?.isWall).toBe(false);
+
     expect(terrain.getTerrainFactor("3-3")).toBe(2.5);
     expect(terrain.getTerrainType("3-3")).toBe("water");
     expect(terrain.hasWall("3-3")).toBe(false);
-    expect(domStore.get("3-3")?.bg).toBe(TERRAIN_CONFIG.types.water.color);
 
     terrain.commitStroke();
   });
 
   it("paints elevation and enforces layer mutual exclusion", () => {
-    const { domAdapter } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialWallNodes: new Set(["4-4"]),
@@ -140,7 +113,10 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
 
     const context = createContext({ activeBrush: "elevation", elevationBrushValue: 5 });
 
-    terrain.startStroke("4-4", context);
+    const result = terrain.startStroke("4-4", context);
+    expect(result.modified).toBe(true);
+    expect(result.preview?.color).toBe(TERRAIN_CONFIG.getElevationColor(5));
+
     expect(terrain.getElevation("4-4")).toBe(5);
     expect(terrain.hasWall("4-4")).toBe(false);
     expect(terrain.getTerrainFactor("4-4")).toBe(0);
@@ -149,28 +125,30 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     terrain.commitStroke();
   });
 
-  it("drags robot start node across cells and updates adapter", () => {
-    const { domAdapter, resetRobot } = createMockDomAdapter();
+  it("drags robot start node across cells producing robot stroke descriptors", () => {
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
     });
     const context = createContext({ robotHeading: "UP", cellSize: 30 });
 
     // Click on robotNode "0-0"
-    terrain.startStroke("0-0", context);
+    const startResult = terrain.startStroke("0-0", context);
     expect(terrain.getActiveStrokeBrush()).toBe("robot");
+    expect(startResult.modified).toBe(true);
+    expect(startResult.brush).toBe("robot");
+    expect(startResult.cellKey).toBe("0-0");
 
     // Drag to "0-1"
-    const moved = terrain.continueStroke("0-1", context);
-    expect(moved).toBe(true);
+    const moveResult = terrain.continueStroke("0-1");
+    expect(moveResult.modified).toBe(true);
+    expect(moveResult.brush).toBe("robot");
+    expect(moveResult.cellKey).toBe("0-1");
     expect(terrain.getRobotNode()).toBe("0-1");
-    expect(resetRobot).toHaveBeenCalledWith(1, 0, "UP", 30);
 
     // Cannot drag onto destination node
-    const invalidMove = terrain.continueStroke("5-5", context);
-    expect(invalidMove).toBe(false);
+    const invalidMove = terrain.continueStroke("5-5");
+    expect(invalidMove.modified).toBe(false);
     expect(terrain.getRobotNode()).toBe("0-1");
 
     terrain.commitStroke();
@@ -178,35 +156,34 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
   });
 
   it("drags destination node across cells", () => {
-    const { domAdapter } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
     });
     const context = createContext();
 
     // Click on destinationNode "5-5"
-    terrain.startStroke("5-5", context);
+    const startResult = terrain.startStroke("5-5", context);
     expect(terrain.getActiveStrokeBrush()).toBe("destination");
+    expect(startResult.modified).toBe(true);
 
     // Drag to "4-4"
-    const moved = terrain.continueStroke("4-4", context);
-    expect(moved).toBe(true);
+    const moveResult = terrain.continueStroke("4-4");
+    expect(moveResult.modified).toBe(true);
+    expect(moveResult.brush).toBe("destination");
+    expect(moveResult.cellKey).toBe("4-4");
     expect(terrain.getDestinationNode()).toBe("4-4");
 
     // Cannot drag onto robot node
-    const invalidMove = terrain.continueStroke("0-0", context);
-    expect(invalidMove).toBe(false);
+    const invalidMove = terrain.continueStroke("0-0");
+    expect(invalidMove.modified).toBe(false);
     expect(terrain.getDestinationNode()).toBe("4-4");
 
     terrain.commitStroke();
   });
 
   it("allows dragging robot and destination nodes onto untraversable elevation gradients", () => {
-    const { domAdapter } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialElevations: new Map([["1-2", 20]]),
@@ -215,27 +192,25 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
 
     // Drag robot onto untraversable gradient cell 1-1
     terrain.startStroke("0-0", context);
-    const robotMoved = terrain.continueStroke("1-1", context);
-    expect(robotMoved).toBe(true);
+    const robotMoved = terrain.continueStroke("1-1");
+    expect(robotMoved.modified).toBe(true);
     expect(terrain.getRobotNode()).toBe("1-1");
     terrain.commitStroke();
 
     // Drag destination onto untraversable gradient cell 1-1 (move robot to 0-0 first)
     terrain.startStroke("1-1", context);
-    terrain.continueStroke("0-0", context);
+    terrain.continueStroke("0-0");
     terrain.commitStroke();
 
     terrain.startStroke("5-5", context);
-    const destMoved = terrain.continueStroke("1-1", context);
-    expect(destMoved).toBe(true);
+    const destMoved = terrain.continueStroke("1-1");
+    expect(destMoved.modified).toBe(true);
     expect(terrain.getDestinationNode()).toBe("1-1");
     terrain.commitStroke();
   });
 
   it("allows painting elevation directly over robot and destination nodes even if untraversable", () => {
-    const { domAdapter } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "1-1",
       initialDestinationNode: "3-3",
       initialElevations: new Map([["1-2", 20], ["3-4", 20]]),
@@ -248,54 +223,51 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
 
     // Start painting from 0-0 and continue over robot node 1-1
     terrain.startStroke("0-0", elevContext);
-    const paintedOverRobot = terrain.continueStroke("1-1", elevContext);
-    expect(paintedOverRobot).toBe(true);
+    const paintedOverRobot = terrain.continueStroke("1-1");
+    expect(paintedOverRobot.modified).toBe(true);
     expect(terrain.getElevation("1-1")).toBe(15);
 
     // Continue over destination node 3-3
-    const paintedOverDest = terrain.continueStroke("3-3", elevContext);
-    expect(paintedOverDest).toBe(true);
+    const paintedOverDest = terrain.continueStroke("3-3");
+    expect(paintedOverDest.modified).toBe(true);
     expect(terrain.getElevation("3-3")).toBe(15);
     terrain.commitStroke();
 
     // Wall brush still cannot overwrite robot or destination
     const wallContext = createContext({ activeBrush: "wall" });
     terrain.startStroke("0-0", wallContext);
-    expect(terrain.continueStroke("1-1", wallContext)).toBe(false);
+    expect(terrain.continueStroke("1-1").modified).toBe(false);
     expect(terrain.hasWall("1-1")).toBe(false);
-    expect(terrain.continueStroke("3-3", wallContext)).toBe(false);
+    expect(terrain.continueStroke("3-3").modified).toBe(false);
     expect(terrain.hasWall("3-3")).toBe(false);
     terrain.commitStroke();
   });
 
   it("aborts active stroke and restores snapshot perfectly", () => {
-    const { domAdapter, domStore } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
     });
     const context = createContext({ activeBrush: "wall" });
 
     terrain.startStroke("2-2", context);
-    terrain.continueStroke("2-3", context);
+    terrain.continueStroke("2-3");
     expect(terrain.hasWall("2-2")).toBe(true);
     expect(terrain.hasWall("2-3")).toBe(true);
-    expect(domStore.get("2-2")?.classes.has("is-wall")).toBe(true);
 
-    // Abort
-    terrain.abortStroke();
+    // Abort - returns rollback cell descriptors for visual clearance
+    const rolledBack = terrain.abortStroke();
     expect(terrain.isSessionActive()).toBe(false);
     expect(terrain.hasWall("2-2")).toBe(false);
     expect(terrain.hasWall("2-3")).toBe(false);
-    expect(domStore.get("2-2")?.classes.has("is-wall")).toBe(false);
-    expect(domStore.get("2-2")?.bg).toBe("");
+    expect(rolledBack).toEqual([
+      { key: "2-2", restoreWall: false },
+      { key: "2-3", restoreWall: false },
+    ]);
   });
 
-  it("deletes dirt during drag stroke and instantly shows transparent background", () => {
-    const { domAdapter, domStore } = createMockDomAdapter();
+  it("deletes dirt during drag stroke and returns transparent preview", () => {
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialTerrainFactors: new Map([["2-2", 1.5], ["2-3", 1.5]]),
@@ -305,25 +277,24 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     const context = createContext({ activeBrush: "dirt", dirtBrushValue: 1.5 });
 
     // Click on 2-2 to delete dirt
-    terrain.startStroke("2-2", context);
+    const startResult = terrain.startStroke("2-2", context);
     expect(terrain.getTerrainFactor("2-2")).toBe(0);
     expect(terrain.getTerrainType("2-2")).toBeUndefined();
-    expect(domStore.get("2-2")?.bg).toBe("transparent");
+    expect(startResult.modified).toBe(true);
+    expect(startResult.preview?.color).toBe("transparent");
 
     // Drag to 2-3 to delete it too
-    terrain.continueStroke("2-3", context);
+    const moveResult = terrain.continueStroke("2-3");
     expect(terrain.getTerrainFactor("2-3")).toBe(0);
-    expect(domStore.get("2-3")?.bg).toBe("transparent");
+    expect(moveResult.modified).toBe(true);
+    expect(moveResult.preview?.color).toBe("transparent");
 
-    terrain.commitStroke();
-    expect(domStore.get("2-2")?.bg).toBe("");
-    expect(domStore.get("2-3")?.bg).toBe("");
+    const modified = terrain.commitStroke();
+    expect(modified).toEqual(["2-2", "2-3"]);
   });
 
-  it("deletes water and elevation during drag stroke with instant transparent background", () => {
-    const { domAdapter, domStore } = createMockDomAdapter();
+  it("deletes water and elevation during drag stroke with transparent preview", () => {
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialTerrainFactors: new Map([["3-1", 2.0]]),
@@ -334,22 +305,22 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     const waterContext = createContext({ activeBrush: "water", waterBrushValue: 2.0 });
     const elevContext = createContext({ activeBrush: "elevation", elevationBrushValue: 4 });
 
-    terrain.startStroke("3-1", waterContext);
+    const waterResult = terrain.startStroke("3-1", waterContext);
     expect(terrain.getTerrainFactor("3-1")).toBe(0);
     expect(terrain.getTerrainType("3-1")).toBeUndefined();
-    expect(domStore.get("3-1")?.bg).toBe("transparent");
+    expect(waterResult.modified).toBe(true);
+    expect(waterResult.preview?.color).toBe("transparent");
     terrain.commitStroke();
 
-    terrain.startStroke("3-2", elevContext);
+    const elevResult = terrain.startStroke("3-2", elevContext);
     expect(terrain.getElevation("3-2")).toBe(0);
-    expect(domStore.get("3-2")?.bg).toBe("transparent");
+    expect(elevResult.modified).toBe(true);
+    expect(elevResult.preview?.color).toBe("transparent");
     terrain.commitStroke();
   });
 
   it("only deletes walls when wall brush is in delete mode, leaving dirt/water/elevation untouched", () => {
-    const { domAdapter, domStore } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialWallNodes: new Set(["1-1"]),
@@ -361,30 +332,29 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     const context = createContext({ activeBrush: "wall" });
 
     // Start deleting on wall 1-1
-    terrain.startStroke("1-1", context);
+    const startResult = terrain.startStroke("1-1", context);
     expect(terrain.hasWall("1-1")).toBe(false);
-    expect(domStore.get("1-1")?.bg).toBe("transparent");
+    expect(startResult.modified).toBe(true);
+    expect(startResult.preview?.color).toBe("transparent");
 
     // Dragging over dirt, water, elevation should NOT modify or delete them
-    const dragDirt = terrain.continueStroke("1-2", context);
-    expect(dragDirt).toBe(false);
+    const dragDirt = terrain.continueStroke("1-2");
+    expect(dragDirt.modified).toBe(false);
     expect(terrain.getTerrainType("1-2")).toBe("dirt");
 
-    const dragWater = terrain.continueStroke("1-3", context);
-    expect(dragWater).toBe(false);
+    const dragWater = terrain.continueStroke("1-3");
+    expect(dragWater.modified).toBe(false);
     expect(terrain.getTerrainType("1-3")).toBe("water");
 
-    const dragElev = terrain.continueStroke("1-4", context);
-    expect(dragElev).toBe(false);
+    const dragElev = terrain.continueStroke("1-4");
+    expect(dragElev.modified).toBe(false);
     expect(terrain.getElevation("1-4")).toBe(4);
 
     terrain.commitStroke();
   });
 
   it("only deletes dirt when dirt brush is in delete mode, leaving walls/water/elevation untouched", () => {
-    const { domAdapter, domStore } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialWallNodes: new Set(["2-2"]),
@@ -396,31 +366,30 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     const context = createContext({ activeBrush: "dirt", dirtBrushValue: 1.5 });
 
     // Start deleting on dirt 2-1
-    terrain.startStroke("2-1", context);
+    const startResult = terrain.startStroke("2-1", context);
     expect(terrain.getTerrainFactor("2-1")).toBe(0);
     expect(terrain.getTerrainType("2-1")).toBeUndefined();
-    expect(domStore.get("2-1")?.bg).toBe("transparent");
+    expect(startResult.modified).toBe(true);
+    expect(startResult.preview?.color).toBe("transparent");
 
     // Dragging over wall, water, elevation should NOT modify them
-    const dragWall = terrain.continueStroke("2-2", context);
-    expect(dragWall).toBe(false);
+    const dragWall = terrain.continueStroke("2-2");
+    expect(dragWall.modified).toBe(false);
     expect(terrain.hasWall("2-2")).toBe(true);
 
-    const dragWater = terrain.continueStroke("2-3", context);
-    expect(dragWater).toBe(false);
+    const dragWater = terrain.continueStroke("2-3");
+    expect(dragWater.modified).toBe(false);
     expect(terrain.getTerrainType("2-3")).toBe("water");
 
-    const dragElev = terrain.continueStroke("2-4", context);
-    expect(dragElev).toBe(false);
+    const dragElev = terrain.continueStroke("2-4");
+    expect(dragElev.modified).toBe(false);
     expect(terrain.getElevation("2-4")).toBe(4);
 
     terrain.commitStroke();
   });
 
   it("supports layer-level operations: updateTypeCost, clearAll, loadScenario, setDimensions", () => {
-    const { domAdapter } = createMockDomAdapter();
     const terrain = new ScenarioTerrain({
-      domAdapter,
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialWallNodes: new Set(["1-1"]),
@@ -443,7 +412,10 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(terrain.getDestinationNode()).toBe("3-3"); // Clamped from 5-5 to 3-3
 
     // Clear all
-    terrain.clearAll();
+    const cleared = terrain.clearAll();
+    expect(cleared.has("1-1")).toBe(true);
+    expect(cleared.has("1-2")).toBe(true);
+    expect(cleared.has("1-3")).toBe(true);
     expect(terrain.hasWall("1-1")).toBe(false);
     expect(terrain.getTerrainFactor("1-2")).toBe(0);
     expect(terrain.getElevation("1-3")).toBe(0);
