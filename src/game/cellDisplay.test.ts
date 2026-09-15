@@ -5,28 +5,16 @@ import { TERRAIN_CONFIG, THEME_CONFIG } from "../config/simulationConfig";
 describe("Cell Display Resolver", () => {
   const baseParams = {
     isWall: false,
-    isRobot: false,
-    isDestination: false,
     terrainFactor: 0,
     elevation: 0,
   };
 
-  it("prioritizes robot and destination colors", () => {
-    const robotState = resolveCellDisplayState({
-      ...baseParams,
-      isRobot: true,
-      robotHeading: "UP",
-    });
-    expect(robotState.bgColor).toBe(THEME_CONFIG.robotColor);
-    expect(robotState.isRobot).toBe(true);
-    expect(robotState.robotHeading).toBe("UP");
-
-    const destState = resolveCellDisplayState({
-      ...baseParams,
-      isDestination: true,
-    });
-    expect(destState.bgColor).toBe(THEME_CONFIG.destinationColor);
-    expect(destState.isDestination).toBe(true);
+  it("resolves default transparent cell styling", () => {
+    const defaultState = resolveCellDisplayState(baseParams);
+    expect(defaultState.bgColor).toBe("transparent");
+    expect(defaultState.isWall).toBe(false);
+    expect(defaultState.elevationLabel).toBeUndefined();
+    expect(defaultState.gradientArrow).toBeUndefined();
   });
 
   it("resolves wall styling", () => {
@@ -69,7 +57,7 @@ describe("Cell Display Resolver", () => {
     expect(slope30State.elevationLabel).toBe(30);
   });
 
-  it("omits elevation label when terrain factor is non-zero or cell is robot/destination/wall", () => {
+  it("omits elevation label when terrain factor is non-zero or cell is a wall", () => {
     const terrainWithElevation = resolveCellDisplayState({
       ...baseParams,
       elevation: 5,
@@ -101,14 +89,14 @@ describe("Cell Display Resolver", () => {
     expect(gradientState.gradientArrow?.isUnstable).toBe(false);
   });
 
-  it("suppresses gradient arrows when cell is robot, destination, or wall", () => {
-    const robotWithGrad = resolveCellDisplayState({
+  it("suppresses gradient arrows when cell is a wall", () => {
+    const wallWithGrad = resolveCellDisplayState({
       ...baseParams,
-      isRobot: true,
+      isWall: true,
       showGradients: true,
       gradient: { angle: 0, magnitude: 0.8, isUnstable: false },
     });
-    expect(robotWithGrad.gradientArrow).toBeUndefined();
+    expect(wallWithGrad.gradientArrow).toBeUndefined();
   });
 
   it("applies unstable overlay when gradient is unstable and showGradients is true", () => {

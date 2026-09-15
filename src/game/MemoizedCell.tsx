@@ -1,8 +1,7 @@
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import NorthIcon from "@mui/icons-material/North";
 import Box from "@mui/material/Box";
 import { memo } from "react";
-import { THEME_CONFIG, getHeadingRotation } from "../config/simulationConfig";
+import { THEME_CONFIG } from "../config/simulationConfig";
 import { areCellDisplayPropsEqual, type CellDisplayState } from "./cellDisplay";
 
 export type { CellDisplayState, GradientArrowDisplay } from "./cellDisplay";
@@ -31,9 +30,6 @@ export const MemoizedCell = memo(
     const {
       bgColor,
       isWall,
-      isRobot,
-      isDestination,
-      robotHeading,
       elevationLabel,
       gradientArrow,
     } = displayState;
@@ -43,7 +39,7 @@ export const MemoizedCell = memo(
         id={`cell-${cellKey}`}
         onMouseDown={() => onMouseDown(cellKey)}
         onMouseEnter={() => onMouseEnter(cellKey)}
-        className={`${isRobot ? "is-robot" : ""} ${isDestination ? "is-destination" : ""} ${isWall ? "is-wall" : ""}`}
+        className={isWall ? "is-wall" : ""}
         sx={{
           width: cellSize,
           height: cellSize,
@@ -62,17 +58,6 @@ export const MemoizedCell = memo(
           position: "relative",
         }}
       >
-        {isRobot && robotHeading && robotHeading !== "NONE" && (
-          <ArrowForwardIcon
-            sx={{
-              fontSize: cellSize * 0.8,
-              transform: `rotate(${getHeadingRotation(robotHeading)})`,
-              transition: "transform 0.2s ease-in-out",
-              pointerEvents: "none",
-            }}
-          />
-        )}
-
         {gradientArrow && (
           <NorthIcon
             sx={{

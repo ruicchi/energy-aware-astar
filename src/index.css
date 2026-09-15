@@ -35,9 +35,7 @@ body,
   background-color: rgba(175, 238, 238, 0.75);
 }
 
-/* Hide overlays on robot, destination, and wall cells */
-.is-robot::after,
-.is-destination::after,
+/* Hide overlays on wall cells */
 .is-wall::after {
   display: none !important;
 }

@@ -11,9 +11,6 @@ describe("MemoizedCell areCellDisplayPropsEqual", () => {
     displayState: {
       bgColor: "transparent",
       isWall: false,
-      isRobot: false,
-      isDestination: false,
-      robotHeading: undefined,
       elevationLabel: undefined,
       gradientArrow: undefined,
     },
@@ -36,32 +33,6 @@ describe("MemoizedCell areCellDisplayPropsEqual", () => {
     expect(areCellDisplayPropsEqual(prevProps, nextProps)).toBe(true);
   });
 
-  it("returns false when isRobot changes (robot dragged onto or off the cell)", () => {
-    const prevProps: MemoizedCellProps = {
-      ...baseProps,
-      displayState: { ...baseProps.displayState, isRobot: false },
-    };
-    const nextProps: MemoizedCellProps = {
-      ...baseProps,
-      displayState: { ...baseProps.displayState, isRobot: true, bgColor: "#4caf50" },
-    };
-
-    expect(areCellDisplayPropsEqual(prevProps, nextProps)).toBe(false);
-  });
-
-  it("returns false when isDestination changes (destination dragged onto or off the cell)", () => {
-    const prevProps: MemoizedCellProps = {
-      ...baseProps,
-      displayState: { ...baseProps.displayState, isDestination: false },
-    };
-    const nextProps: MemoizedCellProps = {
-      ...baseProps,
-      displayState: { ...baseProps.displayState, isDestination: true, bgColor: "#f44336" },
-    };
-
-    expect(areCellDisplayPropsEqual(prevProps, nextProps)).toBe(false);
-  });
-
   it("returns false when isWall or bgColor changes", () => {
     const prevProps: MemoizedCellProps = {
       ...baseProps,
@@ -82,14 +53,14 @@ describe("MemoizedCell areCellDisplayPropsEqual", () => {
     expect(areCellDisplayPropsEqual(prevProps, nextProps)).toBe(false);
   });
 
-  it("returns false when robotHeading changes", () => {
+  it("returns false when elevationLabel changes", () => {
     const prevProps: MemoizedCellProps = {
       ...baseProps,
-      displayState: { ...baseProps.displayState, isRobot: true, robotHeading: "UP" },
+      displayState: { ...baseProps.displayState, elevationLabel: 15 },
     };
     const nextProps: MemoizedCellProps = {
       ...baseProps,
-      displayState: { ...baseProps.displayState, isRobot: true, robotHeading: "RIGHT" },
+      displayState: { ...baseProps.displayState, elevationLabel: 30 },
     };
 
     expect(areCellDisplayPropsEqual(prevProps, nextProps)).toBe(false);

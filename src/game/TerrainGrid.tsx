@@ -52,8 +52,6 @@ export const TerrainGrid = memo(
         {cells.map((cell) => {
           const displayState = resolveCellDisplayState({
             isWall: walls.has(cell.key),
-            isRobot: false,
-            isDestination: false,
             terrainFactor: terrainFactors.get(cell.key) || 0,
             terrainType: terrainTypes.get(cell.key),
             elevation: elevations.get(cell.key) || 0,

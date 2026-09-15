@@ -1,4 +1,3 @@
-import type { Heading } from "../shared/types";
 import { TERRAIN_CONFIG, THEME_CONFIG } from "../config/simulationConfig";
 import { getElevationSlopeDegrees } from "../physics/terrainPhysics";
 
@@ -11,44 +10,31 @@ export interface GradientArrowDisplay {
 export interface CellDisplayState {
   bgColor: string;
   isWall: boolean;
-  isRobot: boolean;
-  isDestination: boolean;
-  robotHeading?: Heading;
   elevationLabel?: number;
   gradientArrow?: GradientArrowDisplay;
 }
 
 export interface ResolveCellDisplayParams {
   isWall: boolean;
-  isRobot: boolean;
-  isDestination: boolean;
   terrainFactor: number;
   terrainType?: "dirt" | "water";
   elevation: number;
-  robotHeading?: Heading;
   gradient?: { angle: number; magnitude: number; isUnstable: boolean } | null;
   showGradients?: boolean;
 }
 
 export function resolveCellDisplayState({
   isWall,
-  isRobot,
-  isDestination,
   terrainFactor,
   terrainType,
   elevation,
-  robotHeading,
   gradient,
   showGradients,
 }: ResolveCellDisplayParams): CellDisplayState {
   const isUnstable = gradient?.isUnstable ?? false;
 
   let bgColor = "transparent";
-  if (isRobot) {
-    bgColor = THEME_CONFIG.robotColor;
-  } else if (isDestination) {
-    bgColor = THEME_CONFIG.destinationColor;
-  } else if (isWall) {
+  if (isWall) {
     bgColor = TERRAIN_CONFIG.types.wall.color;
   } else if (isUnstable && showGradients) {
     bgColor = THEME_CONFIG.unstableOverlayColor;
@@ -65,8 +51,6 @@ export function resolveCellDisplayState({
     showGradients &&
     gradient &&
     gradient.magnitude > TERRAIN_CONFIG.arrowDisplayThreshold &&
-    !isRobot &&
-    !isDestination &&
     !isWall
   ) {
     gradientArrow = {
@@ -77,16 +61,13 @@ export function resolveCellDisplayState({
   }
 
   const elevationLabel =
-    elevation > 0 && !isRobot && !isDestination && !isWall && terrainFactor === 0
+    elevation > 0 && !isWall && terrainFactor === 0
       ? Math.round(getElevationSlopeDegrees(elevation))
       : undefined;
 
   return {
     bgColor,
     isWall,
-    isRobot,
-    isDestination,
-    robotHeading: isRobot ? robotHeading : undefined,
     elevationLabel,
     gradientArrow,
   };
@@ -111,9 +92,6 @@ export function areCellDisplayPropsEqual(
   if (
     prev.bgColor !== next.bgColor ||
     prev.isWall !== next.isWall ||
-    prev.isRobot !== next.isRobot ||
-    prev.isDestination !== next.isDestination ||
-    prev.robotHeading !== next.robotHeading ||
     prev.elevationLabel !== next.elevationLabel
   ) {
     return false;
@@ -129,4 +107,4 @@ export function areCellDisplayPropsEqual(
     prevArrow.opacity === nextArrow.opacity &&
     prevArrow.isUnstable === nextArrow.isUnstable
   );
-};
+}
