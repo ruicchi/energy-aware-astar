@@ -485,6 +485,10 @@ export class SimulationEngine {
     };
   }
 
+  public isPainting(): boolean {
+    return this.terrain.isSessionActive();
+  }
+
   public startPaint(key: string): void {
     if (this.isAnimating || this.isWalking) return;
 
@@ -498,11 +502,11 @@ export class SimulationEngine {
       if (result.brush === "robot") {
         const [r, c] = key.split("-").map(Number);
         this.visualizer.resetRobot(c, r, this.robotHeading, this.cellSize);
-        this.notify();
+        this.visualizer.setDraggingActor?.("robot");
       } else if (result.brush === "destination") {
         const [r, c] = key.split("-").map(Number);
         this.visualizer.setDestinationPosition(c, r, this.cellSize);
-        this.notify();
+        this.visualizer.setDraggingActor?.("destination");
       } else if (result.mutation && result.cellKey) {
         const preview = resolveMutationPreview(result.mutation);
         this.visualizer.previewCell(result.cellKey, preview.color, preview.isWall);
@@ -511,16 +515,16 @@ export class SimulationEngine {
   }
 
   public continuePaint(key: string): void {
+    if (!this.terrain.isSessionActive()) return;
+
     const result = this.terrain.continueStroke(key);
     if (result.modified) {
       if (result.brush === "robot") {
         const [r, c] = key.split("-").map(Number);
         this.visualizer.resetRobot(c, r, this.robotHeading, this.cellSize);
-        this.notify();
       } else if (result.brush === "destination") {
         const [r, c] = key.split("-").map(Number);
         this.visualizer.setDestinationPosition(c, r, this.cellSize);
-        this.notify();
       } else if (result.mutation && result.cellKey) {
         const preview = resolveMutationPreview(result.mutation);
         this.visualizer.previewCell(result.cellKey, preview.color, preview.isWall);
@@ -529,6 +533,10 @@ export class SimulationEngine {
   }
 
   public endPaint(): void {
+    const activeBrush = this.terrain.getActiveStrokeBrush();
+    const wasActorMove = activeBrush === "robot" || activeBrush === "destination";
+    this.visualizer.setDraggingActor?.(null);
+
     const modifiedCells = this.terrain.commitStroke();
     if (modifiedCells && modifiedCells.length > 0) {
       for (const key of modifiedCells) {
@@ -539,15 +547,32 @@ export class SimulationEngine {
       } else {
         this.notify();
       }
+    } else if (wasActorMove) {
+      if (this.isPathVisible) {
+        this.solveInstantly(this.selectedAlgo);
+      } else {
+        this.notify();
+      }
     }
   }
 
   public abortPaint(): void {
+    const activeBrush = this.terrain.getActiveStrokeBrush();
+    const wasActorMove = activeBrush === "robot" || activeBrush === "destination";
+    this.visualizer.setDraggingActor?.(null);
+
     const rolledBack = this.terrain.abortStroke();
     if (rolledBack && rolledBack.length > 0) {
       for (const key of rolledBack) {
         this.visualizer.clearCellPreview(key, this.terrain.hasWall(key));
       }
+      if (this.isPathVisible) {
+        this.solveInstantly(this.selectedAlgo);
+      } else {
+        this.notify();
+      }
+    } else if (wasActorMove) {
+      this.resetActorsVisuals();
       if (this.isPathVisible) {
         this.solveInstantly(this.selectedAlgo);
       } else {

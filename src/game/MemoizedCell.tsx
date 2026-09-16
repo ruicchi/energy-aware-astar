@@ -1,5 +1,3 @@
-import NorthIcon from "@mui/icons-material/North";
-import Box from "@mui/material/Box";
 import { memo } from "react";
 import { THEME_CONFIG } from "../config/simulationConfig";
 import { areCellDisplayPropsEqual, type CellDisplayState } from "./cellDisplay";
@@ -35,45 +33,41 @@ export const MemoizedCell = memo(
     } = displayState;
 
     return (
-      <Box
+      <div
         id={`cell-${cellKey}`}
+        data-cell-key={cellKey}
         onMouseDown={() => onMouseDown(cellKey)}
         onMouseEnter={() => onMouseEnter(cellKey)}
-        className={isWall ? "is-wall" : ""}
-        sx={{
+        className={`grid-cell ${isWall ? "is-wall" : ""}`}
+        style={{
           width: cellSize,
           height: cellSize,
-          boxSizing: "border-box",
-          borderRight: `1px solid ${THEME_CONFIG.cellBorderColor}`,
-          borderBottom: `1px solid ${THEME_CONFIG.cellBorderColor}`,
-          borderTop: row === 0 ? `1px solid ${THEME_CONFIG.cellBorderColor}` : "none",
-          borderLeft: col === 0 ? `1px solid ${THEME_CONFIG.cellBorderColor}` : "none",
-          backgroundColor: bgColor,
-          cursor: "pointer",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          fontSize: "8px",
-          color: "white",
-          position: "relative",
+          backgroundColor: bgColor || undefined,
+          borderTop: row === 0 ? `1px solid ${THEME_CONFIG.cellBorderColor}` : undefined,
+          borderLeft: col === 0 ? `1px solid ${THEME_CONFIG.cellBorderColor}` : undefined,
         }}
       >
         {gradientArrow && (
-          <NorthIcon
-            sx={{
-              fontSize: cellSize * 0.6,
+          <svg
+            viewBox="0 0 24 24"
+            style={{
+              width: cellSize * 0.6,
+              height: cellSize * 0.6,
               transform: `rotate(${gradientArrow.rotationDeg}deg)`,
               color: gradientArrow.isUnstable
                 ? THEME_CONFIG.unstableArrowColor
                 : THEME_CONFIG.contourArrowColor,
               opacity: gradientArrow.opacity,
               pointerEvents: "none",
+              fill: "currentColor",
             }}
-          />
+          >
+            <path d="m12 5 6 6-1.41 1.41L13 8.83V19h-2V8.83l-3.59 3.58L6 11l6-6z" />
+          </svg>
         )}
 
         {elevationLabel != null && elevationLabel}
-      </Box>
+      </div>
     );
   },
   areCellDisplayPropsEqual,

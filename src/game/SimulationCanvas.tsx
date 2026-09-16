@@ -1,4 +1,4 @@
-import { memo, useMemo, useCallback } from "react";
+import { memo, useMemo, useCallback, useRef, useEffect } from "react";
 import Box from "@mui/material/Box";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { MemoizedCell } from "./MemoizedCell";
@@ -12,6 +12,83 @@ import {
 } from "./simulationHooks";
 import { THEME_CONFIG, UI_CONFIG, getHeadingRotation } from "../config/simulationConfig";
 
+interface TerrainGridProps {
+  cols: number;
+  rows: number;
+  cellSize: number;
+  wallNodes: ReadonlySet<string>;
+  terrainFactors: ReadonlyMap<string, number>;
+  terrainTypes: ReadonlyMap<string, "dirt" | "water">;
+  elevations: ReadonlyMap<string, number>;
+  showGradients: boolean;
+  maxTraversableSlope?: number;
+  handleMouseDown: (key: string) => void;
+  handleMouseEnter: (key: string) => void;
+}
+
+const TerrainGrid = memo(function TerrainGrid({
+  cols,
+  rows,
+  cellSize,
+  wallNodes,
+  terrainFactors,
+  terrainTypes,
+  elevations,
+  showGradients,
+  maxTraversableSlope,
+  handleMouseDown,
+  handleMouseEnter,
+}: TerrainGridProps) {
+  const cells = useMemo(() => {
+    return Array.from({ length: rows * cols }, (_, index) => {
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+      return { row, col, key: `${row}-${col}` };
+    });
+  }, [rows, cols]);
+
+  const gradientField = useMemo(() => {
+    if (!showGradients) return null;
+    return computeGradientField(rows, cols, elevations, maxTraversableSlope);
+  }, [rows, cols, elevations, showGradients, maxTraversableSlope]);
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "grid",
+        gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
+        gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
+      }}
+    >
+      {cells.map((cell) => {
+        const displayState = resolveCellDisplayState({
+          isWall: wallNodes.has(cell.key),
+          terrainFactor: terrainFactors.get(cell.key) || 0,
+          terrainType: terrainTypes.get(cell.key),
+          elevation: elevations.get(cell.key) || 0,
+          gradient: gradientField?.get(cell.key) ?? null,
+          showGradients,
+        });
+
+        return (
+          <MemoizedCell
+            key={cell.key}
+            cellKey={cell.key}
+            cellSize={cellSize}
+            row={cell.row}
+            col={cell.col}
+            displayState={displayState}
+            onMouseDown={handleMouseDown}
+            onMouseEnter={handleMouseEnter}
+          />
+        );
+      })}
+    </div>
+  );
+});
+
 /**
  * The deep SimulationCanvas module.
  * Consolidates grid terrain rendering, cell elevation & gradient display,
@@ -21,6 +98,7 @@ import { THEME_CONFIG, UI_CONFIG, getHeadingRotation } from "../config/simulatio
 export const SimulationCanvas = memo(function SimulationCanvas() {
   const engine = useSimulationEngine();
   const state = useSimulationSelector(selectGridCanvas, shallowEqual);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     cols,
@@ -50,18 +128,36 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
   const handleMouseEnter = useCallback((key: string) => engine.continuePaint(key), [engine]);
   const handleMouseUp = useCallback(() => engine.endPaint(), [engine]);
 
-  const cells = useMemo(() => {
-    return Array.from({ length: rows * cols }, (_, index) => {
-      const row = Math.floor(index / cols);
-      const col = index % cols;
-      return { row, col, key: `${row}-${col}` };
-    });
-  }, [rows, cols]);
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!engine.isPainting()) return;
+      if (e.buttons === 0) {
+        engine.endPaint();
+        return;
+      }
+      const container = gridContainerRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const col = Math.floor((e.clientX - rect.left) / cellSize);
+      const row = Math.floor((e.clientY - rect.top) / cellSize);
+      if (col >= 0 && col < cols && row >= 0 && row < rows) {
+        engine.continuePaint(`${row}-${col}`);
+      }
+    },
+    [engine, cellSize, cols, rows],
+  );
 
-  const gradientField = useMemo(() => {
-    if (!showGradients) return null;
-    return computeGradientField(rows, cols, elevations, maxTraversableSlope);
-  }, [rows, cols, elevations, showGradients, maxTraversableSlope]);
+  useEffect(() => {
+    const handleGlobalPointerUp = () => {
+      if (engine.isPainting()) {
+        engine.endPaint();
+      }
+    };
+    window.addEventListener("pointerup", handleGlobalPointerUp);
+    return () => {
+      window.removeEventListener("pointerup", handleGlobalPointerUp);
+    };
+  }, [engine]);
 
   const [robotRow, robotCol] = useMemo(() => {
     const parts = robotNode.split("-");
@@ -92,6 +188,8 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
       onMouseLeave={handleMouseUp}
     >
       <Box
+        ref={gridContainerRef}
+        onPointerMove={handlePointerMove}
         sx={{
           width: cols * cellSize,
           height: rows * cellSize,
@@ -103,40 +201,20 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
           borderRadius: isFixedDimensions ? 1 : 0,
         }}
       >
-        {/* Terrain Cells Grid */}
-        <Box
-          sx={{
-            width: "100%",
-            height: "100%",
-            display: "grid",
-            gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
-            gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
-          }}
-        >
-          {cells.map((cell) => {
-            const displayState = resolveCellDisplayState({
-              isWall: wallNodes.has(cell.key),
-              terrainFactor: terrainFactors.get(cell.key) || 0,
-              terrainType: terrainTypes.get(cell.key),
-              elevation: elevations.get(cell.key) || 0,
-              gradient: gradientField?.get(cell.key) ?? null,
-              showGradients,
-            });
-
-            return (
-              <MemoizedCell
-                key={cell.key}
-                cellKey={cell.key}
-                cellSize={cellSize}
-                row={cell.row}
-                col={cell.col}
-                displayState={displayState}
-                onMouseDown={handleMouseDown}
-                onMouseEnter={handleMouseEnter}
-              />
-            );
-          })}
-        </Box>
+        {/* Terrain Cells Grid (Memoized to prevent re-render when moving nodes or walking) */}
+        <TerrainGrid
+          cols={cols}
+          rows={rows}
+          cellSize={cellSize}
+          wallNodes={wallNodes}
+          terrainFactors={terrainFactors}
+          terrainTypes={terrainTypes}
+          elevations={elevations}
+          showGradients={showGradients}
+          maxTraversableSlope={maxTraversableSlope}
+          handleMouseDown={handleMouseDown}
+          handleMouseEnter={handleMouseEnter}
+        />
 
         {/* Search Path Polyline Overlay */}
         {isLineVisible && currentPath && (
@@ -196,6 +274,7 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
             border: `1px solid ${THEME_CONFIG.actorBorderColor}`,
             userSelect: "none",
             touchAction: "none",
+            willChange: "transform",
           }}
         >
           <ArrowForwardIcon
@@ -241,6 +320,7 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
             border: `1px solid ${THEME_CONFIG.actorBorderColor}`,
             userSelect: "none",
             touchAction: "none",
+            willChange: "transform",
           }}
         />
       </Box>

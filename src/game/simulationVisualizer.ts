@@ -18,6 +18,7 @@ export interface SimulationVisualizer {
   setRobotHeading(heading: Heading, animated?: boolean): void;
   resetRobot(col: number, row: number, heading: Heading, cellSize: number): void;
   setDestinationPosition(col: number, row: number, cellSize: number): void;
+  setDraggingActor?(actor: "robot" | "destination" | null): void;
 
   // --- Transient Terrain Stroke Previews ---
   previewCell(key: string, color: string, isWall?: boolean): void;
@@ -99,6 +100,20 @@ export class DomVisualizer implements SimulationVisualizer {
     }
   }
 
+  public setDraggingActor(actor: "robot" | "destination" | null): void {
+    if (typeof document === "undefined") return;
+    const robotEl = document.getElementById("robot-actor");
+    if (robotEl) {
+      robotEl.style.pointerEvents = actor === "robot" ? "none" : "auto";
+      robotEl.style.cursor = actor === "robot" ? "grabbing" : "grab";
+    }
+    const destEl = document.getElementById("destination-actor");
+    if (destEl) {
+      destEl.style.pointerEvents = actor === "destination" ? "none" : "auto";
+      destEl.style.cursor = actor === "destination" ? "grabbing" : "grab";
+    }
+  }
+
   public previewCell(key: string, color: string, isWall?: boolean): void {
     if (typeof document === "undefined") return;
     const node = document.getElementById(`cell-${key}`);
@@ -150,6 +165,7 @@ export class NullVisualizer implements SimulationVisualizer {
   public setRobotHeading(): void {}
   public resetRobot(): void {}
   public setDestinationPosition(): void {}
+  public setDraggingActor(): void {}
   public previewCell(): void {}
   public clearCellPreview(): void {}
   public clearAllCellPreviews(): void {}
@@ -167,6 +183,7 @@ export class MemoryVisualizer implements SimulationVisualizer {
   public robotHeadings: { heading: Heading; animated?: boolean }[] = [];
   public robotResets: { col: number; row: number; heading: Heading; cellSize: number }[] = [];
   public destinationPositions: { col: number; row: number; cellSize: number }[] = [];
+  public draggingActor: "robot" | "destination" | null = null;
   public previews: Map<string, { color: string; isWall?: boolean }> = new Map();
 
   public renderSearchNode(key: string, type: "open" | "closed", theme: "manhattan" | "energy"): void {
@@ -196,6 +213,10 @@ export class MemoryVisualizer implements SimulationVisualizer {
 
   public setDestinationPosition(col: number, row: number, cellSize: number): void {
     this.destinationPositions.push({ col, row, cellSize });
+  }
+
+  public setDraggingActor(actor: "robot" | "destination" | null): void {
+    this.draggingActor = actor;
   }
 
   public previewCell(key: string, color: string, isWall?: boolean): void {

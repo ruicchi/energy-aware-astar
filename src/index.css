@@ -4,6 +4,22 @@ body,
   padding: 0;
 }
 
+/* Fast layout-contained grid cell styles */
+.grid-cell {
+  box-sizing: border-box;
+  border-right: 1px solid #b8b8b8;
+  border-bottom: 1px solid #b8b8b8;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 8px;
+  color: white;
+  position: relative;
+  user-select: none;
+  contain: layout style paint;
+}
+
 /* Base style for the overlays */
 [data-manhattan]::after,
 [data-energy]::after {
