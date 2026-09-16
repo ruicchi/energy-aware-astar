@@ -134,5 +134,36 @@ describe("Benchmark: Energy-Aware A* vs Standard Heuristics", () => {
     const euclideanResults = report3D.results.filter((r) => r.algorithm === "euclidean");
     expect(euclideanResults.every((r) => r.use3DStandard === true)).toBe(true);
     expect(report3D.latexTable).toContain("Euclidean A* (3D)");
+
+    console.log("\n=== Deterministic Benchmarks (3D Standard Mode) ===");
+    const scenarios = Array.from(new Set(report3D.results.map((r) => r.scenarioName)));
+    for (const name of scenarios) {
+      console.log(`\nScenario: ${name}`);
+      const scenRes = report3D.results.filter((r) => r.scenarioName === name);
+      scenRes.forEach((r) => {
+        const label = r.use3DStandard && r.algorithm !== "energyAware"
+          ? `${ALGORITHM_LABELS[r.algorithm]} (3D)`
+          : ALGORITHM_LABELS[r.algorithm];
+        console.log(
+          `  ${label.padEnd(20)} | Dist: ${r.totalDistance.toFixed(
+            1,
+          )}m | Energy: ${r.totalEnergy.toFixed(1)}J | Nodes: ${r.nodesEvaluated} | Safe: ${
+            r.isSafe ? "YES" : "NO (" + r.safetyFailureReason + ")"
+          }`,
+        );
+      });
+    }
+
+    const mcReport3D = runMonteCarloBenchmarkSuite({ trials: 50, use3DStandard: true });
+    console.log("\n=== Monte Carlo Summary (3D Standard Mode, N = 50) ===");
+    for (const [algo, s] of mcReport3D.summaryMap.entries()) {
+      const red = s.energySavingsPercentVsEA
+        ? ` (Savings: +${s.energySavingsPercentVsEA.toFixed(1)}%)`
+        : "";
+      const label = algo !== "energyAware" ? `${ALGORITHM_LABELS[algo]} (3D)` : ALGORITHM_LABELS[algo];
+      console.log(
+        `  ${label.padEnd(20)} | Energy: ${s.meanEnergy.toFixed(1)} ± ${s.stdEnergy.toFixed(1)}J${red} | Safety: ${s.safetyRatePercent.toFixed(1)}% | Distance: ${s.meanDistance.toFixed(1)}m`,
+      );
+    }
   });
 });
