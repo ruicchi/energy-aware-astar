@@ -68,9 +68,9 @@ _Avoid_: MathHelpers, StatsUtils, AnalysisService
 The presentation adapters serializing benchmark telemetry and statistical summaries into structured CSV records, LaTeX `booktabs` tables, and Chapter 4 discussion Markdown summaries.
 _Avoid_: TableFormatters, Exporters, LatexGenerators
 
-**Simulation Canvas Seam**:
-The unified domain hook and selector projection (`useGridCanvas`) consolidating grid dimensions, terrain layer collections, kinematic actor orientations, search polyline geometry, and pointer stroke event handlers for canvas rendering.
-_Avoid_: ViewportHooks, CanvasStore, GridSelectors
+**Simulation Canvas**:
+The deep module (`SimulationCanvas`) consolidating grid terrain visualization, cell elevation and gradient display, search polyline geometry, kinematic actor posing, and pointer stroke event handlers behind a self-contained canvas seam.
+_Avoid_: ViewportHooks, CanvasStore, GridSelectors, TerrainGrid, ActorComponents
 
 **Simulation Control Seam**:
 The cohesive domain hooks (`useSimulationControls`, `useBrushControls`, `useHeadingControls`, `usePathMetrics`) aggregating scenario configuration, brush parameters, algorithm selection, and playback commands across control panels.

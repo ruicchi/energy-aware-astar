@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-describe("Actor Coordinate Calculations", () => {
+describe("SimulationCanvas - Kinematic Actor Coordinate Calculations", () => {
   it("translates robotNode string to grid pixel coordinates", () => {
     const robotNode = "3-5";
     const cellSize = 28;
