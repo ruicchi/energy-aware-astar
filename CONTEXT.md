@@ -21,8 +21,12 @@ A search policy that models 3D robot states (row, column, heading) to optimize t
 _Avoid_: EnergyStrategy, BatteryPlanner
 
 **Standard Policy**:
-A search policy that models 2D grid coordinates (row, column) to minimize spatial distance using classical distance metrics (Manhattan, Euclidean, Chebyshev, Octile).
+A search policy that models grid coordinates to minimize spatial distance using classical distance metrics (Manhattan, Euclidean, Chebyshev, Octile), operable in either 2D planar mode or 3D elevation-aware mode.
 _Avoid_: ClassicAStar, DistanceStrategy
+
+**3D Distance Extension**:
+A geometric extension for standard policies that accounts for continuous elevation change in transition step cost and heuristic estimation, enforcing maximum traversable slope bounds while minimizing geometric distance rather than vehicle energy.
+_Avoid_: ElevationPolicy, 3DStrategy, VerticalCost
 
 **Heading**:
 The discrete orientation of the robot on the grid across 8 directions or NONE.

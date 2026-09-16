@@ -149,6 +149,7 @@ export interface AlgorithmBenchmarkResult {
   safetyFailureReason?: string;
   maxSlope: number;
   energyBreakdown: EnergyBreakdown;
+  use3DStandard?: boolean;
 }
 
 export const ALGORITHMS: AlgorithmType[] = [
@@ -191,9 +192,11 @@ export function runAlgorithmBenchmark(
   scenarioName: string,
   scenario: Scenario,
   algorithm: AlgorithmType,
+  options?: { use3DStandard?: boolean },
 ): AlgorithmBenchmarkResult {
+  const use3DStandard = options?.use3DStandard ?? false;
   const startTime = performance.now();
-  const pathResult = findPath(scenario, { algorithm });
+  const pathResult = findPath(scenario, { algorithm, use3DStandard });
   const endTime = performance.now();
   const executionTimeMs = parseFloat((endTime - startTime).toFixed(3));
 
@@ -213,6 +216,7 @@ export function runAlgorithmBenchmark(
     safetyFailureReason: safety.failureReason,
     maxSlope: parseFloat(safety.maxSlopeEncountered.toFixed(1)),
     energyBreakdown: pathResult.energyBreakdown,
+    use3DStandard,
   };
 }
 
@@ -223,14 +227,16 @@ export function runScenarioSuite(
   scenarioName: string,
   scenario: Scenario,
   algorithms: AlgorithmType[] = ALGORITHMS,
+  options?: { use3DStandard?: boolean },
 ): AlgorithmBenchmarkResult[] {
-  return algorithms.map((algo) => runAlgorithmBenchmark(scenarioName, scenario, algo));
+  return algorithms.map((algo) => runAlgorithmBenchmark(scenarioName, scenario, algo, options));
 }
 
 export interface DeterministicBenchmarkOptions {
   algorithms?: AlgorithmType[];
   outputDir?: string;
   reporters?: readonly BenchmarkReporter[];
+  use3DStandard?: boolean;
 }
 
 export interface DeterministicBenchmarkReport {
@@ -257,7 +263,7 @@ export function runDeterministicBenchmarkSuite(
 
   for (const { name, scenario } of scenarios) {
     for (const algo of algorithms) {
-      results.push(runAlgorithmBenchmark(name, scenario, algo));
+      results.push(runAlgorithmBenchmark(name, scenario, algo, { use3DStandard: options.use3DStandard }));
     }
   }
 
@@ -308,6 +314,7 @@ export interface MonteCarloBenchmarkOptions {
   algorithms?: AlgorithmType[];
   outputDir?: string;
   reporters?: readonly BenchmarkReporter[];
+  use3DStandard?: boolean;
 }
 
 export interface MonteCarloBenchmarkReport {
@@ -352,7 +359,7 @@ export function runMonteCarloBenchmarkSuite(
       obstacleDensity,
     });
     for (const algo of algorithms) {
-      results.push(runAlgorithmBenchmark(`Seed_${seed}`, scenario, algo));
+      results.push(runAlgorithmBenchmark(`Seed_${seed}`, scenario, algo, { use3DStandard: options.use3DStandard }));
     }
   }
 

@@ -126,4 +126,13 @@ describe("Benchmark: Energy-Aware A* vs Standard Heuristics", () => {
     expect(virtualFiles.has(written.table1Path!)).toBe(true);
     expect(virtualFiles.get(written.table1Path!)).toBe(bundle.table1DeterministicTex);
   });
+
+  it("supports running 3D-aware standard heuristics in deterministic benchmark suite", () => {
+    const report3D = runDeterministicBenchmarkSuite(undefined, { use3DStandard: true });
+    expect(report3D.results.length).toBe(20);
+
+    const euclideanResults = report3D.results.filter((r) => r.algorithm === "euclidean");
+    expect(euclideanResults.every((r) => r.use3DStandard === true)).toBe(true);
+    expect(report3D.latexTable).toContain("Euclidean A* (3D)");
+  });
 });

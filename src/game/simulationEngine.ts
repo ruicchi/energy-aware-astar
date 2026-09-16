@@ -92,6 +92,7 @@ export interface SimulationState {
   showGradients: boolean;
   robotHeading: Heading;
   selectedAlgo: AlgorithmType;
+  use3DStandard: boolean;
 
   // Playback & Animation State
   playbackStatus: "idle" | "searching" | "walking";
@@ -134,6 +135,7 @@ export interface SimulationEngineOptions {
   initialElevations?: Map<string, number>;
   initialHeading?: Heading;
   initialAlgo?: AlgorithmType;
+  initialUse3DStandard?: boolean;
   initialMaxTraversableSlope?: number;
   visualizer?: SimulationVisualizer;
   /** Backwards compatibility alias for visualizer */
@@ -175,6 +177,7 @@ export class SimulationEngine {
   private showGradients: boolean = false;
   private robotHeading: Heading = VEHICLE_CONFIG.defaultHeading;
   private selectedAlgo: AlgorithmType = "energyAware";
+  private use3DStandard: boolean = false;
 
   private playbackStatus: "idle" | "searching" | "walking" = "idle";
   private isAnimating: boolean = false;
@@ -232,6 +235,7 @@ export class SimulationEngine {
     this.maxTraversableSlope = this.defaultMaxTraversableSlope;
     this.robotHeading = this.initialHeading;
     this.selectedAlgo = options.initialAlgo ?? "energyAware";
+    this.use3DStandard = options.initialUse3DStandard ?? false;
 
     this.subscribe = this.subscribe.bind(this);
     this.getSnapshot = this.getSnapshot.bind(this);
@@ -271,6 +275,7 @@ export class SimulationEngine {
       showGradients: this.showGradients,
       robotHeading: this.robotHeading,
       selectedAlgo: this.selectedAlgo,
+      use3DStandard: this.use3DStandard,
       playbackStatus: this.playbackStatus,
       isAnimating: this.isAnimating,
       isWalking: this.isWalking,
@@ -456,6 +461,26 @@ export class SimulationEngine {
         this.notify();
       }
     }
+  }
+
+  public setUse3DStandard(enabled: boolean): void {
+    if (this.use3DStandard === enabled) return;
+    this.use3DStandard = enabled;
+    this.cachedSnapshot = null;
+    if (
+      this.selectedAlgo !== "energyAware" &&
+      (this.isPathVisible || Boolean(this.currentPath && this.currentPath.length > 0)) &&
+      !this.isAnimating &&
+      !this.isWalking
+    ) {
+      this.solveInstantly(this.selectedAlgo);
+    } else {
+      this.notify();
+    }
+  }
+
+  public toggleUse3DStandard(): void {
+    this.setUse3DStandard(!this.use3DStandard);
   }
 
   public toggleManhattanSearch(): void {
@@ -684,15 +709,21 @@ export class SimulationEngine {
 
     const config = algoConfigs[algo];
     const theme = config.theme;
-    const result = findPath(scenario, { algorithm: algo });
+    const result = findPath(scenario, { algorithm: algo, use3DStandard: this.use3DStandard });
 
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
       result;
 
     const safety = evaluatePathSafety(shortestPath, scenario);
+    const algoName =
+      algo === "energyAware"
+        ? config.name
+        : this.use3DStandard
+          ? `${config.name} (3D)`
+          : config.name;
 
     this.pathMetrics = {
-      algorithm: config.name,
+      algorithm: algoName,
       distance: totalDistance,
       energy: totalEnergy,
       energyBreakdown,
@@ -898,12 +929,18 @@ export class SimulationEngine {
 
     const config = algoConfigs[algo];
     const theme = config.theme;
-    const result = findPath(scenario, { algorithm: algo });
+    const result = findPath(scenario, { algorithm: algo, use3DStandard: this.use3DStandard });
     const { shortestPath, totalEnergy, totalDistance, energyBreakdown } = result;
     const safety = evaluatePathSafety(shortestPath, scenario);
+    const algoName =
+      algo === "energyAware"
+        ? config.name
+        : this.use3DStandard
+          ? `${config.name} (3D)`
+          : config.name;
 
     this.pathMetrics = {
-      algorithm: config.name,
+      algorithm: algoName,
       distance: totalDistance,
       energy: totalEnergy,
       energyBreakdown,

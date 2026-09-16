@@ -216,4 +216,77 @@ describe("Pathfinding Engine", () => {
       expect(result.shortestPath).toEqual([])
     })
   })
-})
+
+  describe("3D-Aware Standard A*", () => {
+    it("routes around impassable steep slopes when use3DStandard is true, unlike 2D standard", () => {
+      // Create a scenario where going straight through (2-2) has a vertical cliff (slope > 30 deg),
+      // while an alternative flat path around (1-2) is available.
+      // Elevation level 5 with ELEVATION_SCALE 0.5 is height 2.5m, step distance 1.0 => slope = atan(2.5/1)*180/pi = 68.2 deg > 30 deg.
+      const scenario = createTestScenario({
+        rows: 5,
+        cols: 5,
+        robotNode: "2-1",
+        destinationNode: "2-3",
+        maxTraversableSlope: 30,
+        elevations: new Map([
+          ["2-1", 0],
+          ["2-2", 5], // 68.2° slope from 2-1 to 2-2
+          ["2-3", 0],
+          ["1-1", 0],
+          ["1-2", 0], // Flat alternative detour
+          ["1-3", 0],
+        ]),
+      });
+
+      // 2D Euclidean standard ignores elevation and walks straight through the cliff (2-2)
+      const result2D = findPath(scenario, { algorithm: "euclidean", use3DStandard: false });
+      expect(result2D.shortestPath).toContain("2-2");
+
+      // 3D-Aware Euclidean standard prunes the impassable cliff (2-2) and routes around via row 1
+      const result3D = findPath(scenario, { algorithm: "euclidean", use3DStandard: true });
+      expect(result3D.shortestPath.length).toBeGreaterThan(0);
+      expect(result3D.shortestPath).not.toContain("2-2");
+      expect(result3D.shortestPath).toContain("1-2");
+      expect(result3D.totalDistance).toBeGreaterThan(0);
+    });
+
+    it("evaluates all standard 3D heuristics (manhattan, euclidean, octile, chebyshev)", () => {
+      const scenario = createTestScenario({
+        rows: 6,
+        cols: 6,
+        robotNode: "0-0",
+        destinationNode: "3-3",
+        elevations: new Map([
+          ["0-0", 0],
+          ["1-1", 1],
+          ["2-2", 1],
+          ["3-3", 1],
+        ]),
+      });
+
+      const manhattan3D = findPath(scenario, { algorithm: "manhattan", use3DStandard: true });
+      const euclidean3D = findPath(scenario, { algorithm: "euclidean", use3DStandard: true });
+      const octile3D = findPath(scenario, { algorithm: "octile", use3DStandard: true });
+      const chebyshev3D = findPath(scenario, { algorithm: "chebyshev", use3DStandard: true });
+
+      expect(manhattan3D.shortestPath.length).toBeGreaterThan(0);
+      expect(manhattan3D.shortestPath[0]).toBe("0-0");
+      expect(manhattan3D.shortestPath[manhattan3D.shortestPath.length - 1]).toBe("3-3");
+
+      expect(euclidean3D.shortestPath.length).toBeGreaterThan(0);
+      expect(euclidean3D.shortestPath[0]).toBe("0-0");
+      expect(euclidean3D.shortestPath[euclidean3D.shortestPath.length - 1]).toBe("3-3");
+
+      expect(octile3D.shortestPath.length).toBeGreaterThan(0);
+      expect(octile3D.shortestPath[0]).toBe("0-0");
+      expect(octile3D.shortestPath[octile3D.shortestPath.length - 1]).toBe("3-3");
+
+      expect(chebyshev3D.shortestPath.length).toBeGreaterThan(0);
+      expect(chebyshev3D.shortestPath[0]).toBe("0-0");
+      expect(chebyshev3D.shortestPath[chebyshev3D.shortestPath.length - 1]).toBe("3-3");
+
+      // In 3D mode, totalDistance incorporates spatial elevation changes
+      expect(euclidean3D.totalDistance).toBeGreaterThan(0);
+    });
+  });
+});

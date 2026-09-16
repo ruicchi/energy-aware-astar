@@ -10,6 +10,7 @@ import type {
 import {
   SQRT2,
   HEADING_ANGLES,
+  ELEVATION_SCALE,
   getStepDistance,
   getSlopeDegrees,
   getPosture,
@@ -21,6 +22,7 @@ import * as MinHeap from "./MinHeap";
 
 export interface PathfindingOptions {
   algorithm?: AlgorithmType;
+  use3DStandard?: boolean;
 }
 
 /**
@@ -55,22 +57,69 @@ const HEADING_ORDER: Record<Exclude<Heading, "NONE">, number> = {
   UP_LEFT: 7,
 };
 
-function manhattanDistance(r1: number, c1: number, r2: number, c2: number): number {
+export function manhattanDistance(r1: number, c1: number, r2: number, c2: number): number {
   return Math.abs(r1 - r2) + Math.abs(c1 - c2);
 }
 
-function euclideanDistance(r1: number, c1: number, r2: number, c2: number): number {
+export function euclideanDistance(r1: number, c1: number, r2: number, c2: number): number {
   return Math.hypot(r1 - r2, c1 - c2);
 }
 
-function chebyshevDistance(r1: number, c1: number, r2: number, c2: number): number {
+export function chebyshevDistance(r1: number, c1: number, r2: number, c2: number): number {
   return Math.max(Math.abs(r1 - r2), Math.abs(c1 - c2));
 }
 
-function octileDistance(r1: number, c1: number, r2: number, c2: number): number {
+export function octileDistance(r1: number, c1: number, r2: number, c2: number): number {
   const dx = Math.abs(r1 - r2);
   const dy = Math.abs(c1 - c2);
   return dx + dy + (SQRT2 - 2) * Math.min(dx, dy);
+}
+
+export function manhattanDistance3D(
+  r1: number,
+  c1: number,
+  z1: number,
+  r2: number,
+  c2: number,
+  z2: number,
+): number {
+  return Math.abs(r1 - r2) + Math.abs(c1 - c2) + Math.abs(z1 - z2);
+}
+
+export function euclideanDistance3D(
+  r1: number,
+  c1: number,
+  z1: number,
+  r2: number,
+  c2: number,
+  z2: number,
+): number {
+  return Math.hypot(r1 - r2, c1 - c2, z1 - z2);
+}
+
+export function chebyshevDistance3D(
+  r1: number,
+  c1: number,
+  z1: number,
+  r2: number,
+  c2: number,
+  z2: number,
+): number {
+  return Math.max(Math.abs(r1 - r2), Math.abs(c1 - c2), Math.abs(z1 - z2));
+}
+
+export function octileDistance3D(
+  r1: number,
+  c1: number,
+  z1: number,
+  r2: number,
+  c2: number,
+  z2: number,
+): number {
+  const dx = Math.abs(r1 - r2);
+  const dy = Math.abs(c1 - c2);
+  const dz = Math.abs(z1 - z2);
+  return dx + dy + (SQRT2 - 2) * Math.min(dx, dy) + dz;
 }
 
 function getTurnCost(current: Heading, target: Heading, penalty: number): number {
@@ -343,6 +392,7 @@ function compilePathfindingResult(
   scenario: Scenario,
   nodesEvaluated: number,
   visitedNodesInOrder: VisitedNode[],
+  use3D = false,
 ): PathfindingResult {
   const shortestPath: string[] = [];
   let totalDistance = 0;
@@ -352,7 +402,15 @@ function compilePathfindingResult(
     shortestPath.push(`${temp.row}-${temp.col}`);
     if (temp.parent) {
       const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col;
-      totalDistance += isDiagonal ? SQRT2 : 1.0;
+      const step2D = isDiagonal ? SQRT2 : 1.0;
+      if (use3D) {
+        const currElev = (scenario.elevations.get(`${temp.row}-${temp.col}`) || 0) * ELEVATION_SCALE;
+        const parentElev =
+          (scenario.elevations.get(`${temp.parent.row}-${temp.parent.col}`) || 0) * ELEVATION_SCALE;
+        totalDistance += Math.hypot(step2D, currElev - parentElev);
+      } else {
+        totalDistance += step2D;
+      }
     }
     temp = temp.parent;
   }
@@ -424,27 +482,86 @@ function createEnergyAwarePolicy(scenario: Scenario): SearchPolicy {
 function createStandardPolicy(
   scenario: Scenario,
   algorithm: "manhattan" | "euclidean" | "octile" | "chebyshev",
+  use3D = false,
 ): SearchPolicy {
-  let hFunc = manhattanDistance;
+  let hFunc: (row: number, col: number, destRow: number, destCol: number) => number;
   let neighbors = NEIGHBORS_4;
 
+  if (!use3D) {
+    switch (algorithm) {
+      case "euclidean":
+        hFunc = euclideanDistance;
+        neighbors = NEIGHBORS_8;
+        break;
+      case "chebyshev":
+        hFunc = chebyshevDistance;
+        neighbors = NEIGHBORS_8;
+        break;
+      case "octile":
+        hFunc = octileDistance;
+        neighbors = NEIGHBORS_8;
+        break;
+      case "manhattan":
+      default:
+        hFunc = manhattanDistance;
+        neighbors = NEIGHBORS_4;
+        break;
+    }
+
+    return {
+      neighbors,
+      getStateKey: (row, col) => `${row}-${col}`,
+      resolveHeading: (neighborHeading) => neighborHeading,
+      isMoveBlocked: (current, nr, nc, neighborHeading, cellKey, stateKey, closedSet) => {
+        if (nr < 0 || nr >= scenario.rows || nc < 0 || nc >= scenario.cols) return true;
+        if (scenario.wallNodes.has(cellKey)) return true;
+        if (closedSet.has(stateKey)) return true;
+        if (neighborHeading.includes("_")) {
+          const cardinal1 = `${current.row + (nr - current.row)}-${current.col}`;
+          const cardinal2 = `${current.row}-${current.col + (nc - current.col)}`;
+          if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) return true;
+        }
+        return false;
+      },
+      computeStepCost: (_current, target) => getStepDistance(target.heading),
+      computeHeuristic: (row, col, _heading, destRow, destCol) => hFunc(row, col, destRow, destCol),
+    };
+  }
+
+  // 3D-Aware Standard Policy
   switch (algorithm) {
     case "euclidean":
-      hFunc = euclideanDistance;
       neighbors = NEIGHBORS_8;
+      hFunc = (row, col, destRow, destCol) => {
+        const currElev = (scenario.elevations.get(`${row}-${col}`) || 0) * ELEVATION_SCALE;
+        const destElev = (scenario.elevations.get(scenario.destinationNode) || 0) * ELEVATION_SCALE;
+        return euclideanDistance3D(row, col, currElev, destRow, destCol, destElev);
+      };
       break;
     case "chebyshev":
-      hFunc = chebyshevDistance;
       neighbors = NEIGHBORS_8;
+      hFunc = (row, col, destRow, destCol) => {
+        const currElev = (scenario.elevations.get(`${row}-${col}`) || 0) * ELEVATION_SCALE;
+        const destElev = (scenario.elevations.get(scenario.destinationNode) || 0) * ELEVATION_SCALE;
+        return chebyshevDistance3D(row, col, currElev, destRow, destCol, destElev);
+      };
       break;
     case "octile":
-      hFunc = octileDistance;
       neighbors = NEIGHBORS_8;
+      hFunc = (row, col, destRow, destCol) => {
+        const currElev = (scenario.elevations.get(`${row}-${col}`) || 0) * ELEVATION_SCALE;
+        const destElev = (scenario.elevations.get(scenario.destinationNode) || 0) * ELEVATION_SCALE;
+        return octileDistance3D(row, col, currElev, destRow, destCol, destElev);
+      };
       break;
     case "manhattan":
     default:
-      hFunc = manhattanDistance;
       neighbors = NEIGHBORS_4;
+      hFunc = (row, col, destRow, destCol) => {
+        const currElev = (scenario.elevations.get(`${row}-${col}`) || 0) * ELEVATION_SCALE;
+        const destElev = (scenario.elevations.get(scenario.destinationNode) || 0) * ELEVATION_SCALE;
+        return manhattanDistance3D(row, col, currElev, destRow, destCol, destElev);
+      };
       break;
   }
 
@@ -461,9 +578,18 @@ function createStandardPolicy(
         const cardinal2 = `${current.row}-${current.col + (nc - current.col)}`;
         if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) return true;
       }
+      if (!isTraversableSlope(current, { row: nr, col: nc, heading: neighborHeading }, scenario, true)) {
+        return true;
+      }
       return false;
     },
-    computeStepCost: (_current, target) => getStepDistance(target.heading),
+    computeStepCost: (current, target) => {
+      const d2D = getStepDistance(target.heading);
+      const currElev = (scenario.elevations.get(`${current.row}-${current.col}`) || 0) * ELEVATION_SCALE;
+      const targetElev = (scenario.elevations.get(`${target.row}-${target.col}`) || 0) * ELEVATION_SCALE;
+      const dz = targetElev - currElev;
+      return Math.hypot(d2D, dz);
+    },
     computeHeuristic: (row, col, _heading, destRow, destCol) => hFunc(row, col, destRow, destCol),
   };
 }
@@ -479,10 +605,12 @@ function createStandardPolicy(
  */
 export function findPath(scenario: Scenario, options?: PathfindingOptions): PathfindingResult {
   const algorithm = options?.algorithm ?? "energyAware";
+  const use3DStandard = Boolean(options?.use3DStandard);
+  const is3D = algorithm === "energyAware" ? false : use3DStandard;
   const policy =
     algorithm === "energyAware"
       ? createEnergyAwarePolicy(scenario)
-      : createStandardPolicy(scenario, algorithm);
+      : createStandardPolicy(scenario, algorithm, use3DStandard);
 
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number);
   const [destRow, destCol] = scenario.destinationNode.split("-").map(Number);
@@ -534,7 +662,7 @@ export function findPath(scenario: Scenario, options?: PathfindingOptions): Path
     const cellKey = `${current.row}-${current.col}`;
 
     if (current.row === destRow && current.col === destCol) {
-      return compilePathfindingResult(current, scenario, nodesEvaluated, visitedNodesInOrder);
+      return compilePathfindingResult(current, scenario, nodesEvaluated, visitedNodesInOrder, is3D);
     }
 
     recordVisit(cellKey, "closed");

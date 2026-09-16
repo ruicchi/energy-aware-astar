@@ -239,6 +239,7 @@ export interface SimulationControlsState {
   isLocked: boolean;
   selectedAlgo: AlgorithmType;
   isEnergyAware: boolean;
+  use3DStandard: boolean;
   robotHeading: Heading;
   isManhattanFinished: boolean;
   isEnergyFinished: boolean;
@@ -260,6 +261,8 @@ export interface SimulationControlsModel extends SimulationControlsState {
   resetToFreeform: () => void;
   setSelectedAlgo: (algo: AlgorithmType, runImmediate?: boolean) => void;
   setRobotHeading: (heading: Heading) => void;
+  setUse3DStandard: (enabled: boolean) => void;
+  toggleUse3DStandard: () => void;
   visualize: (algo?: AlgorithmType) => void;
   solveInstantly: (algo?: AlgorithmType) => void;
   walk: () => void;
@@ -278,6 +281,7 @@ export function selectSimulationControls(s: SimulationState): SimulationControls
     isLocked: s.isLocked,
     selectedAlgo: s.selectedAlgo,
     isEnergyAware: s.selectedAlgo === "energyAware",
+    use3DStandard: s.use3DStandard,
     robotHeading: s.robotHeading,
     isManhattanFinished: s.isManhattanFinished,
     isEnergyFinished: s.isEnergyFinished,
@@ -309,6 +313,14 @@ export function useSimulationControls(): SimulationControlsModel {
     (heading: Heading) => engine.setRobotHeading(heading),
     [engine],
   );
+  const setUse3DStandard = useCallback(
+    (enabled: boolean) => engine.setUse3DStandard(enabled),
+    [engine],
+  );
+  const toggleUse3DStandard = useCallback(
+    () => engine.toggleUse3DStandard(),
+    [engine],
+  );
   const visualize = useCallback((algo?: AlgorithmType) => engine.visualize(algo), [engine]);
   const solveInstantly = useCallback((algo?: AlgorithmType) => engine.solveInstantly(algo), [engine]);
   const walk = useCallback(() => engine.walk(), [engine]);
@@ -324,6 +336,8 @@ export function useSimulationControls(): SimulationControlsModel {
       resetToFreeform,
       setSelectedAlgo,
       setRobotHeading,
+      setUse3DStandard,
+      toggleUse3DStandard,
       visualize,
       solveInstantly,
       walk,
@@ -338,6 +352,8 @@ export function useSimulationControls(): SimulationControlsModel {
       resetToFreeform,
       setSelectedAlgo,
       setRobotHeading,
+      setUse3DStandard,
+      toggleUse3DStandard,
       visualize,
       solveInstantly,
       walk,

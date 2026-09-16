@@ -30,7 +30,11 @@ export function generateDeterministicLatexTable(
     scenResults.forEach((r, idx) => {
       const isFirst = idx === 0;
       const scenLabel = isFirst ? `\\multirow{5}{*}{\\textbf{${scen}}}` : "";
-      const algoLabel = ALGORITHM_LABELS[r.algorithm];
+      const baseAlgoLabel = ALGORITHM_LABELS[r.algorithm];
+      const algoLabel =
+        r.use3DStandard && r.algorithm !== "energyAware"
+          ? `${baseAlgoLabel} (3D)`
+          : baseAlgoLabel;
       const safeLabel = r.isSafe ? "\\checkmark" : "\\texttimes";
       latex += `${scenLabel} & ${algoLabel} & ${r.totalDistance.toFixed(2)} & ${r.totalEnergy.toFixed(2)} & ${r.energyBreakdown.climbingCost.toFixed(2)} & ${r.energyBreakdown.turnCost.toFixed(2)} & ${r.nodesEvaluated} & ${safeLabel} \\\\\n`;
     });

@@ -14,6 +14,7 @@ export interface AlgorithmBenchmarkResult {
   safetyFailureReason?: string;
   maxSlope: number;
   energyBreakdown: EnergyBreakdown;
+  use3DStandard?: boolean;
 }
 
 export const ALGORITHMS: AlgorithmType[] = [

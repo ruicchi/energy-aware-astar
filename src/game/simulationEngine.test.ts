@@ -966,6 +966,34 @@ describe("SimulationEngine", () => {
       // Path now traverses directly through 1-0 since slope <= 35 deg is allowed!
       expect(snapshotAfterUpdate.currentPath).toContain("1-0");
     });
+
+    it("toggles use3DStandard and re-solves path with (3D) telemetry when path is visible", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "0-3",
+        initialAlgo: "euclidean",
+        domAdapter,
+      });
+
+      expect(engine.getSnapshot().use3DStandard).toBe(false);
+
+      // Solve path in 2D Euclidean mode
+      engine.solveInstantly("euclidean");
+      expect(engine.getSnapshot().pathMetrics?.algorithm).toBe("Euclidean");
+
+      // Toggle to 3D mode
+      engine.toggleUse3DStandard();
+      expect(engine.getSnapshot().use3DStandard).toBe(true);
+      expect(engine.getSnapshot().pathMetrics?.algorithm).toBe("Euclidean (3D)");
+
+      // Toggle back to 2D mode
+      engine.setUse3DStandard(false);
+      expect(engine.getSnapshot().use3DStandard).toBe(false);
+      expect(engine.getSnapshot().pathMetrics?.algorithm).toBe("Euclidean");
+    });
   });
 });
 

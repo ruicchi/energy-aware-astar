@@ -56,6 +56,8 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
   const {
     selectedAlgo,
     setSelectedAlgo,
+    use3DStandard,
+    toggleUse3DStandard,
     robotHeading,
     setRobotHeading,
     isEnergyAware,
@@ -116,6 +118,39 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           {algo.label}
         </Button>
       ))}
+
+      {/* 3D-Aware Standard Heuristics Toggle */}
+      <Box
+        sx={{
+          mt: 0.5,
+          borderTop: `1px solid ${THEME_CONFIG.panelHeaderBorderColor}`,
+          pt: 1,
+          opacity: isEnergyAware ? 0.45 : 1,
+          pointerEvents: isEnergyAware ? "none" : "auto",
+          transition: "opacity 0.2s",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+          <Typography variant="caption" color="textSecondary">
+            3D Elevation Aware
+          </Typography>
+          {isEnergyAware && (
+            <Typography variant="caption" color="textSecondary" sx={{ fontSize: "10px", fontStyle: "italic" }}>
+              (Standard only)
+            </Typography>
+          )}
+        </Box>
+        <Button
+          variant={use3DStandard ? "contained" : "outlined"}
+          color={use3DStandard ? "secondary" : "inherit"}
+          fullWidth
+          size="small"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => toggleUse3DStandard()}
+        >
+          {use3DStandard ? "3D Aware: ON" : "3D Aware: OFF (2D)"}
+        </Button>
+      </Box>
 
       {/* Initial Vehicle Heading Orientation */}
       <Box
