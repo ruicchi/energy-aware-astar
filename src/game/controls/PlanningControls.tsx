@@ -130,19 +130,30 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           transition: "opacity 0.2s",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 0.75,
+          }}
+        >
           <Typography variant="caption" color="textSecondary">
             3D Elevation Aware
           </Typography>
           {isEnergyAware && (
-            <Typography variant="caption" color="textSecondary" sx={{ fontSize: "10px", fontStyle: "italic" }}>
+            <Typography
+              variant="caption"
+              color="textSecondary"
+              sx={{ fontSize: "10px", fontStyle: "italic" }}
+            >
               (Standard only)
             </Typography>
           )}
         </Box>
         <Button
           variant={use3DStandard ? "contained" : "outlined"}
-          color={use3DStandard ? "secondary" : "inherit"}
+          color={use3DStandard ? "primary" : "primary"}
           fullWidth
           size="small"
           onPointerDown={(e) => e.stopPropagation()}
@@ -163,12 +174,23 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           transition: "opacity 0.2s",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 0.75,
+          }}
+        >
           <Typography variant="caption" color="textSecondary">
             Initial Heading
           </Typography>
           {!isEnergyAware && (
-            <Typography variant="caption" color="textSecondary" sx={{ fontSize: "10px", fontStyle: "italic" }}>
+            <Typography
+              variant="caption"
+              color="textSecondary"
+              sx={{ fontSize: "10px", fontStyle: "italic" }}
+            >
               (Energy-Aware only)
             </Typography>
           )}
