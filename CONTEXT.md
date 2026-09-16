@@ -73,8 +73,8 @@ The deep module (`SimulationCanvas`) consolidating grid terrain visualization, c
 _Avoid_: ViewportHooks, CanvasStore, GridSelectors, TerrainGrid, ActorComponents
 
 **Simulation Control Seam**:
-The cohesive domain hooks (`useSimulationControls`, `useBrushControls`, `useHeadingControls`, `usePathMetrics`) aggregating scenario configuration, brush parameters, algorithm selection, and playback commands across control panels.
-_Avoid_: ControlHooks, ToolRibbonManager, PanelState
+The cohesive domain hooks (`useSimulationControls`, `useBrushControls`) and control modules (`ScenarioControls`, `PlanningControls`, `TerrainBrushControls`) aggregating scenario configuration, brush parameters, heuristic search policy selection, vehicle heading invariants, and playback commands across control panels.
+_Avoid_: ControlHooks, ToolRibbonManager, PanelState, HeadingControls, HeuristicControls
 
 **Simulation HUD Seam**:
 The unified layout module (`SimulationHud`) and pure placement resolver (`resolveHudLayout`) orchestrating floating control panels, terrain brushes, interactive instructions, and calculation modals with responsive, non-colliding coordinates across viewports.

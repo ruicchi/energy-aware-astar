@@ -12,15 +12,20 @@ import {
   analyzeMonteCarloResults,
   type StatisticalSummary,
 } from "./statisticalAnalysis";
-import { exportToCsv } from "./reporters/csvReporter";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import {
+  type BenchmarkArtifact,
+  type BenchmarkTelemetry,
+  type BenchmarkReporter,
+  DEFAULT_REPORTERS,
+  formatBenchmarkTelemetry,
+  exportToCsv,
   generateDeterministicLatexTable,
   generateMonteCarloLatexTable,
   generateEnergyBreakdownLatexTable,
-} from "./reporters/latexReporter";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import { generateMarkdownSummary } from "./reporters/markdownReporter";
+  generateMarkdownSummary,
+} from "./reporters";
 
 export interface BenchmarkArtifactBundle {
   rawCsv?: string;
@@ -55,6 +60,40 @@ export const defaultFileSystem: ArtifactFileSystem = {
 };
 
 /**
+ * Persists an array of benchmark publication artifacts to disk using an ArtifactFileSystem adapter.
+ */
+export function publishArtifacts(
+  outputDir: string,
+  artifacts: BenchmarkArtifact[],
+  fileSystem: ArtifactFileSystem = defaultFileSystem,
+): WrittenArtifactPaths {
+  const written: WrittenArtifactPaths = {};
+
+  for (const artifact of artifacts) {
+    const fullPath = path.join(outputDir, artifact.relativePath);
+    const parentDir = path.dirname(fullPath);
+    if (!fileSystem.existsSync(parentDir)) {
+      fileSystem.mkdirSync(parentDir, { recursive: true });
+    }
+    fileSystem.writeFileSync(fullPath, artifact.content, "utf-8");
+
+    if (artifact.id === "rawCsv" || artifact.relativePath.endsWith(".csv")) {
+      written.csvPath = fullPath;
+    } else if (artifact.id === "table1Deterministic" || artifact.relativePath.includes("table1")) {
+      written.table1Path = fullPath;
+    } else if (artifact.id === "table2MonteCarlo" || artifact.relativePath.includes("table2")) {
+      written.table2Path = fullPath;
+    } else if (artifact.id === "table3EnergyBreakdown" || artifact.relativePath.includes("table3")) {
+      written.table3Path = fullPath;
+    } else if (artifact.id === "summaryMd" || artifact.relativePath.endsWith(".md")) {
+      written.summaryMdPath = fullPath;
+    }
+  }
+
+  return written;
+}
+
+/**
  * Persists an in-memory benchmark artifact bundle using a filesystem adapter seam.
  */
 export function saveArtifactBundle(
@@ -62,43 +101,37 @@ export function saveArtifactBundle(
   bundle: BenchmarkArtifactBundle,
   fileSystem: ArtifactFileSystem = defaultFileSystem,
 ): WrittenArtifactPaths {
-  const tableDir = path.join(outputDir, "thesis_tables");
-  if (!fileSystem.existsSync(outputDir)) fileSystem.mkdirSync(outputDir, { recursive: true });
-  if (!fileSystem.existsSync(tableDir)) fileSystem.mkdirSync(tableDir, { recursive: true });
-
-  const written: WrittenArtifactPaths = {};
+  const artifacts: BenchmarkArtifact[] = [];
 
   if (bundle.rawCsv !== undefined) {
-    const csvPath = path.join(outputDir, "benchmark_raw.csv");
-    fileSystem.writeFileSync(csvPath, bundle.rawCsv, "utf-8");
-    written.csvPath = csvPath;
+    artifacts.push({ id: "rawCsv", relativePath: "benchmark_raw.csv", content: bundle.rawCsv });
   }
-
   if (bundle.table1DeterministicTex !== undefined) {
-    const table1Path = path.join(tableDir, "table1_deterministic.tex");
-    fileSystem.writeFileSync(table1Path, bundle.table1DeterministicTex, "utf-8");
-    written.table1Path = table1Path;
+    artifacts.push({
+      id: "table1Deterministic",
+      relativePath: "thesis_tables/table1_deterministic.tex",
+      content: bundle.table1DeterministicTex,
+    });
   }
-
   if (bundle.table2MonteCarloTex !== undefined) {
-    const table2Path = path.join(tableDir, "table2_montecarlo.tex");
-    fileSystem.writeFileSync(table2Path, bundle.table2MonteCarloTex, "utf-8");
-    written.table2Path = table2Path;
+    artifacts.push({
+      id: "table2MonteCarlo",
+      relativePath: "thesis_tables/table2_montecarlo.tex",
+      content: bundle.table2MonteCarloTex,
+    });
   }
-
   if (bundle.table3EnergyBreakdownTex !== undefined) {
-    const table3Path = path.join(tableDir, "table3_energy_breakdown.tex");
-    fileSystem.writeFileSync(table3Path, bundle.table3EnergyBreakdownTex, "utf-8");
-    written.table3Path = table3Path;
+    artifacts.push({
+      id: "table3EnergyBreakdown",
+      relativePath: "thesis_tables/table3_energy_breakdown.tex",
+      content: bundle.table3EnergyBreakdownTex,
+    });
   }
-
   if (bundle.summaryMd !== undefined) {
-    const summaryMdPath = path.join(outputDir, "benchmark_summary.md");
-    fileSystem.writeFileSync(summaryMdPath, bundle.summaryMd, "utf-8");
-    written.summaryMdPath = summaryMdPath;
+    artifacts.push({ id: "summaryMd", relativePath: "benchmark_summary.md", content: bundle.summaryMd });
   }
 
-  return written;
+  return publishArtifacts(outputDir, artifacts, fileSystem);
 }
 
 export const writeBenchmarkArtifacts = saveArtifactBundle;
@@ -197,6 +230,7 @@ export function runScenarioSuite(
 export interface DeterministicBenchmarkOptions {
   algorithms?: AlgorithmType[];
   outputDir?: string;
+  reporters?: readonly BenchmarkReporter[];
 }
 
 export interface DeterministicBenchmarkReport {
@@ -204,6 +238,7 @@ export interface DeterministicBenchmarkReport {
   csv: string;
   latexTable: string;
   energyBreakdownLatexTable: string;
+  artifacts: BenchmarkArtifact[];
   writtenFiles?: WrittenArtifactPaths;
   getBundle: () => BenchmarkArtifactBundle;
   saveToDisk: (outputDir: string, fileSystem?: ArtifactFileSystem) => WrittenArtifactPaths;
@@ -226,9 +261,17 @@ export function runDeterministicBenchmarkSuite(
     }
   }
 
-  const csv = exportToCsv(results);
-  const latexTable = generateDeterministicLatexTable(results);
-  const energyBreakdownLatexTable = generateEnergyBreakdownLatexTable(results);
+  const telemetry: BenchmarkTelemetry = { results };
+  const reporters = options.reporters ?? DEFAULT_REPORTERS;
+  const artifacts = formatBenchmarkTelemetry(telemetry, reporters);
+
+  const csv = artifacts.find((a) => a.id === "rawCsv")?.content ?? exportToCsv(results);
+  const latexTable =
+    artifacts.find((a) => a.id === "table1Deterministic")?.content ??
+    generateDeterministicLatexTable(results);
+  const energyBreakdownLatexTable =
+    artifacts.find((a) => a.id === "table3EnergyBreakdown")?.content ??
+    generateEnergyBreakdownLatexTable(results);
 
   const getBundle = (): BenchmarkArtifactBundle => ({
     table1DeterministicTex: latexTable,
@@ -236,7 +279,7 @@ export function runDeterministicBenchmarkSuite(
   });
 
   const saveToDisk = (dir: string, fileSystem?: ArtifactFileSystem) =>
-    saveArtifactBundle(dir, getBundle(), fileSystem);
+    publishArtifacts(dir, artifacts, fileSystem);
 
   const writeArtifacts = saveToDisk;
   const writtenFiles = options.outputDir ? saveToDisk(options.outputDir) : undefined;
@@ -246,6 +289,7 @@ export function runDeterministicBenchmarkSuite(
     csv,
     latexTable,
     energyBreakdownLatexTable,
+    artifacts,
     writtenFiles,
     getBundle,
     saveToDisk,
@@ -263,6 +307,7 @@ export interface MonteCarloBenchmarkOptions {
   seedStart?: number;
   algorithms?: AlgorithmType[];
   outputDir?: string;
+  reporters?: readonly BenchmarkReporter[];
 }
 
 export interface MonteCarloBenchmarkReport {
@@ -271,6 +316,7 @@ export interface MonteCarloBenchmarkReport {
   csv: string;
   latexTable: string;
   markdownSummary: string;
+  artifacts: BenchmarkArtifact[];
   writtenFiles?: WrittenArtifactPaths;
   getBundle: () => BenchmarkArtifactBundle;
   saveToDisk: (outputDir: string, fileSystem?: ArtifactFileSystem) => WrittenArtifactPaths;
@@ -311,9 +357,17 @@ export function runMonteCarloBenchmarkSuite(
   }
 
   const summaryMap = analyzeMonteCarloResults(results);
-  const csv = exportToCsv(results);
-  const latexTable = generateMonteCarloLatexTable(summaryMap);
-  const markdownSummary = generateMarkdownSummary(summaryMap, trials);
+  const telemetry: BenchmarkTelemetry = { results, summaryMap, trialsCount: trials };
+  const reporters = options.reporters ?? DEFAULT_REPORTERS;
+  const artifacts = formatBenchmarkTelemetry(telemetry, reporters);
+
+  const csv = artifacts.find((a) => a.id === "rawCsv")?.content ?? exportToCsv(results);
+  const latexTable =
+    artifacts.find((a) => a.id === "table2MonteCarlo")?.content ??
+    generateMonteCarloLatexTable(summaryMap);
+  const markdownSummary =
+    artifacts.find((a) => a.id === "summaryMd")?.content ??
+    generateMarkdownSummary(summaryMap, trials);
 
   const getBundle = (): BenchmarkArtifactBundle => ({
     rawCsv: csv,
@@ -322,7 +376,7 @@ export function runMonteCarloBenchmarkSuite(
   });
 
   const saveToDisk = (dir: string, fileSystem?: ArtifactFileSystem) =>
-    saveArtifactBundle(dir, getBundle(), fileSystem);
+    publishArtifacts(dir, artifacts, fileSystem);
 
   const writeArtifacts = saveToDisk;
   const writtenFiles = options.outputDir ? saveToDisk(options.outputDir) : undefined;
@@ -333,6 +387,7 @@ export function runMonteCarloBenchmarkSuite(
     csv,
     latexTable,
     markdownSummary,
+    artifacts,
     writtenFiles,
     getBundle,
     saveToDisk,
@@ -344,6 +399,7 @@ export interface ComprehensiveBenchmarkOptions {
   deterministic?: boolean | NamedScenario[];
   monteCarlo?: boolean | MonteCarloBenchmarkOptions;
   outputDir?: string;
+  reporters?: readonly BenchmarkReporter[];
 }
 
 export interface ComprehensiveBenchmarkReport {
@@ -351,6 +407,7 @@ export interface ComprehensiveBenchmarkReport {
   monteCarloReport?: MonteCarloBenchmarkReport;
   allResults: AlgorithmBenchmarkResult[];
   allCsv: string;
+  artifacts: BenchmarkArtifact[];
   writtenFiles?: WrittenArtifactPaths;
   getBundle: () => BenchmarkArtifactBundle;
   saveToDisk: (outputDir: string, fileSystem?: ArtifactFileSystem) => WrittenArtifactPaths;
@@ -364,25 +421,35 @@ export interface ComprehensiveBenchmarkReport {
 export function runBenchmarkExperiment(
   options: ComprehensiveBenchmarkOptions = { deterministic: true, monteCarlo: true },
 ): ComprehensiveBenchmarkReport {
+  const reporters = options.reporters ?? DEFAULT_REPORTERS;
+
   let deterministicReport: DeterministicBenchmarkReport | undefined;
   if (options.deterministic !== false) {
     const scenarios = Array.isArray(options.deterministic)
       ? options.deterministic
       : getDefaultDeterministicScenarios();
-    deterministicReport = runDeterministicBenchmarkSuite(scenarios);
+    deterministicReport = runDeterministicBenchmarkSuite(scenarios, { reporters });
   }
 
   let monteCarloReport: MonteCarloBenchmarkReport | undefined;
   if (options.monteCarlo !== false) {
     const mcOpts = typeof options.monteCarlo === "object" ? options.monteCarlo : {};
-    monteCarloReport = runMonteCarloBenchmarkSuite(mcOpts);
+    monteCarloReport = runMonteCarloBenchmarkSuite({ ...mcOpts, reporters });
   }
 
   const allResults = [
     ...(deterministicReport?.results ?? []),
     ...(monteCarloReport?.results ?? []),
   ];
-  const allCsv = exportToCsv(allResults);
+
+  const telemetry: BenchmarkTelemetry = {
+    results: allResults,
+    summaryMap: monteCarloReport?.summaryMap,
+    trialsCount: typeof options.monteCarlo === "object" ? options.monteCarlo.trials : undefined,
+  };
+
+  const artifacts = formatBenchmarkTelemetry(telemetry, reporters);
+  const allCsv = artifacts.find((a) => a.id === "rawCsv")?.content ?? exportToCsv(allResults);
 
   const getBundle = (): BenchmarkArtifactBundle => ({
     rawCsv: monteCarloReport?.csv ?? allCsv,
@@ -393,7 +460,7 @@ export function runBenchmarkExperiment(
   });
 
   const saveToDisk = (dir: string, fileSystem?: ArtifactFileSystem) =>
-    saveArtifactBundle(dir, getBundle(), fileSystem);
+    publishArtifacts(dir, artifacts, fileSystem);
 
   const writeArtifacts = saveToDisk;
   const writtenFiles = options.outputDir ? saveToDisk(options.outputDir) : undefined;
@@ -403,6 +470,7 @@ export function runBenchmarkExperiment(
     monteCarloReport,
     allResults,
     allCsv,
+    artifacts,
     writtenFiles,
     getBundle,
     saveToDisk,
@@ -410,7 +478,7 @@ export function runBenchmarkExperiment(
   };
 }
 
-// Re-export statistical analysis and publication reporters for backwards compatibility
+// Re-export statistical analysis and publication reporters
 export {
   calcStats,
   standardNormalCdf,
@@ -419,10 +487,4 @@ export {
   type StatisticalSummary,
 } from "./statisticalAnalysis";
 
-export { exportToCsv } from "./reporters/csvReporter";
-export {
-  generateDeterministicLatexTable,
-  generateMonteCarloLatexTable,
-  generateEnergyBreakdownLatexTable,
-} from "./reporters/latexReporter";
-export { generateMarkdownSummary } from "./reporters/markdownReporter";
+export * from "./reporters";

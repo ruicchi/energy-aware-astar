@@ -1,4 +1,9 @@
-import type { AlgorithmBenchmarkResult } from "../benchmarkEngine";
+import type {
+  AlgorithmBenchmarkResult,
+  BenchmarkReporter,
+  BenchmarkArtifact,
+  BenchmarkTelemetry,
+} from "./reporterTypes";
 
 /**
  * Converts benchmark results into CSV formatted string.
@@ -43,4 +48,22 @@ export function exportToCsv(results: AlgorithmBenchmarkResult[]): string {
   ]);
 
   return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
-};
+}
+
+/**
+ * Presentation adapter serializing benchmark telemetry into raw CSV tabular datasets.
+ */
+export class CsvReporter implements BenchmarkReporter {
+  public readonly id = "csv";
+
+  public format(telemetry: BenchmarkTelemetry): BenchmarkArtifact[] {
+    if (!telemetry.results || telemetry.results.length === 0) return [];
+    return [
+      {
+        id: "rawCsv",
+        relativePath: "benchmark_raw.csv",
+        content: exportToCsv(telemetry.results),
+      },
+    ];
+  }
+}

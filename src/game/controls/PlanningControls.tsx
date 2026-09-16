@@ -1,19 +1,64 @@
 import { Box, Typography, Button, IconButton, Tooltip } from "@mui/material";
-import { OpenInNew } from "@mui/icons-material";
+import {
+  OpenInNew,
+  North,
+  South,
+  East,
+  West,
+  NorthEast,
+  NorthWest,
+  SouthEast,
+  SouthWest,
+  Block,
+} from "@mui/icons-material";
+import type { Heading, AlgorithmType } from "../../shared/types";
 import { THEME_CONFIG } from "../../config/simulationConfig";
 import { useSimulationControls } from "../simulationHooks";
 import { useHud } from "../hudContext";
 
-export interface HeuristicControlsProps {
+const HEADINGS: readonly Heading[] = [
+  "UP_LEFT",
+  "UP",
+  "UP_RIGHT",
+  "LEFT",
+  "NONE",
+  "RIGHT",
+  "DOWN_LEFT",
+  "DOWN",
+  "DOWN_RIGHT",
+];
+
+const HEADING_ICONS: Record<Heading, React.ReactNode> = {
+  UP: <North fontSize="small" />,
+  DOWN: <South fontSize="small" />,
+  LEFT: <West fontSize="small" />,
+  RIGHT: <East fontSize="small" />,
+  UP_LEFT: <NorthWest fontSize="small" />,
+  UP_RIGHT: <NorthEast fontSize="small" />,
+  DOWN_LEFT: <SouthWest fontSize="small" />,
+  DOWN_RIGHT: <SouthEast fontSize="small" />,
+  NONE: <Block fontSize="small" />,
+};
+
+export interface PlanningControlsProps {
   onOpenResults?: () => void;
 }
 
-export function HeuristicControls({ onOpenResults }: HeuristicControlsProps = {}) {
+/**
+ * Deep PlanningControls module.
+ * Consolidates heuristic search policy selection, kinematic vehicle heading invariants,
+ * visualization execution triggers, search exploration toggles, and results telemetry.
+ */
+export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) {
   const hud = useHud();
   const handleOpenResults = onOpenResults ?? hud.openMetrics;
+
   const {
     selectedAlgo,
     setSelectedAlgo,
+    robotHeading,
+    setRobotHeading,
+    isEnergyAware,
     visualize,
     walk,
     toggleManhattanSearch,
@@ -29,6 +74,14 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps = {}
     isLocked,
   } = useSimulationControls();
 
+  const algorithms: { type: AlgorithmType; label: string }[] = [
+    { type: "energyAware", label: "Energy-Aware" },
+    { type: "manhattan", label: "Manhattan" },
+    { type: "euclidean", label: "Euclidean" },
+    { type: "octile", label: "Octile" },
+    { type: "chebyshev", label: "Chebyshev" },
+  ];
+
   return (
     <Box
       sx={{
@@ -40,6 +93,7 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps = {}
         transition: "opacity 0.2s",
       }}
     >
+      {/* Search Policy Selection */}
       <Typography
         variant="caption"
         color="textSecondary"
@@ -49,64 +103,74 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps = {}
         Heuristic
       </Typography>
 
-      <Button
-        variant={selectedAlgo === "energyAware" ? "contained" : "outlined"}
-        color="primary"
-        fullWidth
-        size="small"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setSelectedAlgo("energyAware")}
-      >
-        Energy-Aware
-      </Button>
+      {algorithms.map((algo) => (
+        <Button
+          key={algo.type}
+          variant={selectedAlgo === algo.type ? "contained" : "outlined"}
+          color="primary"
+          fullWidth
+          size="small"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => setSelectedAlgo(algo.type)}
+        >
+          {algo.label}
+        </Button>
+      ))}
 
-      <Button
-        variant={selectedAlgo === "manhattan" ? "contained" : "outlined"}
-        color="primary"
-        fullWidth
-        size="small"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setSelectedAlgo("manhattan")}
+      {/* Initial Vehicle Heading Orientation */}
+      <Box
+        sx={{
+          mt: 0.5,
+          borderTop: `1px solid ${THEME_CONFIG.panelHeaderBorderColor}`,
+          pt: 1,
+          opacity: !isEnergyAware ? 0.45 : 1,
+          pointerEvents: !isEnergyAware ? "none" : "auto",
+          transition: "opacity 0.2s",
+        }}
       >
-        Manhattan
-      </Button>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+          <Typography variant="caption" color="textSecondary">
+            Initial Heading
+          </Typography>
+          {!isEnergyAware && (
+            <Typography variant="caption" color="textSecondary" sx={{ fontSize: "10px", fontStyle: "italic" }}>
+              (Energy-Aware only)
+            </Typography>
+          )}
+        </Box>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 0.75,
+          }}
+        >
+          {HEADINGS.map((h) => (
+            <Button
+              key={h}
+              variant={robotHeading === h ? "contained" : "outlined"}
+              color={h === "NONE" ? "error" : "secondary"}
+              size="small"
+              sx={{
+                minWidth: 0,
+                p: 0.5,
+                aspectRatio: "1/1",
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => setRobotHeading(h)}
+            >
+              {HEADING_ICONS[h]}
+            </Button>
+          ))}
+        </Box>
+      </Box>
 
-      <Button
-        variant={selectedAlgo === "euclidean" ? "contained" : "outlined"}
-        color="primary"
-        size="small"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setSelectedAlgo("euclidean")}
-      >
-        Euclidean
-      </Button>
-
-      <Button
-        variant={selectedAlgo === "octile" ? "contained" : "outlined"}
-        color="primary"
-        size="small"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setSelectedAlgo("octile")}
-      >
-        Octile
-      </Button>
-
-      <Button
-        variant={selectedAlgo === "chebyshev" ? "contained" : "outlined"}
-        color="primary"
-        size="small"
-        fullWidth
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setSelectedAlgo("chebyshev")}
-      >
-        Chebyshev
-      </Button>
-
+      {/* Execution Commands */}
       <Button
         variant="contained"
         color="success"
         fullWidth
-        sx={{ mt: 1, py: 1, fontWeight: "bold" }}
+        sx={{ mt: 0.5, py: 1, fontWeight: "bold" }}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => visualize(selectedAlgo)}
       >
@@ -116,16 +180,17 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps = {}
       {hasPath && (
         <Button
           variant="contained"
-          color={isWalking ? "primary" : "primary"}
+          color="primary"
           fullWidth
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => walk()}
-          sx={{ mt: 1 }}
+          sx={{ mt: 0.5 }}
         >
           {isWalking ? "Walking..." : "Walk Path"}
         </Button>
       )}
 
+      {/* Search Map Visibility Toggles */}
       {(isManhattanFinished || isEnergyFinished) && (
         <Box sx={{ mt: 0.5, display: "flex", flexDirection: "column", gap: 0.5 }}>
           {isManhattanFinished && (
@@ -155,10 +220,11 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps = {}
         </Box>
       )}
 
+      {/* Results Telemetry Display */}
       {pathMetrics && (
         <Box
           sx={{
-            mt: 1.5,
+            mt: 1,
             p: 1,
             backgroundColor: "rgba(0,0,0,0.05)",
             borderRadius: 1,
@@ -233,3 +299,8 @@ export function HeuristicControls({ onOpenResults }: HeuristicControlsProps = {}
     </Box>
   );
 }
+
+/**
+ * Backward compatibility alias for PlanningControls.
+ */
+export const HeuristicControls = PlanningControls;

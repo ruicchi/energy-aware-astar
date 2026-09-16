@@ -191,5 +191,93 @@ describe("Benchmark Reporters", () => {
       expect(md).toContain("4. **Search Complexity:**");
     });
   });
+
+  describe("Polymorphic BenchmarkReporter Presentation Adapters", () => {
+    it("CsvReporter formats raw CSV artifact", async () => {
+      const { CsvReporter } = await import("./csvReporter");
+      const reporter = new CsvReporter();
+      const artifacts = reporter.format({ results: [dummyResult] });
+
+      expect(artifacts.length).toBe(1);
+      expect(artifacts[0].id).toBe("rawCsv");
+      expect(artifacts[0].relativePath).toBe("benchmark_raw.csv");
+      expect(artifacts[0].content).toContain("Scenario,Algorithm,PathFound");
+    });
+
+    it("LatexReporter formats booktabs table artifacts", async () => {
+      const { LatexReporter } = await import("./latexReporter");
+      const reporter = new LatexReporter();
+      const artifacts = reporter.format({ results: [dummyResult] });
+
+      expect(artifacts.some((a) => a.id === "table1Deterministic")).toBe(true);
+      expect(artifacts.some((a) => a.id === "table3EnergyBreakdown")).toBe(true);
+      expect(artifacts.find((a) => a.id === "table1Deterministic")?.relativePath).toBe(
+        "thesis_tables/table1_deterministic.tex",
+      );
+    });
+
+    it("MarkdownReporter formats Chapter 4 summary artifact", async () => {
+      const { MarkdownReporter } = await import("./markdownReporter");
+      const reporter = new MarkdownReporter();
+      const summaryMap = new Map<AlgorithmType, StatisticalSummary>([
+        [
+          "energyAware",
+          {
+            algorithm: "energyAware",
+            trials: 5,
+            meanDistance: 10,
+            stdDistance: 1,
+            meanEnergy: 20,
+            stdEnergy: 2,
+            meanNodes: 50,
+            stdNodes: 5,
+            meanTimeMs: 1,
+            stdTimeMs: 0.1,
+            safetyRatePercent: 100,
+          },
+        ],
+      ]);
+
+      const artifacts = reporter.format({ results: [dummyResult], summaryMap, trialsCount: 5 });
+      expect(artifacts.length).toBe(1);
+      expect(artifacts[0].id).toBe("summaryMd");
+      expect(artifacts[0].relativePath).toBe("benchmark_summary.md");
+      expect(artifacts[0].content).toContain("# Chapter 4: Simulation Results & Discussion Summary");
+    });
+
+    it("formatBenchmarkTelemetry runs all default adapters", async () => {
+      const { formatBenchmarkTelemetry } = await import("./index");
+      const summaryMap = new Map<AlgorithmType, StatisticalSummary>([
+        [
+          "energyAware",
+          {
+            algorithm: "energyAware",
+            trials: 5,
+            meanDistance: 10,
+            stdDistance: 1,
+            meanEnergy: 20,
+            stdEnergy: 2,
+            meanNodes: 50,
+            stdNodes: 5,
+            meanTimeMs: 1,
+            stdTimeMs: 0.1,
+            safetyRatePercent: 100,
+          },
+        ],
+      ]);
+
+      const artifacts = formatBenchmarkTelemetry({
+        results: [dummyResult],
+        summaryMap,
+        trialsCount: 5,
+      });
+
+      expect(artifacts.length).toBeGreaterThanOrEqual(4);
+      expect(artifacts.some((a) => a.id === "rawCsv")).toBe(true);
+      expect(artifacts.some((a) => a.id === "table1Deterministic")).toBe(true);
+      expect(artifacts.some((a) => a.id === "table2MonteCarlo")).toBe(true);
+      expect(artifacts.some((a) => a.id === "summaryMd")).toBe(true);
+    });
+  });
 });
 

@@ -239,6 +239,7 @@ export interface SimulationControlsState {
   isLocked: boolean;
   selectedAlgo: AlgorithmType;
   isEnergyAware: boolean;
+  robotHeading: Heading;
   isManhattanFinished: boolean;
   isEnergyFinished: boolean;
   showManhattanSearch: boolean;
@@ -258,6 +259,7 @@ export interface SimulationControlsModel extends SimulationControlsState {
   loadProcedural: (seed?: number) => void;
   resetToFreeform: () => void;
   setSelectedAlgo: (algo: AlgorithmType, runImmediate?: boolean) => void;
+  setRobotHeading: (heading: Heading) => void;
   visualize: (algo?: AlgorithmType) => void;
   solveInstantly: (algo?: AlgorithmType) => void;
   walk: () => void;
@@ -276,6 +278,7 @@ export function selectSimulationControls(s: SimulationState): SimulationControls
     isLocked: s.isLocked,
     selectedAlgo: s.selectedAlgo,
     isEnergyAware: s.selectedAlgo === "energyAware",
+    robotHeading: s.robotHeading,
     isManhattanFinished: s.isManhattanFinished,
     isEnergyFinished: s.isEnergyFinished,
     showManhattanSearch: s.showManhattanSearch,
@@ -289,7 +292,7 @@ export function selectSimulationControls(s: SimulationState): SimulationControls
 }
 
 /**
- * Unified domain seam for scenario loading, algorithm selection, and simulation playback controls.
+ * Unified domain seam for scenario loading, algorithm selection, vehicle posture, and simulation playback controls.
  */
 export function useSimulationControls(): SimulationControlsModel {
   const engine = useSimulationEngine();
@@ -300,6 +303,10 @@ export function useSimulationControls(): SimulationControlsModel {
   const resetToFreeform = useCallback(() => engine.resetToFreeform(), [engine]);
   const setSelectedAlgo = useCallback(
     (algo: AlgorithmType, runImmediate?: boolean) => engine.setSelectedAlgo(algo, runImmediate),
+    [engine],
+  );
+  const setRobotHeading = useCallback(
+    (heading: Heading) => engine.setRobotHeading(heading),
     [engine],
   );
   const visualize = useCallback((algo?: AlgorithmType) => engine.visualize(algo), [engine]);
@@ -316,6 +323,7 @@ export function useSimulationControls(): SimulationControlsModel {
       loadProcedural,
       resetToFreeform,
       setSelectedAlgo,
+      setRobotHeading,
       visualize,
       solveInstantly,
       walk,
@@ -329,6 +337,7 @@ export function useSimulationControls(): SimulationControlsModel {
       loadProcedural,
       resetToFreeform,
       setSelectedAlgo,
+      setRobotHeading,
       visualize,
       solveInstantly,
       walk,
@@ -438,26 +447,14 @@ export interface HeadingControlsModel {
  * Caller-aligned hook for Robot Heading orientation controls.
  */
 export function useHeadingControls(): HeadingControlsModel {
-  const engine = useSimulationEngine();
-  const state = useSimulationSelector(
-    (s) => ({
-      robotHeading: s.robotHeading,
-      isEnergyAware: s.selectedAlgo === "energyAware",
-    }),
-    shallowEqual,
-  );
-
-  const setRobotHeading = useCallback(
-    (heading: Heading) => engine.setRobotHeading(heading),
-    [engine],
-  );
-
+  const { robotHeading, isEnergyAware, setRobotHeading } = useSimulationControls();
   return useMemo(
     () => ({
-      ...state,
+      robotHeading,
+      isEnergyAware,
       setRobotHeading,
     }),
-    [state, setRobotHeading],
+    [robotHeading, isEnergyAware, setRobotHeading],
   );
 }
 

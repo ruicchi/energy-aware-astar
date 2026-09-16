@@ -1,12 +1,16 @@
-import type { AlgorithmType } from "../../shared/types";
-import { ALGORITHM_LABELS } from "../benchmarkEngine";
 import type { StatisticalSummary } from "../statisticalAnalysis";
+import {
+  ALGORITHM_LABELS,
+  type BenchmarkReporter,
+  type BenchmarkArtifact,
+  type BenchmarkTelemetry,
+} from "./reporterTypes";
 
 /**
  * Formats Monte Carlo statistical results into a Chapter 4 summary markdown document.
  */
 export function generateMarkdownSummary(
-  summaryMap: Map<AlgorithmType, StatisticalSummary>,
+  summaryMap: Map<import("../../shared/types").AlgorithmType, StatisticalSummary>,
   trialsCount = 50,
 ): string {
   let md = `# Chapter 4: Simulation Results & Discussion Summary\n\n`;
@@ -65,4 +69,22 @@ export function generateMarkdownSummary(
   }
 
   return md;
+}
+
+/**
+ * Presentation adapter serializing benchmark telemetry into Chapter 4 thesis discussion Markdown.
+ */
+export class MarkdownReporter implements BenchmarkReporter {
+  public readonly id = "markdown";
+
+  public format(telemetry: BenchmarkTelemetry): BenchmarkArtifact[] {
+    if (!telemetry.summaryMap || telemetry.summaryMap.size === 0) return [];
+    return [
+      {
+        id: "summaryMd",
+        relativePath: "benchmark_summary.md",
+        content: generateMarkdownSummary(telemetry.summaryMap, telemetry.trialsCount ?? 50),
+      },
+    ];
+  }
 }

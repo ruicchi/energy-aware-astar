@@ -1,6 +1,12 @@
-import type { AlgorithmType } from "../../shared/types";
-import { ALGORITHMS, ALGORITHM_LABELS, type AlgorithmBenchmarkResult } from "../benchmarkEngine";
 import type { StatisticalSummary } from "../statisticalAnalysis";
+import {
+  ALGORITHMS,
+  ALGORITHM_LABELS,
+  type AlgorithmBenchmarkResult,
+  type BenchmarkReporter,
+  type BenchmarkArtifact,
+  type BenchmarkTelemetry,
+} from "./reporterTypes";
 
 /**
  * Formats deterministic case studies into a LaTeX booktabs table for Chapter 4.
@@ -38,13 +44,13 @@ export function generateDeterministicLatexTable(
 \\end{table*}`;
 
   return latex;
-};
+}
 
 /**
  * Formats Monte Carlo statistical summary into a LaTeX table for Chapter 4.
  */
 export function generateMonteCarloLatexTable(
-  summaryMap: Map<AlgorithmType, StatisticalSummary>,
+  summaryMap: Map<import("../../shared/types").AlgorithmType, StatisticalSummary>,
 ): string {
   let latex = `\\begin{table*}[t]
 \\centering
@@ -82,7 +88,7 @@ export function generateMonteCarloLatexTable(
 \\end{table*}`;
 
   return latex;
-};
+}
 
 /**
  * Generates an energy breakdown LaTeX table.
@@ -113,4 +119,42 @@ export function generateEnergyBreakdownLatexTable(
 \\end{table*}`;
 
   return latex;
-};
+}
+
+/**
+ * Presentation adapter serializing benchmark telemetry into publication-grade LaTeX booktabs tables.
+ */
+export class LatexReporter implements BenchmarkReporter {
+  public readonly id = "latex";
+
+  public format(telemetry: BenchmarkTelemetry): BenchmarkArtifact[] {
+    const artifacts: BenchmarkArtifact[] = [];
+
+    if (telemetry.results && telemetry.results.length > 0) {
+      const hasDeterministic = telemetry.results.some((r) => !r.scenarioName.startsWith("Seed_"));
+      if (hasDeterministic) {
+        artifacts.push({
+          id: "table1Deterministic",
+          relativePath: "thesis_tables/table1_deterministic.tex",
+          content: generateDeterministicLatexTable(telemetry.results),
+        });
+      }
+
+      artifacts.push({
+        id: "table3EnergyBreakdown",
+        relativePath: "thesis_tables/table3_energy_breakdown.tex",
+        content: generateEnergyBreakdownLatexTable(telemetry.results),
+      });
+    }
+
+    if (telemetry.summaryMap && telemetry.summaryMap.size > 0) {
+      artifacts.push({
+        id: "table2MonteCarlo",
+        relativePath: "thesis_tables/table2_montecarlo.tex",
+        content: generateMonteCarloLatexTable(telemetry.summaryMap),
+      });
+    }
+
+    return artifacts;
+  }
+}

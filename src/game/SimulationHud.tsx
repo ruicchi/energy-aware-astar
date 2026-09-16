@@ -3,8 +3,7 @@ import { Box, Divider } from "@mui/material";
 import { useViewport } from "../hooks/useViewport";
 import { FloatingPanel } from "./FloatingPanel";
 import { ScenarioControls } from "./controls/ScenarioControls";
-import { HeuristicControls } from "./controls/HeuristicControls";
-import { HeadingControls } from "./controls/HeadingControls";
+import { PlanningControls } from "./controls/PlanningControls";
 import { TerrainBrushControls } from "./controls/TerrainBrushControls";
 import { SimulationManual } from "./controls/SimulationManual";
 import { MetricsModal } from "./controls/MetricsModal";
@@ -39,7 +38,7 @@ export const SimulationHud = memo(function SimulationHud() {
 
   return (
     <HudContext.Provider value={hudContextValue}>
-      {/* Simulation Controls: Scenarios, Heuristics, Initial Heading */}
+      {/* Simulation Controls: Scenarios and Path Planning */}
       <FloatingPanel
         title="Controls"
         initialPosition={layout.controls.initialPosition}
@@ -49,8 +48,7 @@ export const SimulationHud = memo(function SimulationHud() {
         <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
           <ScenarioControls />
           <Divider sx={{ my: 0.5 }} />
-          <HeuristicControls />
-          <HeadingControls />
+          <PlanningControls />
         </Box>
       </FloatingPanel>
 
