@@ -1,5 +1,5 @@
 import type { Scenario } from "../../shared/types";
-import { VEHICLE_CONFIG, ENERGY_CONFIG } from "../../config/simulationConfig";
+import { VEHICLE_CONFIG, ENERGY_CONFIG, TERRAIN_CONFIG } from "../../config/simulationConfig";
 
 /**
  * Creates a high-friction mud and water zone across the center diagonal.
@@ -16,10 +16,10 @@ function createFrictionMap(): {
     for (let c = 8; c <= 16; c++) {
       const isInnerWater = r >= 10 && r <= 14 && c >= 10 && c <= 14;
       if (isInnerWater) {
-        terrainFactors.set(`${r}-${c}`, 8.0); // Severe water drag
+        terrainFactors.set(`${r}-${c}`, TERRAIN_CONFIG.types.water.cost);
         terrainTypes.set(`${r}-${c}`, "water");
       } else {
-        terrainFactors.set(`${r}-${c}`, 3.5); // Sticky mud drag
+        terrainFactors.set(`${r}-${c}`, TERRAIN_CONFIG.types.dirt.cost);
         terrainTypes.set(`${r}-${c}`, "dirt");
       }
     }
@@ -79,7 +79,7 @@ function createComplexMap() {
   // Muddy valley in center
   for (let r = 10; r <= 14; r++) {
     for (let c = 10; c <= 14; c++) {
-      terrainFactors.set(`${r}-${c}`, 4.0);
+      terrainFactors.set(`${r}-${c}`, TERRAIN_CONFIG.types.dirt.cost);
       terrainTypes.set(`${r}-${c}`, "dirt");
     }
   }
