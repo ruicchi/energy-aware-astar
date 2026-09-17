@@ -146,6 +146,10 @@ export const PROCEDURAL_CONFIG = {
   maxTraversableSlope: VEHICLE_CONFIG.maxTraversableSlope,
   protectedRadius: 2.5,
   waterProbability: 0.4,
+  seed: {
+    min: 1,
+    max: 9999,
+  },
   hills: {
     minPeakHeight: 3,
     peakHeightVariance: 5,

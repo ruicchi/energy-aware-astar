@@ -12,6 +12,7 @@ import {
 import { Casino, Refresh } from "@mui/icons-material";
 import { useSimulationControls } from "../simulationHooks";
 import { SCENARIO_PRESETS, type ScenarioPresetId } from "../../data";
+import { PROCEDURAL_CONFIG } from "../../config/simulationConfig";
 
 type ScenarioKey = "freeform" | ScenarioPresetId | "procedural";
 
@@ -32,7 +33,7 @@ function resolveActiveScenarioKey(
 export function ScenarioControls() {
   const { engine, isFixedDimensions, isLocked, loadedScenarioName } = useSimulationControls();
 
-  const [seed, setSeed] = useState<number>(1);
+  const [seed, setSeed] = useState<number>(PROCEDURAL_CONFIG.seed.min);
 
   const activeKey: ScenarioKey = resolveActiveScenarioKey(isFixedDimensions, loadedScenarioName);
 
@@ -48,7 +49,13 @@ export function ScenarioControls() {
   }
 
   function handleSeedChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const nextSeed = Math.max(1, parseInt(e.target.value, 10) || 1);
+    const nextSeed = Math.min(
+      PROCEDURAL_CONFIG.seed.max,
+      Math.max(
+        PROCEDURAL_CONFIG.seed.min,
+        parseInt(e.target.value, 10) || PROCEDURAL_CONFIG.seed.min,
+      ),
+    );
     setSeed(nextSeed);
     if (activeKey === "procedural") {
       engine.loadProcedural(nextSeed);
@@ -56,7 +63,8 @@ export function ScenarioControls() {
   }
 
   function handleRandomSeed() {
-    const randomSeed = Math.floor(Math.random() * 9999) + 1;
+    const { min, max } = PROCEDURAL_CONFIG.seed;
+    const randomSeed = Math.floor(Math.random() * (max - min + 1)) + min;
     setSeed(randomSeed);
     engine.loadProcedural(randomSeed);
   }
@@ -125,7 +133,7 @@ export function ScenarioControls() {
           </MenuItem>
         ))}
         <MenuItem value="procedural" sx={{ fontSize: "12px" }}>
-          Monte Carlo Seed (1-50)
+          {`Monte Carlo Seed (${PROCEDURAL_CONFIG.seed.min}-${PROCEDURAL_CONFIG.seed.max})`}
         </MenuItem>
       </Select>
 
@@ -147,15 +155,18 @@ export function ScenarioControls() {
             onPointerDown={(e) => e.stopPropagation()}
             slotProps={{
               htmlInput: {
-                min: 1,
-                max: 9999,
+                min: PROCEDURAL_CONFIG.seed.min,
+                max: PROCEDURAL_CONFIG.seed.max,
                 style: { fontSize: "12px", padding: "4px 8px" },
               },
               inputLabel: { style: { fontSize: "11px" } },
             }}
             sx={{ flex: 1 }}
           />
-          <Tooltip title="Random Seed (1–50)" arrow>
+          <Tooltip
+            title={`Random Seed (${PROCEDURAL_CONFIG.seed.min}–${PROCEDURAL_CONFIG.seed.max})`}
+            arrow
+          >
             <IconButton
               size="small"
               color="primary"
