@@ -16,25 +16,25 @@ export const SCENARIO_PRESETS: readonly ScenarioPresetDescriptor[] = [
   {
     id: "case1",
     name: "Flat Obstacles",
-    label: "1: Flat Obstacles",
+    label: "Flat Obstacles",
     scenario: flatTerrainScenario,
   },
   {
     id: "case2",
     name: "Steep Ridge",
-    label: "2: Steep Ridge",
+    label: "Steep Ridge",
     scenario: elevatedTerrainScenario,
   },
   {
     id: "case3",
     name: "Mud & Water",
-    label: "3: Mud & Water",
+    label: "Mud & Water",
     scenario: frictionTerrainScenario,
   },
   {
     id: "case4",
     name: "Mixed Hazard",
-    label: "4: Mixed Hazard",
+    label: "Mixed Hazard",
     scenario: mixedTerrainScenario,
   },
 ] as const;

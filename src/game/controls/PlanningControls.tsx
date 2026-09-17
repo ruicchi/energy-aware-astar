@@ -139,7 +139,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           }}
         >
           <Typography variant="caption" color="textSecondary">
-            3D Elevation Aware
+            Elevation Aware
           </Typography>
         </Box>
         <Button
