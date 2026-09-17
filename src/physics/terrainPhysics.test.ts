@@ -10,6 +10,7 @@ import {
   evaluatePathSafety,
   getElevationSlopeDegrees,
   getElevationFromSlopeDegrees,
+  getStabilityPenalty,
   SQRT2,
 } from "./terrainPhysics"
 import type { Scenario } from "../shared/types"
@@ -222,5 +223,19 @@ describe("Terrain Physics", () => {
       expect(getElevationSlopeDegrees(getElevationFromSlopeDegrees(60))).toBeCloseTo(60.0, 1)
       expect(getElevationSlopeDegrees(getElevationFromSlopeDegrees(90))).toBeCloseTo(90.0, 1)
     })
+
+    it("calculates zero stability penalty on flat terrain and positive penalty on slopes", () => {
+      const flatScenario = createScenario();
+      const zeroPenalty = getStabilityPenalty(5, 5, "RIGHT", flatScenario, 1.0);
+      expect(zeroPenalty).toBe(0);
+
+      const slopedElevations = new Map<string, number>([
+        ["5-6", 5],
+        ["4-5", 5],
+      ]);
+      const slopedScenario = createScenario({ elevations: slopedElevations });
+      const slopePenalty = getStabilityPenalty(5, 5, "RIGHT", slopedScenario, 10.0);
+      expect(slopePenalty).toBeGreaterThan(0);
+    });
   })
 })

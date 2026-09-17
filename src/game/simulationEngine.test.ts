@@ -485,7 +485,7 @@ describe("SimulationEngine", () => {
       expect(snapshot.isWalking).toBe(false);
       expect(snapshot.hasFinishedWalking).toBe(true);
       expect(snapshot.walkFailure).not.toBeNull();
-      expect(snapshot.walkFailure?.reason).toBe("ROBOT TIPPED OVER");
+      expect(snapshot.walkFailure?.reason).toBe("UNSTABLE_ELEVATION_GRADIENT");
     });
 
     it("invokes direct DOM adapter updates during walk without firing intermediate notifications", () => {

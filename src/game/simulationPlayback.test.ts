@@ -5,7 +5,7 @@ import {
   compileWalkTimeline,
   type TimelineFrame,
 } from "./simulationPlayback";
-import type { Scenario, VisitedNode } from "../shared/types";
+import type { VisitedNode } from "../shared/types";
 
 describe("SimulationPlayback (Deep Playback Module)", () => {
   beforeEach(() => {
@@ -171,31 +171,15 @@ describe("SimulationPlayback (Deep Playback Module)", () => {
     expect(visits).toEqual(["0-0:open", "0-1:closed"]);
   });
 
-  it("compileWalkTimeline handles turning, moving, and slope failure", () => {
+  it("compileWalkTimeline handles turning, moving, and pre-evaluated failure points", () => {
     const path = ["0-0", "0-1", "1-1"];
     const rotates: string[] = [];
     const steps: number[] = [];
     let failure: { row: number; col: number; reason: string } | null = null;
 
-    const mockScenario: Scenario = {
-      rows: 5,
-      cols: 5,
-      robotNode: "0-0",
-      destinationNode: "1-1",
-      wallNodes: new Set(),
-      terrainFactors: new Map(),
-      elevations: new Map(),
-      climbingFactor: 1.5,
-      turnPenalty: 1.0,
-      maxTraversableSlope: 45,
-      initialHeading: "RIGHT",
-      showGradients: false,
-    };
-
     const frames = compileWalkTimeline({
       path,
       initialHeading: "RIGHT",
-      scenario: mockScenario,
       stepDelayMs: 200,
       rotateDelayMs: 100,
       onRotate: (h) => rotates.push(h),
@@ -213,5 +197,41 @@ describe("SimulationPlayback (Deep Playback Module)", () => {
     expect(rotates).toEqual(["DOWN"]);
     expect(steps).toEqual([1, 2]);
     expect(failure).toBeNull();
+  });
+
+  it("compileWalkTimeline halts and emits failure when encountering a pre-evaluated failure point", () => {
+    const path = ["0-0", "0-1", "1-1"];
+    const steps: number[] = [];
+    let failure: { row: number; col: number; reason: string } | null = null;
+
+    const frames = compileWalkTimeline({
+      path,
+      initialHeading: "RIGHT",
+      stepDelayMs: 200,
+      rotateDelayMs: 100,
+      failure: {
+        step: 2,
+        row: 1,
+        col: 1,
+        reason: "EXCEEDED_MAX_SLOPE (35.0° > 30.0°)",
+      },
+      onRotate: () => {},
+      onStep: (_c, _r, stepIdx) => steps.push(stepIdx),
+      onFailure: (f) => {
+        failure = f;
+      },
+    });
+
+    // Step 1 executes normally, then step 2 triggers failure and halts
+    expect(frames.length).toBe(2); // move 1, fail frame
+    expect(frames[1].tag).toBe("walk-fail-1-1");
+    frames.forEach((f) => f.execute());
+
+    expect(steps).toEqual([1]);
+    expect(failure).toEqual({
+      row: 1,
+      col: 1,
+      reason: "EXCEEDED_MAX_SLOPE (35.0° > 30.0°)",
+    });
   });
 });

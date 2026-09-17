@@ -13,9 +13,9 @@ import {
   ELEVATION_SCALE,
   getStepDistance,
   getSlopeDegrees,
-  getPosture,
   getHeading,
   isTraversableSlope,
+  getStabilityPenalty,
 } from "../../physics/terrainPhysics";
 import { TERRAIN_CONFIG, ENERGY_CONFIG } from "../../config/simulationConfig";
 import * as MinHeap from "./MinHeap";
@@ -287,12 +287,13 @@ function getEnergyCostBreakdown(
   const movementCost = stepDistance + climbingCost + turnCost;
   const subtotal = movementCost + terrainBreakdown.total;
 
-  const { roll, pitch } = getPosture(target.row, target.col, target.heading, scenario);
-
-  // Asymmetric Risk: Roll (lateral) is more dangerous than Pitch (longitudinal)
-  const { kRoll, kPitch, riskWeight } = ENERGY_CONFIG.stability;
-  const riskFactor = Math.hypot(roll * kRoll, pitch * kPitch);
-  const stabilityPenalty = subtotal * riskWeight * riskFactor;
+  const stabilityPenalty = getStabilityPenalty(
+    target.row,
+    target.col,
+    target.heading,
+    scenario,
+    subtotal,
+  );
 
   const total = subtotal + stabilityPenalty;
 

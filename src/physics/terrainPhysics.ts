@@ -1,5 +1,5 @@
 import type { Heading, Scenario } from "../shared/types";
-import { TERRAIN_CONFIG } from "../config/simulationConfig";
+import { TERRAIN_CONFIG, ENERGY_CONFIG } from "../config/simulationConfig";
 
 export const SQRT2 = 1.414;
 export const INV_SQRT2 = 1 / Math.sqrt(2);
@@ -206,6 +206,23 @@ export function isStablePosture(
     Math.abs(xProj) <= halfLength - stabilityMargin &&
     Math.abs(yProj) <= halfWidth - stabilityMargin
   );
+}
+
+/**
+ * Calculates the vehicle center-of-mass stability penalty based on terrain roll and pitch.
+ * Encapsulates asymmetric lateral roll vs longitudinal pitch risk factors.
+ */
+export function getStabilityPenalty(
+  row: number,
+  col: number,
+  heading: Heading,
+  scenario: Scenario,
+  movementSubtotal: number,
+): number {
+  const { roll, pitch } = getPosture(row, col, heading, scenario.elevations);
+  const { kRoll, kPitch, riskWeight } = ENERGY_CONFIG.stability;
+  const riskFactor = Math.hypot(roll * kRoll, pitch * kPitch);
+  return movementSubtotal * riskWeight * riskFactor;
 }
 
 export function getSlopeDegrees(

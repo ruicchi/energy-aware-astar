@@ -34,6 +34,7 @@ import {
   compileWalkTimeline,
   type TimelineFrame,
   type PlaybackStatus,
+  type WalkFailurePoint,
 } from "./simulationPlayback";
 import {
   type SimulationVisualizer,
@@ -57,6 +58,7 @@ export {
   compileWalkTimeline,
   type TimelineFrame,
   type PlaybackStatus,
+  type WalkFailurePoint,
   type SimulationVisualizer,
   DomVisualizer,
   NullVisualizer,
@@ -792,13 +794,23 @@ export class SimulationEngine {
     this.notify();
 
     const scenario = this.getScenario();
+    const safety = evaluatePathSafety(this.currentPath, scenario);
+    const failure: WalkFailurePoint | null =
+      !safety.isSafe && safety.failureStep !== undefined
+        ? {
+            step: safety.failureStep,
+            row: Number(this.currentPath[safety.failureStep].split("-")[0]),
+            col: Number(this.currentPath[safety.failureStep].split("-")[1]),
+            reason: safety.failureReason || "ROBOT_TIPOVER_RISK",
+          }
+        : null;
 
     const frames = compileWalkTimeline({
       path: this.currentPath,
       initialHeading: this.robotHeading,
-      scenario,
       stepDelayMs: ANIMATION_CONFIG.walkStepDelayMs,
       rotateDelayMs: ANIMATION_CONFIG.walkRotateDelayMs,
+      failure,
       onRotate: (heading) => {
         this.robotHeading = heading;
         this.visualizer.setRobotHeading(heading, true);
@@ -807,8 +819,8 @@ export class SimulationEngine {
         this.walkingStep = stepIndex;
         this.visualizer.setRobotPosition(col, row, this.cellSize, true);
       },
-      onFailure: (failure) => {
-        this.walkFailure = failure;
+      onFailure: (fail) => {
+        this.walkFailure = fail;
       },
     });
 

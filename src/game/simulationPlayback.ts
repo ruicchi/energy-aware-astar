@@ -1,5 +1,5 @@
-import type { Heading, Scenario, VisitedNode } from "../shared/types";
-import { isTraversableSlope, getHeading } from "../physics/terrainPhysics";
+import type { Heading, VisitedNode } from "../shared/types";
+import { getHeading } from "../physics/terrainPhysics";
 
 export interface TimelineFrame {
   delayMs: number;
@@ -164,46 +164,46 @@ export function compileSearchTimeline({
   }));
 }
 
+export interface WalkFailurePoint {
+  step: number;
+  row: number;
+  col: number;
+  reason: string;
+}
+
 export interface WalkTimelineParams {
   path: string[];
   initialHeading: Heading;
-  scenario: Scenario;
   stepDelayMs: number;
   rotateDelayMs: number;
   onRotate: (heading: Heading) => void;
   onStep: (col: number, row: number, stepIndex: number) => void;
-  onFailure: (failure: { row: number; col: number; reason: string }) => void;
+  failure?: WalkFailurePoint | null;
+  onFailure?: (failure: { row: number; col: number; reason: string }) => void;
 }
 
 export function compileWalkTimeline({
   path,
   initialHeading,
-  scenario,
   stepDelayMs,
   rotateDelayMs,
   onRotate,
   onStep,
+  failure,
   onFailure,
 }: WalkTimelineParams): TimelineFrame[] {
   const frames: TimelineFrame[] = [];
   let currentRobotHeading: Heading = initialHeading;
 
   for (let i = 1; i < path.length; i++) {
-    const [prevR, prevC] = path[i - 1].split("-").map(Number);
     const [currR, currC] = path[i].split("-").map(Number);
     const nextHeading = getHeading(path[i - 1], path[i]);
 
-    const isSafe = isTraversableSlope(
-      { row: prevR, col: prevC },
-      { row: currR, col: currC, heading: nextHeading },
-      scenario,
-    );
-
-    if (!isSafe) {
+    if (failure && failure.step === i) {
       frames.push({
         delayMs: stepDelayMs,
-        execute: () => onFailure({ row: currR, col: currC, reason: "ROBOT TIPPED OVER" }),
-        tag: `walk-fail-${currR}-${currC}`,
+        execute: () => onFailure?.({ row: failure.row, col: failure.col, reason: failure.reason }),
+        tag: `walk-fail-${failure.row}-${failure.col}`,
       });
       break;
     }
