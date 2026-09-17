@@ -65,7 +65,6 @@ export function TerrainBrushControls() {
           sx={{
             backgroundColor: TERRAIN_CONFIG.types.wall.color,
             color: "#ffffff",
-            fontWeight: "bold",
             border: activeBrush === "wall" ? "2.5px solid #111827" : "2.5px solid transparent",
             boxShadow: activeBrush === "wall" ? 4 : 1,
             "&:hover": {
@@ -86,7 +85,6 @@ export function TerrainBrushControls() {
             sx={{
               backgroundColor: TERRAIN_CONFIG.types.dirt.color,
               color: "#3e2723",
-              fontWeight: "bold",
               border: activeBrush === "dirt" ? "2.5px solid #111827" : "2.5px solid transparent",
               boxShadow: activeBrush === "dirt" ? 4 : 1,
               "&:hover": {
@@ -108,7 +106,6 @@ export function TerrainBrushControls() {
             sx={{
               backgroundColor: TERRAIN_CONFIG.types.water.color,
               color: "#004d40",
-              fontWeight: "bold",
               border: activeBrush === "water" ? "2.5px solid #111827" : "2.5px solid transparent",
               boxShadow: activeBrush === "water" ? 4 : 1,
               "&:hover": {
@@ -129,7 +126,6 @@ export function TerrainBrushControls() {
           sx={{
             backgroundColor: TERRAIN_CONFIG.getElevationColor(elevationBrushValue),
             color: "#ffffff",
-            fontWeight: "bold",
             border: activeBrush === "elevation" ? "2.5px solid #111827" : "2.5px solid transparent",
             boxShadow: activeBrush === "elevation" ? 4 : 1,
             "&:hover": {
@@ -290,7 +286,7 @@ export function TerrainBrushControls() {
             variant={showGradients ? "contained" : "outlined"}
             size="small"
             fullWidth
-            color="secondary"
+            color="primary"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => engine.toggleGradients()}
           >

@@ -133,7 +133,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           }}
         >
           <Typography variant="caption" color="textSecondary">
-            Elevation Aware
+            Elevation Aware (3D)
           </Typography>
         </Box>
         <Button
@@ -179,7 +179,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
             <Button
               key={h}
               variant={robotHeading === h ? "contained" : "outlined"}
-              color={h === "NONE" ? "error" : "secondary"}
+              color={h === "NONE" ? "error" : "primary"}
               size="small"
               sx={{
                 minWidth: 0,
@@ -200,9 +200,10 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
         variant="contained"
         color="success"
         fullWidth
-        sx={{ mt: 0.5, py: 1, fontWeight: "bold" }}
+        size="small"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={() => engine.visualize(selectedAlgo)}
+        sx={{ mt: 0.5 }}
       >
         Visualize
       </Button>
@@ -212,11 +213,12 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           variant="contained"
           color="primary"
           fullWidth
+          size="small"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => engine.walk()}
           sx={{ mt: 0.5 }}
         >
-          {isWalking ? "Walking..." : "Walk Path"}
+          {isWalking ? "Walking" : "Walk Path"}
         </Button>
       )}
 
@@ -301,7 +303,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           </Typography>
           {pathMetrics.isSafe !== undefined && (
             <Typography variant="caption" display="block">
-              Safety: {pathMetrics.isSafe ? "Safe" : `Unsafe (${pathMetrics.safetyFailureReason})`}
+              Safety: {pathMetrics.isSafe ? "Safe" : "Unsafe"}
             </Typography>
           )}
         </Box>

@@ -1057,7 +1057,7 @@ describe("SimulationEngine", () => {
       expect(engine.getSnapshot().maxTraversableSlope).toBe(45);
     });
 
-    it("re-solves path immediately when maxTraversableSlope changes while a path is visible", () => {
+    it("resets search map when maxTraversableSlope changes while a path is visible, requiring re-visualize", () => {
       const { domAdapter } = createMockDomAdapter();
       const engine = new SimulationEngine({
         cols: 10,
@@ -1083,12 +1083,18 @@ describe("SimulationEngine", () => {
       expect(pathWith20Deg).not.toContain("1-0");
 
       // Now increase max traversable slope to 35 deg (which accommodates 26.6 deg)
+      // Search map should reset, requiring re-visualize
       engine.setMaxTraversableSlope(35);
       const snapshotAfterUpdate = engine.getSnapshot();
       expect(snapshotAfterUpdate.maxTraversableSlope).toBe(35);
-      expect(snapshotAfterUpdate.isPathVisible).toBe(true);
-      // Path now traverses directly through 1-0 since slope <= 35 deg is allowed!
-      expect(snapshotAfterUpdate.currentPath).toContain("1-0");
+      expect(snapshotAfterUpdate.isPathVisible).toBe(false);
+      expect(snapshotAfterUpdate.currentPath).toBeNull();
+      expect(snapshotAfterUpdate.isEnergyFinished).toBe(false);
+      expect(snapshotAfterUpdate.isManhattanFinished).toBe(false);
+
+      // Re-visualizing with new slope traverses directly through 1-0
+      engine.visualize("energyAware");
+      expect(engine.getSnapshot().currentPath).toContain("1-0");
     });
 
     it("toggles use3DStandard and re-solves path with (3D) telemetry when path is visible", () => {

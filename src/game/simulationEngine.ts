@@ -410,11 +410,17 @@ export class SimulationEngine {
     if (slope !== null && !this.isFixedDimensions) {
       this.defaultMaxTraversableSlope = nextSlope;
     }
-    if (this.isPathVisible && !this.isAnimating && !this.isWalking) {
-      this.solveInstantly(this.selectedAlgo);
-    } else {
-      this.notify();
+    const hasVisualization =
+      this.isAnimating ||
+      this.isPathVisible ||
+      this.isManhattanFinished ||
+      this.isEnergyFinished ||
+      Boolean(this.currentPath && this.currentPath.length > 0);
+    if (hasVisualization && !this.isWalking) {
+      this.clearAnimations();
+      return;
     }
+    this.notify();
   }
 
   public getDefaultMaxTraversableSlope(): number {

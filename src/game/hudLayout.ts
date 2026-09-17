@@ -71,7 +71,7 @@ export function resolveHudLayout(
       width: isMobile ? "calc(100vw - 40px)" : UI_CONFIG.panelWidth.manual,
       maxWidth: "calc(100vw - 32px)",
       initialPosition: {
-        x: isMobile ? UI_CONFIG.initialPosition.x : 235,
+        x: isMobile ? UI_CONFIG.initialPosition.x : UI_CONFIG.initialPosition.x + 235,
         y: UI_CONFIG.initialPosition.y,
       },
     },
@@ -79,7 +79,7 @@ export function resolveHudLayout(
       width: isMobile ? UI_CONFIG.panelWidth.metricsMobile : UI_CONFIG.panelWidth.metrics,
       maxWidth: "calc(100vw - 24px)",
       initialPosition: {
-        x: isMobile ? UI_CONFIG.initialPosition.x : 240,
+        x: isMobile ? UI_CONFIG.initialPosition.x : UI_CONFIG.initialPosition.x + 220,
         y: 240,
       },
       zIndex: UI_CONFIG.zIndex.modal,

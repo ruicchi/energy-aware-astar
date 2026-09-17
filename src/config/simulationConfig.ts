@@ -97,7 +97,7 @@ export const UI_CONFIG = {
     tiny: 160,
     mobile: 180,
     default: 220,
-    manual: 580,
+    manual: 550,
     metrics: 280,
     metricsMobile: 220,
   },
@@ -117,7 +117,7 @@ export const UI_CONFIG = {
     paddingX: 60,
     paddingY: 50,
   },
-} as const;
+};
 
 export const THEME_CONFIG = {
   robotColor: "#4caf50",
