@@ -6,6 +6,9 @@ import {
   runMonteCarloBenchmarkSuite,
   runBenchmarkExperiment,
   ALGORITHM_LABELS,
+  type BenchmarkReporter,
+  type BenchmarkTelemetry,
+  type BenchmarkArtifact,
 } from "./benchmarkEngine";
 
 describe("Benchmark: Energy-Aware A* vs Standard Heuristics", () => {
@@ -125,6 +128,45 @@ describe("Benchmark: Energy-Aware A* vs Standard Heuristics", () => {
     expect(written.table1Path).toBe(path.join("/virtual/output", "thesis_tables", "table1_deterministic.tex"));
     expect(virtualFiles.has(written.table1Path!)).toBe(true);
     expect(virtualFiles.get(written.table1Path!)).toBe(bundle.table1DeterministicTex);
+  });
+
+  it("polymorphically publishes arbitrary benchmark reporter artifacts", () => {
+    class CustomJsonReporter implements BenchmarkReporter {
+      public readonly id = "customJson";
+      public format(telemetry: BenchmarkTelemetry): BenchmarkArtifact[] {
+        return [
+          {
+            id: this.id,
+            relativePath: "reports/benchmark_custom.json",
+            content: JSON.stringify({ count: telemetry.results.length }),
+          },
+        ];
+      }
+    }
+
+    const virtualFiles = new Map<string, string>();
+    const virtualDirs = new Set<string>();
+    const mockFs = {
+      mkdirSync: (dir: string) => {
+        virtualDirs.add(dir);
+      },
+      writeFileSync: (filePath: string, content: string) => {
+        virtualFiles.set(filePath, content);
+      },
+      existsSync: (dir: string) => virtualDirs.has(dir),
+    };
+
+    const customReporter = new CustomJsonReporter();
+    const report = runDeterministicBenchmarkSuite(undefined, {
+      reporters: [customReporter],
+    });
+
+    const written = report.saveToDisk("/virtual/test", mockFs);
+    const expectedPath = path.join("/virtual/test", "reports", "benchmark_custom.json");
+
+    expect(written.paths["customJson"]).toBe(expectedPath);
+    expect(written["customJson"]).toBe(expectedPath);
+    expect(virtualFiles.get(expectedPath)).toBe(JSON.stringify({ count: report.results.length }));
   });
 
   it("supports running 3D-aware standard heuristics in deterministic benchmark suite", () => {

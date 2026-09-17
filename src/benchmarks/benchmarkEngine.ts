@@ -1,6 +1,6 @@
 import { findPath } from "../algorithms/astar";
 import { evaluatePathSafety } from "../physics/terrainPhysics";
-import type { Scenario, AlgorithmType, EnergyBreakdown } from "../shared/types";
+import type { Scenario, AlgorithmType } from "../shared/types";
 import {
   flatTerrainScenario,
   elevatedTerrainScenario,
@@ -18,6 +18,8 @@ import {
   type BenchmarkArtifact,
   type BenchmarkTelemetry,
   type BenchmarkReporter,
+  type AlgorithmBenchmarkResult,
+  ALGORITHMS,
   DEFAULT_REPORTERS,
   formatBenchmarkTelemetry,
   exportToCsv,
@@ -36,6 +38,12 @@ export interface BenchmarkArtifactBundle {
 }
 
 export interface WrittenArtifactPaths {
+  /** Index mapping artifact ID to its fully-qualified destination file path */
+  paths: Record<string, string>;
+  /** Dynamic indexing allowing arbitrary reporter IDs to be accessed directly (e.g. written[artifact.id]) */
+  [key: string]: string | Record<string, string> | undefined;
+
+  // Backwards-compatible convenience properties
   csvPath?: string;
   table1Path?: string;
   table2Path?: string;
@@ -61,13 +69,15 @@ export const defaultFileSystem: ArtifactFileSystem = {
 
 /**
  * Persists an array of benchmark publication artifacts to disk using an ArtifactFileSystem adapter.
+ * Polymorphically indexes all written paths by artifact ID while providing typed backwards-compatible accessors.
  */
 export function publishArtifacts(
   outputDir: string,
   artifacts: BenchmarkArtifact[],
   fileSystem: ArtifactFileSystem = defaultFileSystem,
 ): WrittenArtifactPaths {
-  const written: WrittenArtifactPaths = {};
+  const paths: Record<string, string> = {};
+  const written: WrittenArtifactPaths = { paths };
 
   for (const artifact of artifacts) {
     const fullPath = path.join(outputDir, artifact.relativePath);
@@ -77,15 +87,24 @@ export function publishArtifacts(
     }
     fileSystem.writeFileSync(fullPath, artifact.content, "utf-8");
 
+    // Polymorphic indexing by artifact ID
+    paths[artifact.id] = fullPath;
+    written[artifact.id] = fullPath;
+
+    // Backwards-compatible legacy accessors
     if (artifact.id === "rawCsv" || artifact.relativePath.endsWith(".csv")) {
       written.csvPath = fullPath;
-    } else if (artifact.id === "table1Deterministic" || artifact.relativePath.includes("table1")) {
+    }
+    if (artifact.id === "table1Deterministic" || artifact.relativePath.includes("table1")) {
       written.table1Path = fullPath;
-    } else if (artifact.id === "table2MonteCarlo" || artifact.relativePath.includes("table2")) {
+    }
+    if (artifact.id === "table2MonteCarlo" || artifact.relativePath.includes("table2")) {
       written.table2Path = fullPath;
-    } else if (artifact.id === "table3EnergyBreakdown" || artifact.relativePath.includes("table3")) {
+    }
+    if (artifact.id === "table3EnergyBreakdown" || artifact.relativePath.includes("table3")) {
       written.table3Path = fullPath;
-    } else if (artifact.id === "summaryMd" || artifact.relativePath.endsWith(".md")) {
+    }
+    if (artifact.id === "summaryMd" || artifact.relativePath.endsWith(".md")) {
       written.summaryMdPath = fullPath;
     }
   }
@@ -135,38 +154,6 @@ export function saveArtifactBundle(
 }
 
 export const writeBenchmarkArtifacts = saveArtifactBundle;
-
-export interface AlgorithmBenchmarkResult {
-  scenarioName: string;
-  algorithm: AlgorithmType;
-  pathFound: boolean;
-  pathLength: number;
-  totalDistance: number;
-  totalEnergy: number;
-  nodesEvaluated: number;
-  executionTimeMs: number;
-  isSafe: boolean;
-  safetyFailureReason?: string;
-  maxSlope: number;
-  energyBreakdown: EnergyBreakdown;
-  use3DStandard?: boolean;
-}
-
-export const ALGORITHMS: AlgorithmType[] = [
-  "energyAware",
-  "manhattan",
-  "euclidean",
-  "octile",
-  "chebyshev",
-];
-
-export const ALGORITHM_LABELS: Record<AlgorithmType, string> = {
-  energyAware: "Energy-Aware A*",
-  manhattan: "Manhattan A*",
-  euclidean: "Euclidean A*",
-  octile: "Octile A*",
-  chebyshev: "Chebyshev A*",
-};
 
 export interface NamedScenario {
   name: string;
