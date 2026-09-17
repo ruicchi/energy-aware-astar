@@ -48,7 +48,7 @@ export const SimulationHud = memo(function SimulationHud() {
         <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
           <ScenarioControls />
           <Divider sx={{ my: 0.5 }} />
-          <PlanningControls />
+          <PlanningControls onOpenResults={openMetrics} />
         </Box>
       </FloatingPanel>
 

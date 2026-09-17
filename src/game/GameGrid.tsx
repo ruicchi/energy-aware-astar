@@ -3,10 +3,10 @@ import { SimulationHud } from "./SimulationHud";
 import { SimulationCanvas } from "./SimulationCanvas";
 
 /**
- * Root simulation viewport shell.
+ * Backwards-compatible viewport shell.
  * Coordinates HUD overlays and the deep SimulationCanvas module.
  */
-export default function GameGrid() {
+export function GameGrid() {
   return (
     <Box
       sx={{
@@ -26,3 +26,5 @@ export default function GameGrid() {
     </Box>
   );
 }
+
+export default GameGrid;
