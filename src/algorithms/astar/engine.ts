@@ -760,6 +760,7 @@ export function findPath(scenario: Scenario, options?: PathfindingOptions): Path
           f: tentativeG + h,
           parent: current,
         };
+        nodesGenerated++;
       } else {
         neighborNode.g = tentativeG;
         neighborNode.f = tentativeG + neighborNode.h;
@@ -769,7 +770,6 @@ export function findPath(scenario: Scenario, options?: PathfindingOptions): Path
 
       allNodes.set(neighborStateKey, neighborNode);
       MinHeap.push(openSet, { ...neighborNode });
-      nodesGenerated++;
 
       recordVisit(neighborCellKey, "open");
     }
