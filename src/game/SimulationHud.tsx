@@ -17,10 +17,13 @@ import { HudContext, type HudContextValue } from "./hudContext";
  */
 export const SimulationHud = memo(function SimulationHud() {
   const [isMetricsOpen, setIsMetricsOpen] = useState(false);
+  const [isManualOpen, setIsManualOpen] = useState(true);
+
   const viewport = useViewport();
 
   const openMetrics = useCallback(() => setIsMetricsOpen(true), []);
   const closeMetrics = useCallback(() => setIsMetricsOpen(false), []);
+  const closeManual = useCallback(() => setIsManualOpen(false), []);
 
   const hudContextValue = useMemo<HudContextValue>(
     () => ({
@@ -65,19 +68,21 @@ export const SimulationHud = memo(function SimulationHud() {
       </FloatingPanel>
 
       {/* Interactive Guide: Step-by-Step Instructions */}
-      <FloatingPanel
-        title="Manual"
-        initialPosition={layout.manual.initialPosition}
-        width={layout.manual.width}
-        onClose={closeMetrics}
-      >
-        <SimulationManual />
-      </FloatingPanel>
+      {isManualOpen && (
+        <FloatingPanel
+          title="Manual"
+          initialPosition={layout.manual.initialPosition}
+          width={layout.manual.width}
+          onClose={closeManual}
+        >
+          <SimulationManual />
+        </FloatingPanel>
+      )}
 
-      {/* Pop-Out Calculation Metrics Modal */}
+      {/* Pop-Out Metrics Modal */}
       {isMetricsOpen && (
         <FloatingPanel
-          title="Calculation"
+          title="Metrics"
           initialPosition={layout.metrics.initialPosition}
           zIndex={layout.metrics.zIndex}
           elevation={layout.metrics.elevation}

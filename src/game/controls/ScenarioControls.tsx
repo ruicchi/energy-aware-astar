@@ -11,11 +11,7 @@ import {
 } from "@mui/material";
 import { Casino, Refresh } from "@mui/icons-material";
 import { useSimulationControls } from "../simulationHooks";
-import {
-  SCENARIO_PRESETS,
-  type ScenarioPresetId,
-} from "../../data";
-
+import { SCENARIO_PRESETS, type ScenarioPresetId } from "../../data";
 
 type ScenarioKey = "freeform" | ScenarioPresetId | "procedural";
 
@@ -34,19 +30,11 @@ function resolveActiveScenarioKey(
 }
 
 export function ScenarioControls() {
-  const {
-    engine,
-    isFixedDimensions,
-    isLocked,
-    loadedScenarioName,
-  } = useSimulationControls();
+  const { engine, isFixedDimensions, isLocked, loadedScenarioName } = useSimulationControls();
 
   const [seed, setSeed] = useState<number>(1);
 
-  const activeKey: ScenarioKey = resolveActiveScenarioKey(
-    isFixedDimensions,
-    loadedScenarioName,
-  );
+  const activeKey: ScenarioKey = resolveActiveScenarioKey(isFixedDimensions, loadedScenarioName);
 
   function handleSelectChange(e: SelectChangeEvent<ScenarioKey>) {
     const key = e.target.value as ScenarioKey;
@@ -68,7 +56,7 @@ export function ScenarioControls() {
   }
 
   function handleRandomSeed() {
-    const randomSeed = Math.floor(Math.random() * 50) + 1;
+    const randomSeed = Math.floor(Math.random() * 9999) + 1;
     setSeed(randomSeed);
     engine.loadProcedural(randomSeed);
   }
@@ -120,13 +108,12 @@ export function ScenarioControls() {
 
       <Select
         size="small"
+        fullWidth
         value={activeKey}
         onChange={handleSelectChange}
         onPointerDown={(e) => e.stopPropagation()}
         sx={{
           fontSize: "12px",
-          height: 32,
-          backgroundColor: "rgba(0, 0, 0, 0.04)",
         }}
       >
         <MenuItem value="freeform" sx={{ fontSize: "12px" }}>
