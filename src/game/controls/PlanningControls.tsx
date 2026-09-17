@@ -292,7 +292,9 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
             Energy: {pathMetrics.energy.toFixed(2)} units
           </Typography>
           <Typography variant="caption" display="block">
-            Nodes Expanded: {pathMetrics.energyBreakdown.nodesExpanded ?? pathMetrics.energyBreakdown.nodesEvaluated}
+            Nodes Expanded:{" "}
+            {pathMetrics.energyBreakdown.nodesExpanded ??
+              pathMetrics.energyBreakdown.nodesEvaluated}
           </Typography>
           <Typography variant="caption" display="block">
             Nodes Generated: {pathMetrics.energyBreakdown.nodesGenerated ?? 0}
@@ -301,31 +303,6 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
             <Typography variant="caption" display="block">
               Safety: {pathMetrics.isSafe ? "Safe" : `Unsafe (${pathMetrics.safetyFailureReason})`}
             </Typography>
-          )}
-
-          {walkFailure && (
-            <Box
-              sx={{
-                mt: 1.5,
-                p: 1,
-                backgroundColor: THEME_CONFIG.failureBackgroundColor,
-                border: `1px solid ${THEME_CONFIG.failureBorderColor}`,
-                borderRadius: 1,
-                display: "flex",
-                flexDirection: "column",
-                gap: 0.5,
-              }}
-            >
-              <Typography variant="caption" color="error" fontWeight="bold">
-                FAILED
-              </Typography>
-              <Typography variant="caption" sx={{ fontSize: "9px" }}>
-                {walkFailure.reason}
-              </Typography>
-              <Typography variant="caption" sx={{ fontSize: "9px" }}>
-                LOCATION: [{walkFailure.row}, {walkFailure.col}]
-              </Typography>
-            </Box>
           )}
         </Box>
       )}
