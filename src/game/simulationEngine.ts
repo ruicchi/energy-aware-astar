@@ -71,6 +71,14 @@ export {
   createDefaultDomAdapter,
 };
 
+const ALGO_CONFIGS: Record<AlgorithmType, { name: string; theme: "manhattan" | "energy" }> = {
+  energyAware: { name: "Energy-Aware", theme: "energy" },
+  manhattan:   { name: "Manhattan",    theme: "manhattan" },
+  euclidean:   { name: "Euclidean",    theme: "energy" },
+  octile:      { name: "Octile",       theme: "energy" },
+  chebyshev:   { name: "Chebyshev",    theme: "energy" },
+};
+
 export interface SimulationState {
   // Dimensions
   cols: number;
@@ -698,8 +706,12 @@ export class SimulationEngine {
     this.notify();
   }
 
+
   // --- Pathfinding Visualization ---
 
+  /**
+   * Executes pathfinding and animates the search step-by-step, then reveals the path.
+   */
   public visualize(algoToRun?: AlgorithmType): void {
     const algo = algoToRun ?? this.selectedAlgo;
 
@@ -714,18 +726,34 @@ export class SimulationEngine {
     this.walkingStep = -1;
 
     this.resetActorsVisuals();
+    this.runSearch(algo, true);
+  }
 
+  /**
+   * Executes pathfinding and reveals the path instantly without animation.
+   */
+  public solveInstantly(algoToRun?: AlgorithmType): void {
+    const algo = algoToRun ?? this.selectedAlgo;
+    this.clearTimers();
+    this.visualizer.clearSearchVisuals();
+
+    this.isWalking = false;
+    this.hasFinishedWalking = false;
+    this.walkFailure = null;
+    this.walkingStep = -1;
+
+    this.resetActorsVisuals();
+    this.runSearch(algo, false);
+  }
+
+  /**
+   * Shared result-building core for visualize() and solveInstantly().
+   * Runs findPath, evaluates safety, sets pathMetrics/currentPath/pathTheme, then either
+   * animates the search timeline (animate=true) or reveals the path immediately (animate=false).
+   */
+  private runSearch(algo: AlgorithmType, animate: boolean): void {
     const scenario = this.getScenario();
-
-    const algoConfigs: Record<AlgorithmType, { name: string; theme: "manhattan" | "energy" }> = {
-      energyAware: { name: "Energy-Aware", theme: "energy" },
-      manhattan: { name: "Manhattan", theme: "manhattan" },
-      euclidean: { name: "Euclidean", theme: "energy" },
-      octile: { name: "Octile", theme: "energy" },
-      chebyshev: { name: "Chebyshev", theme: "energy" },
-    };
-
-    const config = algoConfigs[algo];
+    const config = ALGO_CONFIGS[algo];
     const theme = config.theme;
     const result = findPath(scenario, { algorithm: algo, use3DStandard: this.use3DStandard });
 
@@ -750,35 +778,49 @@ export class SimulationEngine {
     };
 
     this.currentPath = shortestPath.length > 0 ? shortestPath : null;
-    this.isAnimating = true;
-    this.isPathVisible = false;
     this.pathTheme = theme;
-    this.playbackStatus = "searching";
-    this.notify();
 
-    const searchAttr = theme === "manhattan" ? "manhattan" : "energy";
+    if (animate) {
+      this.isAnimating = true;
+      this.isPathVisible = false;
+      this.playbackStatus = "searching";
+      this.notify();
 
-    const frames = compileSearchTimeline({
-      visitedNodes: visitedNodesInOrder,
-      delayMs: ANIMATION_CONFIG.searchStepDelayMs,
-      onVisit: (node) => {
-        this.visualizer.renderSearchNode(node.key, node.type, searchAttr);
-      },
-    });
+      const searchAttr = theme === "manhattan" ? "manhattan" : "energy";
+      const frames = compileSearchTimeline({
+        visitedNodes: visitedNodesInOrder,
+        delayMs: ANIMATION_CONFIG.searchStepDelayMs,
+        onVisit: (node) => {
+          this.visualizer.renderSearchNode(node.key, node.type, searchAttr);
+        },
+      });
 
-    this.playback.play(frames, () => {
-      if (shortestPath.length > 0) {
-        this.isPathVisible = true;
-      }
+      this.playback.play(frames, () => {
+        if (shortestPath.length > 0) {
+          this.isPathVisible = true;
+        }
+        this.isAnimating = false;
+        this.playbackStatus = "idle";
+        if (theme === "manhattan") {
+          this.isManhattanFinished = true;
+        } else {
+          this.isEnergyFinished = true;
+        }
+        this.notify();
+      });
+    } else {
       this.isAnimating = false;
+      this.isPathVisible = shortestPath.length > 0;
       this.playbackStatus = "idle";
       if (theme === "manhattan") {
         this.isManhattanFinished = true;
+        this.isEnergyFinished = false;
       } else {
         this.isEnergyFinished = true;
+        this.isManhattanFinished = false;
       }
       this.notify();
-    });
+    }
   }
 
   // --- Kinematic Path Traversal (Robot Walk) ---
@@ -946,65 +988,6 @@ export class SimulationEngine {
     }
   }
 
-  public solveInstantly(algoToRun?: AlgorithmType): void {
-    const algo = algoToRun ?? this.selectedAlgo;
-    this.clearTimers();
-    this.visualizer.clearSearchVisuals();
-
-    this.isWalking = false;
-    this.hasFinishedWalking = false;
-    this.walkFailure = null;
-    this.walkingStep = -1;
-
-    this.resetActorsVisuals();
-
-    const scenario = this.getScenario();
-
-    const algoConfigs: Record<AlgorithmType, { name: string; theme: "manhattan" | "energy" }> = {
-      energyAware: { name: "Energy-Aware", theme: "energy" },
-      manhattan: { name: "Manhattan", theme: "manhattan" },
-      euclidean: { name: "Euclidean", theme: "energy" },
-      octile: { name: "Octile", theme: "energy" },
-      chebyshev: { name: "Chebyshev", theme: "energy" },
-    };
-
-    const config = algoConfigs[algo];
-    const theme = config.theme;
-    const result = findPath(scenario, { algorithm: algo, use3DStandard: this.use3DStandard });
-    const { shortestPath, totalEnergy, totalDistance, energyBreakdown } = result;
-    const safety = evaluatePathSafety(shortestPath, scenario);
-    const algoName =
-      algo === "energyAware"
-        ? config.name
-        : this.use3DStandard
-          ? `${config.name} (3D)`
-          : config.name;
-
-    this.pathMetrics = {
-      algorithm: algoName,
-      distance: totalDistance,
-      energy: totalEnergy,
-      energyBreakdown,
-      isSafe: safety.isSafe,
-      safetyFailureReason: safety.failureReason,
-    };
-
-    this.currentPath = shortestPath.length > 0 ? shortestPath : null;
-    this.isAnimating = false;
-    this.isPathVisible = shortestPath.length > 0;
-    this.pathTheme = theme;
-    this.playbackStatus = "idle";
-
-    if (theme === "manhattan") {
-      this.isManhattanFinished = true;
-      this.isEnergyFinished = false;
-    } else {
-      this.isEnergyFinished = true;
-      this.isManhattanFinished = false;
-    }
-
-    this.notify();
-  }
 
   public resetToFreeform(cols?: number, rows?: number, cellSize?: number): void {
     this.isFixedDimensions = false;

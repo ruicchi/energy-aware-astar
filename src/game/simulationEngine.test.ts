@@ -478,6 +478,46 @@ describe("SimulationEngine", () => {
       expect(state2.isManhattanFinished).toBe(true);
       expect(state2.playbackStatus).toBe("idle");
     });
+
+    it("solveInstantly and visualize produce identical pathMetrics and currentPath for the same scenario", () => {
+      const { domAdapter: adapter1 } = createMockDomAdapter();
+      const engineA = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "2-0",
+        initialDestinationNode: "2-3",
+        domAdapter: adapter1,
+      });
+
+      const { domAdapter: adapter2 } = createMockDomAdapter();
+      const engineB = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "2-0",
+        initialDestinationNode: "2-3",
+        domAdapter: adapter2,
+      });
+
+      // Solve instantly — path + metrics are set synchronously
+      engineA.solveInstantly("energyAware");
+      const snapA = engineA.getSnapshot();
+
+      // Visualize — path + metrics are set before animation starts
+      engineB.visualize("energyAware");
+      const snapBDuring = engineB.getSnapshot();
+
+      // pathMetrics and currentPath must match right away (set before any animation)
+      expect(snapBDuring.pathMetrics).toEqual(snapA.pathMetrics);
+      expect(snapBDuring.currentPath).toEqual(snapA.currentPath);
+
+      // Advance timers; final settled state must also be consistent
+      vi.runAllTimers();
+      const snapBAfter = engineB.getSnapshot();
+      expect(snapBAfter.pathMetrics).toEqual(snapA.pathMetrics);
+      expect(snapBAfter.currentPath).toEqual(snapA.currentPath);
+      expect(snapBAfter.isPathVisible).toBe(true);
+      expect(snapA.isPathVisible).toBe(true);
+    });
   });
 
   describe("Robot Walking Kinematics", () => {
