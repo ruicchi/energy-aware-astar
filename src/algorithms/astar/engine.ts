@@ -642,6 +642,21 @@ export function findPath(scenario: Scenario, options?: PathfindingOptions): Path
   const [startRow, startCol] = scenario.robotNode.split("-").map(Number);
   const [destRow, destCol] = scenario.destinationNode.split("-").map(Number);
 
+  if (startRow === destRow && startCol === destCol) {
+    return {
+      visitedNodesInOrder: [],
+      shortestPath: [scenario.robotNode],
+      totalEnergy: 0,
+      totalDistance: 0,
+      energyBreakdown: {
+        ...createEmptyEnergyBreakdown(),
+        nodesExpanded: 1,
+        nodesGenerated: 1,
+        nodesEvaluated: 1,
+      },
+    };
+  }
+
   const openSet: EnergyNode[] = [];
   const allNodes = new Map<string, EnergyNode>();
   const closedSet = new Set<string>();

@@ -13,7 +13,7 @@ The deep module that computes the optimal path from the robot start node to the 
 _Avoid_: PathfindingService, AlgorithmRegistry, Solver
 
 **Search Policy**:
-The internal specification governing state-space keying (2D coordinates vs. 3D pose), neighbor connectivity, traversal admissibility, cost accumulation, and heuristics.
+The internal specification governing state-space keying (2D coordinates vs. 3D pose), neighbor connectivity, traversal admissibility, cost accumulation, and heuristics. Connectivity is strictly translational into adjacent cells (excluding in-place self-transitions), and coincident start/destination queries terminate immediately with zero cost.
 _Avoid_: AlgorithmStrategy, HeuristicStrategy
 
 **Energy-Aware Policy**:

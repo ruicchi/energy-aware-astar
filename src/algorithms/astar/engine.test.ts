@@ -82,6 +82,36 @@ describe("Pathfinding Engine", () => {
       expect(result.energyBreakdown.nodesEvaluated).toBe(result.energyBreakdown.nodesExpanded)
     })
 
+    it("terminates immediately with zero cost when robot start node equals destination node", () => {
+      const scenario = createTestScenario({
+        robotNode: "2-2",
+        destinationNode: "2-2",
+      })
+
+      const result = findPath(scenario, { algorithm: "energyAware" })
+
+      expect(result.shortestPath).toEqual(["2-2"])
+      expect(result.totalDistance).toBe(0)
+      expect(result.totalEnergy).toBe(0)
+      expect(result.energyBreakdown.nodesExpanded).toBe(1)
+      expect(result.energyBreakdown.nodesGenerated).toBe(1)
+      expect(result.visitedNodesInOrder).toEqual([])
+    })
+
+    it("does not generate in-place self-transitions at the current place", () => {
+      const scenario = createTestScenario({
+        robotNode: "1-1",
+        destinationNode: "1-4",
+      })
+
+      const result = findPath(scenario, { algorithm: "energyAware" })
+
+      expect(result.shortestPath.length).toBeGreaterThan(1)
+      for (let i = 1; i < result.shortestPath.length; i++) {
+        expect(result.shortestPath[i]).not.toBe(result.shortestPath[i - 1])
+      }
+    })
+
     it("supports euclidean, chebyshev, and octile distance heuristics", () => {
       const scenario = createTestScenario({
         robotNode: "0-0",
