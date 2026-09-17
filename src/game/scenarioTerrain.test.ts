@@ -427,4 +427,81 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(terrain.getTerrainFactor("3-3")).toBe(3.0);
     expect(terrain.getElevation("4-4")).toBe(2);
   });
+
+  it("preserves already painted tiles when dragging from an unpainted tile", () => {
+    const terrain = new ScenarioTerrain({
+      initialRobotNode: "0-0",
+      initialDestinationNode: "5-5",
+      initialWallNodes: new Set(["1-2"]),
+      initialTerrainFactors: new Map([["1-3", 1.5]]),
+      initialTerrainTypes: new Map([["1-3", "dirt"]]),
+      initialElevations: new Map([["1-4", 10]]),
+    });
+
+    const wallContext = createContext({ activeBrush: "wall" });
+
+    // 1-1 is unpainted. Start wall stroke on 1-1.
+    expect(terrain.isPaintedCell("1-1")).toBe(false);
+    const startResult = terrain.startStroke("1-1", wallContext);
+    expect(startResult.modified).toBe(true);
+    expect(terrain.hasWall("1-1")).toBe(true);
+
+    // Drag over 1-2 (existing wall) -> skipped and preserved
+    const dragWall = terrain.continueStroke("1-2");
+    expect(dragWall.modified).toBe(false);
+    expect(terrain.hasWall("1-2")).toBe(true);
+
+    // Drag over 1-3 (existing dirt) -> skipped and preserved, not deleted or overwritten
+    const dragDirt = terrain.continueStroke("1-3");
+    expect(dragDirt.modified).toBe(false);
+    expect(terrain.getTerrainType("1-3")).toBe("dirt");
+    expect(terrain.getTerrainFactor("1-3")).toBe(1.5);
+    expect(terrain.hasWall("1-3")).toBe(false);
+
+    // Drag over 1-4 (existing elevation) -> skipped and preserved, not deleted
+    const dragElev = terrain.continueStroke("1-4");
+    expect(dragElev.modified).toBe(false);
+    expect(terrain.getElevation("1-4")).toBe(10);
+    expect(terrain.hasWall("1-4")).toBe(false);
+
+    // Drag over 1-5 (unpainted) -> successfully painted with wall
+    const dragUnpainted = terrain.continueStroke("1-5");
+    expect(dragUnpainted.modified).toBe(true);
+    expect(terrain.hasWall("1-5")).toBe(true);
+
+    const committed = terrain.commitStroke();
+    // Only 1-1 and 1-5 were modified by the stroke
+    expect(committed).toEqual(["1-1", "1-5"]);
+  });
+
+  it("preserves walls and elevations when dragging dirt brush from an unpainted tile", () => {
+    const terrain = new ScenarioTerrain({
+      initialRobotNode: "0-0",
+      initialDestinationNode: "5-5",
+      initialWallNodes: new Set(["2-2"]),
+      initialElevations: new Map([["2-3", 15]]),
+    });
+
+    const dirtContext = createContext({ activeBrush: "dirt", dirtBrushValue: 2.0 });
+
+    // 2-1 is unpainted. Start dirt stroke on 2-1.
+    const startResult = terrain.startStroke("2-1", dirtContext);
+    expect(startResult.modified).toBe(true);
+    expect(terrain.getTerrainType("2-1")).toBe("dirt");
+
+    // Drag over wall at 2-2 -> skipped and preserved
+    const dragWall = terrain.continueStroke("2-2");
+    expect(dragWall.modified).toBe(false);
+    expect(terrain.hasWall("2-2")).toBe(true);
+    expect(terrain.getTerrainType("2-2")).toBeUndefined();
+
+    // Drag over elevation at 2-3 -> skipped and preserved
+    const dragElev = terrain.continueStroke("2-3");
+    expect(dragElev.modified).toBe(false);
+    expect(terrain.getElevation("2-3")).toBe(15);
+    expect(terrain.getTerrainType("2-3")).toBeUndefined();
+
+    const committed = terrain.commitStroke();
+    expect(committed).toEqual(["2-1"]);
+  });
 });

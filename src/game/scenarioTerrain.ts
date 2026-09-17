@@ -29,6 +29,7 @@ export interface ActiveStrokeSession {
   drawValue: number | boolean | null;
   modifiedCells: Set<string>;
   previousSnapshot: TerrainSnapshot;
+  startedOnUnpainted?: boolean;
 }
 
 export interface CellMutation {
@@ -365,6 +366,8 @@ export class ScenarioTerrain {
       return { modified: true, brush: "destination", cellKey: key };
     }
 
+    const startedOnUnpainted = !this.isPaintedCell(key);
+
     let calculatedDrawValue: number | boolean | null = null;
 
     if (context.activeBrush === "wall") {
@@ -390,6 +393,7 @@ export class ScenarioTerrain {
       drawValue: calculatedDrawValue,
       modifiedCells: new Set(),
       previousSnapshot,
+      startedOnUnpainted,
     };
 
     const applied = this.applyStrokeToCell(key);
@@ -434,6 +438,10 @@ export class ScenarioTerrain {
       return { modified: true, brush, cellKey: key };
     }
 
+    if (this.strokeSession.startedOnUnpainted && this.isPaintedCell(key)) {
+      return { modified: false };
+    }
+
     const applied = this.applyStrokeToCell(key);
     return {
       modified: applied.modified,
@@ -473,6 +481,14 @@ export class ScenarioTerrain {
   }
 
   // --- Internal Helpers ---
+
+  public isPaintedCell(key: string): boolean {
+    if (this.wallNodes.has(key)) return true;
+    if (this.terrainTypes.has(key)) return true;
+    if ((this.terrainFactors.get(key) ?? 0) > 0) return true;
+    if ((this.elevations.get(key) ?? 0) > 0) return true;
+    return false;
+  }
 
   private isDirtCell(key: string): boolean {
     if (this.wallNodes.has(key)) return false;

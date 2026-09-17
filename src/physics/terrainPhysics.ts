@@ -274,10 +274,20 @@ export function isTraversableSlope(
 
   if (ignoreStability) return true;
 
-  const currentGrad = getElevationGradient(current.row, current.col, scenario.elevations, maxTraversableSlope);
+  const currentGrad = getElevationGradient(
+    current.row,
+    current.col,
+    scenario.elevations,
+    maxTraversableSlope,
+  );
   if (currentGrad.isUnstable) return false;
 
-  const { isUnstable } = getElevationGradient(target.row, target.col, scenario.elevations, maxTraversableSlope);
+  const { isUnstable } = getElevationGradient(
+    target.row,
+    target.col,
+    scenario.elevations,
+    maxTraversableSlope,
+  );
   if (isUnstable) return false;
 
   return isStablePosture(target.row, target.col, target.heading, scenario);
@@ -294,12 +304,13 @@ export interface PathSafetyResult {
  * Validates whether an entire path can be safely traversed by the robot
  * under physical constraints (slope limits, gradient stability, roll/pitch tipping).
  */
-export function evaluatePathSafety(
-  path: string[],
-  scenario: Scenario,
-): PathSafetyResult {
+export function evaluatePathSafety(path: string[], scenario: Scenario): PathSafetyResult {
   if (!path || path.length === 0) {
-    return { isSafe: false, failureReason: "NO_PATH_FOUND", maxSlopeEncountered: 0 };
+    return {
+      isSafe: false,
+      failureReason: "NO_PATH_FOUND",
+      maxSlopeEncountered: 0,
+    };
   }
 
   const maxTraversableSlope =
@@ -340,17 +351,22 @@ export function evaluatePathSafety(
     if (slope > maxTraversableSlope) {
       return {
         isSafe: false,
-        failureReason: `EXCEEDED_MAX_SLOPE (${slope.toFixed(1)}° > ${maxTraversableSlope}°)`,
+        failureReason: `Exceeded max slope (${slope.toFixed(1)}° > ${maxTraversableSlope}°)`,
         failureStep: i,
         maxSlopeEncountered,
       };
     }
 
-    const { isUnstable } = getElevationGradient(currR, currC, scenario.elevations, maxTraversableSlope);
+    const { isUnstable } = getElevationGradient(
+      currR,
+      currC,
+      scenario.elevations,
+      maxTraversableSlope,
+    );
     if (isUnstable) {
       return {
         isSafe: false,
-        failureReason: "UNSTABLE_ELEVATION_GRADIENT",
+        failureReason: "Unstable elevation gradient",
         failureStep: i,
         maxSlopeEncountered,
       };
@@ -359,7 +375,7 @@ export function evaluatePathSafety(
     if (!isStablePosture(currR, currC, heading, scenario)) {
       return {
         isSafe: false,
-        failureReason: "ROBOT_TIPOVER_RISK",
+        failureReason: "Robot tipover risk",
         failureStep: i,
         maxSlopeEncountered,
       };
@@ -368,4 +384,3 @@ export function evaluatePathSafety(
 
   return { isSafe: true, maxSlopeEncountered };
 }
-

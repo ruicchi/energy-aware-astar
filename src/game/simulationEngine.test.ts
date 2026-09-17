@@ -5,6 +5,7 @@ import {
   MemoryVisualizer,
 } from "./simulationEngine";
 import type { Scenario } from "../shared/types";
+import { TERRAIN_CONFIG } from "../config/simulationConfig";
 
 describe("SimulationEngine", () => {
   beforeEach(() => {
@@ -233,6 +234,48 @@ describe("SimulationEngine", () => {
       engine.startPaint("1-1");
       engine.endPaint();
       expect(engine.getSnapshot().elevations.get("1-1")).toBe(6);
+    });
+
+    it("preserves already painted tiles when dragging from an unpainted tile via startPaint and continuePaint", () => {
+      const { domAdapter, domStore } = createMockDomAdapter();
+      const engine = new SimulationEngine({
+        cols: 10,
+        rows: 10,
+        initialRobotNode: "0-0",
+        initialDestinationNode: "5-5",
+        initialWallNodes: new Set(["2-2"]),
+        initialElevations: new Map([["2-3", 8]]),
+        domAdapter,
+      });
+
+      // User has dirt brush and starts dragging from unpainted tile 2-1
+      engine.setActiveBrush("dirt");
+      engine.setDirtBrushValue(1.8);
+      engine.startPaint("2-1");
+      expect(domStore.get("2-1")?.bg).toBe(TERRAIN_CONFIG.types.dirt.color);
+
+      // Drag across wall 2-2 -> should NOT overwrite or delete wall
+      engine.continuePaint("2-2");
+      // Preview should not have been set for 2-2
+      expect(domStore.get("2-2")?.bg).toBe("");
+
+      // Drag across elevation 2-3 -> should NOT overwrite or delete elevation
+      engine.continuePaint("2-3");
+      expect(domStore.get("2-3")?.bg).toBe("");
+
+      // Drag across unpainted 2-4 -> should paint dirt
+      engine.continuePaint("2-4");
+      expect(domStore.get("2-4")?.bg).toBe(TERRAIN_CONFIG.types.dirt.color);
+
+      engine.endPaint();
+
+      const snapshot = engine.getSnapshot();
+      expect(snapshot.terrainTypes.get("2-1")).toBe("dirt");
+      expect(snapshot.wallNodes.has("2-2")).toBe(true);
+      expect(snapshot.terrainTypes.has("2-2")).toBe(false);
+      expect(snapshot.elevations.get("2-3")).toBe(8);
+      expect(snapshot.terrainTypes.has("2-3")).toBe(false);
+      expect(snapshot.terrainTypes.get("2-4")).toBe("dirt");
     });
 
     it("instantly updates cell visuals to transparent when deleting on mouse drag", () => {
