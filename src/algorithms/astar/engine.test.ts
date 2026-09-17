@@ -83,6 +83,37 @@ describe("Pathfinding Engine", () => {
       expect(chebyshevResult.shortestPath[0]).toBe("0-0")
       expect(chebyshevResult.shortestPath[chebyshevResult.shortestPath.length - 1]).toBe("3-3")
     })
+
+    it("steers standard heuristics based on initial robot heading", () => {
+      const scenarioRight = createTestScenario({
+        robotNode: "1-1",
+        destinationNode: "2-2",
+        initialHeading: "RIGHT",
+      });
+
+      const manhattanRight = findPath(scenarioRight, { algorithm: "manhattan" });
+      expect(manhattanRight.shortestPath).toEqual(["1-1", "1-2", "2-2"]);
+
+      const scenarioDown = createTestScenario({
+        robotNode: "1-1",
+        destinationNode: "2-2",
+        initialHeading: "DOWN",
+      });
+
+      const manhattanDown = findPath(scenarioDown, { algorithm: "manhattan" });
+      expect(manhattanDown.shortestPath).toEqual(["1-1", "2-1", "2-2"]);
+
+      const euclideanRight = findPath(scenarioRight, { algorithm: "euclidean" });
+      const octileRight = findPath(scenarioRight, { algorithm: "octile" });
+      const chebyshevRight = findPath(scenarioRight, { algorithm: "chebyshev" });
+
+      expect(euclideanRight.shortestPath[0]).toBe("1-1");
+      expect(euclideanRight.shortestPath[euclideanRight.shortestPath.length - 1]).toBe("2-2");
+      expect(octileRight.shortestPath[0]).toBe("1-1");
+      expect(octileRight.shortestPath[octileRight.shortestPath.length - 1]).toBe("2-2");
+      expect(chebyshevRight.shortestPath[0]).toBe("1-1");
+      expect(chebyshevRight.shortestPath[chebyshevRight.shortestPath.length - 1]).toBe("2-2");
+    })
   })
 
   describe("Energy-Aware A*", () => {

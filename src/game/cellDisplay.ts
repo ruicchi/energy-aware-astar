@@ -142,3 +142,28 @@ export function areCellDisplayPropsEqual(
     prevArrow.isUnstable === nextArrow.isUnstable
   );
 }
+
+/**
+ * Pure coordinate resolution for the kinematic robot actor.
+ * Retains the final destination position when traversal has completed,
+ * while anchoring to the designated start node when idle or commencing search.
+ */
+export function resolveRobotCoordinates(params: {
+  hasFinishedWalking: boolean;
+  currentPath: readonly string[] | null;
+  walkingStep: number;
+  robotNode: string;
+}): [number, number] {
+  if (
+    params.hasFinishedWalking &&
+    params.currentPath &&
+    params.walkingStep >= 0 &&
+    params.walkingStep < params.currentPath.length
+  ) {
+    const parts = params.currentPath[params.walkingStep].split("-");
+    return [Number(parts[0]), Number(parts[1])];
+  }
+  const parts = params.robotNode.split("-");
+  return [Number(parts[0]), Number(parts[1])];
+}
+

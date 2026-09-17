@@ -141,15 +141,6 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           <Typography variant="caption" color="textSecondary">
             3D Elevation Aware
           </Typography>
-          {isEnergyAware && (
-            <Typography
-              variant="caption"
-              color="textSecondary"
-              sx={{ fontSize: "10px", fontStyle: "italic" }}
-            >
-              (Standard only)
-            </Typography>
-          )}
         </Box>
         <Button
           variant={use3DStandard ? "contained" : "outlined"}
@@ -159,7 +150,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           onPointerDown={(e) => e.stopPropagation()}
           onClick={() => toggleUse3DStandard()}
         >
-          {use3DStandard ? "3D Aware: ON" : "3D Aware: OFF (2D)"}
+          {use3DStandard ? "ON" : "OFF"}
         </Button>
       </Box>
 
@@ -169,9 +160,6 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           mt: 0.5,
           borderTop: `1px solid ${THEME_CONFIG.panelHeaderBorderColor}`,
           pt: 1,
-          opacity: !isEnergyAware ? 0.45 : 1,
-          pointerEvents: !isEnergyAware ? "none" : "auto",
-          transition: "opacity 0.2s",
         }}
       >
         <Box
@@ -185,15 +173,6 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           <Typography variant="caption" color="textSecondary">
             Initial Heading
           </Typography>
-          {!isEnergyAware && (
-            <Typography
-              variant="caption"
-              color="textSecondary"
-              sx={{ fontSize: "10px", fontStyle: "italic" }}
-            >
-              (Energy-Aware only)
-            </Typography>
-          )}
         </Box>
         <Box
           sx={{

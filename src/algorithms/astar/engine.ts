@@ -486,6 +486,7 @@ function createStandardPolicy(
 ): SearchPolicy {
   let hFunc: (row: number, col: number, destRow: number, destCol: number) => number;
   let neighbors = NEIGHBORS_4;
+  const turnPenalty = scenario.turnPenalty ?? ENERGY_CONFIG.turnPenalty;
 
   if (!use3D) {
     switch (algorithm) {
@@ -510,7 +511,7 @@ function createStandardPolicy(
 
     return {
       neighbors,
-      getStateKey: (row, col) => `${row}-${col}`,
+      getStateKey: (row, col, heading) => `${row}-${col}-${heading}`,
       resolveHeading: (neighborHeading) => neighborHeading,
       isMoveBlocked: (current, nr, nc, neighborHeading, cellKey, stateKey, closedSet) => {
         if (nr < 0 || nr >= scenario.rows || nc < 0 || nc >= scenario.cols) return true;
@@ -523,8 +524,17 @@ function createStandardPolicy(
         }
         return false;
       },
-      computeStepCost: (_current, target) => getStepDistance(target.heading),
-      computeHeuristic: (row, col, _heading, destRow, destCol) => hFunc(row, col, destRow, destCol),
+      computeStepCost: (current, target) => {
+        const stepDist = getStepDistance(target.heading);
+        const turnCost = getTurnCost(current.heading, target.heading, turnPenalty);
+        return stepDist + turnCost;
+      },
+      computeHeuristic: (row, col, heading, destRow, destCol) => {
+        const dist = hFunc(row, col, destRow, destCol);
+        const minAngle = getMinAngleToDestination(heading, row, col, destRow, destCol);
+        const hRot = turnPenalty * minAngle;
+        return dist + hRot;
+      },
     };
   }
 
@@ -567,7 +577,7 @@ function createStandardPolicy(
 
   return {
     neighbors,
-    getStateKey: (row, col) => `${row}-${col}`,
+    getStateKey: (row, col, heading) => `${row}-${col}-${heading}`,
     resolveHeading: (neighborHeading) => neighborHeading,
     isMoveBlocked: (current, nr, nc, neighborHeading, cellKey, stateKey, closedSet) => {
       if (nr < 0 || nr >= scenario.rows || nc < 0 || nc >= scenario.cols) return true;
@@ -588,9 +598,16 @@ function createStandardPolicy(
       const currElev = (scenario.elevations.get(`${current.row}-${current.col}`) || 0) * ELEVATION_SCALE;
       const targetElev = (scenario.elevations.get(`${target.row}-${target.col}`) || 0) * ELEVATION_SCALE;
       const dz = targetElev - currElev;
-      return Math.hypot(d2D, dz);
+      const dist3D = Math.hypot(d2D, dz);
+      const turnCost = getTurnCost(current.heading, target.heading, turnPenalty);
+      return dist3D + turnCost;
     },
-    computeHeuristic: (row, col, _heading, destRow, destCol) => hFunc(row, col, destRow, destCol),
+    computeHeuristic: (row, col, heading, destRow, destCol) => {
+      const dist = hFunc(row, col, destRow, destCol);
+      const minAngle = getMinAngleToDestination(heading, row, col, destRow, destCol);
+      const hRot = turnPenalty * minAngle;
+      return dist + hRot;
+    },
   };
 }
 

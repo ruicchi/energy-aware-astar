@@ -748,6 +748,46 @@ describe("SimulationEngine", () => {
       expect(reVisualizedSnapshot.pathMetrics?.algorithm).toBe("Manhattan");
     });
 
+    it("preserves robot heading seamlessly across standard heuristics and energy-aware", () => {
+      const { domAdapter } = createMockDomAdapter();
+      const engine = new SimulationEngine({ cols: 25, rows: 25, domAdapter });
+
+      const testScenario: Scenario = {
+        rows: 25,
+        cols: 25,
+        robotNode: "2-2",
+        destinationNode: "5-5",
+        wallNodes: new Set(),
+        terrainFactors: new Map(),
+        elevations: new Map(),
+        initialHeading: "RIGHT",
+      };
+
+      engine.loadScenario(testScenario, { instantSolve: true });
+      expect(engine.getSnapshot().robotHeading).toBe("RIGHT");
+
+      engine.setSelectedAlgo("manhattan");
+      expect(engine.getSnapshot().robotHeading).toBe("RIGHT");
+
+      engine.setSelectedAlgo("euclidean");
+      expect(engine.getSnapshot().robotHeading).toBe("RIGHT");
+
+      engine.setSelectedAlgo("octile");
+      expect(engine.getSnapshot().robotHeading).toBe("RIGHT");
+
+      engine.setSelectedAlgo("chebyshev");
+      expect(engine.getSnapshot().robotHeading).toBe("RIGHT");
+
+      // Changing heading on standard algorithm updates heading and re-solves path
+      engine.setRobotHeading("DOWN");
+      expect(engine.getSnapshot().robotHeading).toBe("DOWN");
+      expect(engine.getSnapshot().pathMetrics).not.toBeNull();
+
+      // Switching back to energy-aware keeps newly set heading
+      engine.setSelectedAlgo("energyAware");
+      expect(engine.getSnapshot().robotHeading).toBe("DOWN");
+    });
+
     it("resets to freeform viewport mode properly with explicit dimensions", () => {
       const { domAdapter } = createMockDomAdapter();
       const engine = new SimulationEngine({ cols: 40, rows: 25, domAdapter });

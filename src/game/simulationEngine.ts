@@ -401,7 +401,16 @@ export class SimulationEngine {
     if (this.robotHeading === heading) return;
     this.robotHeading = heading;
     this.visualizer.setRobotHeading(heading, false);
-    this.notify();
+    if (
+      this.isFixedDimensions &&
+      (this.isPathVisible || Boolean(this.currentPath && this.currentPath.length > 0)) &&
+      !this.isAnimating &&
+      !this.isWalking
+    ) {
+      this.solveInstantly(this.selectedAlgo);
+    } else {
+      this.notify();
+    }
   }
 
   public setMaxTraversableSlope(slope: number | null): void {
@@ -432,13 +441,6 @@ export class SimulationEngine {
   public setSelectedAlgo(algo: AlgorithmType, instantSolveIfPathVisible = true): void {
     if (this.selectedAlgo === algo) return;
     this.selectedAlgo = algo;
-    if (algo !== "energyAware") {
-      this.robotHeading = "NONE";
-      this.visualizer.setRobotHeading("NONE", false);
-    } else if (this.loadedScenarioName && this.initialScenarioHeading !== "NONE") {
-      this.robotHeading = this.initialScenarioHeading;
-      this.visualizer.setRobotHeading(this.robotHeading, false);
-    }
 
     if (
       this.isFixedDimensions &&

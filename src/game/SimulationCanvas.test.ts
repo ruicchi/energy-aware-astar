@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveRobotCoordinates } from "./SimulationCanvas";
+import { resolveRobotCoordinates } from "./cellDisplay";
 
 describe("SimulationCanvas - Kinematic Actor Coordinate Calculations", () => {
   it("translates robotNode string to grid pixel coordinates", () => {
