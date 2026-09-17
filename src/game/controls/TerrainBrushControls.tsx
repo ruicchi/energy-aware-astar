@@ -12,7 +12,6 @@ const SLOPE_MARKS = [
   { value: 45, label: "45°" },
   { value: 60, label: "60°" },
   { value: 75, label: "75°" },
-  { value: 90, label: "90°" },
 ];
 
 const sliderMarksSx = {
@@ -77,7 +76,7 @@ export function TerrainBrushControls() {
           Wall
         </Button>
 
-        <Tooltip title={`Penalty factor: ${dirtBrushValue}`} arrow>
+        <Tooltip title={`Penalty: ${dirtBrushValue}`} arrow>
           <Button
             variant="contained"
             size="small"
@@ -98,7 +97,7 @@ export function TerrainBrushControls() {
           </Button>
         </Tooltip>
 
-        <Tooltip title={`Penalty factor: ${waterBrushValue}`} arrow>
+        <Tooltip title={`Penalty: ${waterBrushValue}`} arrow>
           <Button
             variant="contained"
             size="small"
@@ -237,15 +236,9 @@ export function TerrainBrushControls() {
           }}
         >
           <Box>
-            <Tooltip
-              title={`Nominal slope angle: ${currentSlopeAngle}° from flat terrain`}
-              arrow
-              placement="top"
-            >
-              <Typography variant="caption" color="textSecondary" sx={{ cursor: "default" }}>
-                Slope Height: {currentSlopeAngle}°
-              </Typography>
-            </Tooltip>
+            <Typography variant="caption" color="textSecondary" sx={{ cursor: "default" }}>
+              Slope Height: {currentSlopeAngle}°
+            </Typography>
             <Slider
               size="small"
               value={currentSlopeAngle}
@@ -261,15 +254,9 @@ export function TerrainBrushControls() {
           </Box>
 
           <Box>
-            <Tooltip
-              title={`Maximum slope angle the robot can traverse: ${maxTraversableSlope}°`}
-              arrow
-              placement="top"
-            >
-              <Typography variant="caption" color="textSecondary" sx={{ cursor: "default" }}>
-                Max Traversable Slope: {maxTraversableSlope}°
-              </Typography>
-            </Tooltip>
+            <Typography variant="caption" color="textSecondary" sx={{ cursor: "default" }}>
+              Max Traversable Slope: {maxTraversableSlope}°
+            </Typography>
             <Slider
               size="small"
               value={maxTraversableSlope}
