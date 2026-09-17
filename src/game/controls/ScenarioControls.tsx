@@ -10,11 +10,12 @@ import {
   type SelectChangeEvent,
 } from "@mui/material";
 import { Casino, Refresh } from "@mui/icons-material";
+import { useSimulationControls } from "../simulationHooks";
 import {
-  useSimulationControls,
   SCENARIO_PRESETS,
   type ScenarioPresetId,
-} from "../simulationHooks";
+} from "../../data";
+
 
 type ScenarioKey = "freeform" | ScenarioPresetId | "procedural";
 

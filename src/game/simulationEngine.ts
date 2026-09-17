@@ -1,19 +1,11 @@
-import type {
-  Scenario,
-  Heading,
-  BrushMode,
-  AlgorithmType,
-  EnergyBreakdown,
-} from "../shared/types";
+import type { Scenario, Heading, BrushMode, AlgorithmType, EnergyBreakdown } from "../shared/types";
 import {
   VEHICLE_CONFIG,
   ANIMATION_CONFIG,
   GRID_CONFIG,
   BRUSH_CONFIG,
 } from "../config/simulationConfig";
-import {
-  evaluatePathSafety,
-} from "../physics/terrainPhysics";
+import { evaluatePathSafety } from "../physics/terrainPhysics";
 import { findPath } from "../algorithms/astar";
 import {
   getScenarioPreset,
@@ -22,11 +14,7 @@ import {
   type ScenarioPresetId,
   type ScenarioPresetDescriptor,
 } from "../data";
-import {
-  ScenarioTerrain,
-  type PaintContext,
-  type CellMutation,
-} from "./scenarioTerrain";
+import { ScenarioTerrain, type PaintContext, type CellMutation } from "./scenarioTerrain";
 import { resolveMutationPreview } from "./cellDisplay";
 import {
   SimulationPlayback,
@@ -48,35 +36,15 @@ import {
   createDefaultDomAdapter,
 } from "./simulationVisualizer";
 
-export {
-  SCENARIO_PRESETS,
-  type ScenarioPresetId,
-  type ScenarioPresetDescriptor,
-  ScenarioTerrain,
-  type CellMutation,
-  SimulationPlayback,
-  compileSearchTimeline,
-  compileWalkTimeline,
-  type TimelineFrame,
-  type PlaybackStatus,
-  type WalkFailurePoint,
-  type SimulationVisualizer,
-  type ActorElements,
-  DomVisualizer,
-  NullVisualizer,
-  MemoryVisualizer,
-  createDefaultVisualizer,
-  type SimulationDomAdapter,
-  type SimulationDomElement,
-  createDefaultDomAdapter,
-};
+
+
 
 const ALGO_CONFIGS: Record<AlgorithmType, { name: string; theme: "manhattan" | "energy" }> = {
   energyAware: { name: "Energy-Aware", theme: "energy" },
-  manhattan:   { name: "Manhattan",    theme: "manhattan" },
-  euclidean:   { name: "Euclidean",    theme: "energy" },
-  octile:      { name: "Octile",       theme: "energy" },
-  chebyshev:   { name: "Chebyshev",    theme: "energy" },
+  manhattan: { name: "Manhattan", theme: "manhattan" },
+  euclidean: { name: "Euclidean", theme: "energy" },
+  octile: { name: "Octile", theme: "energy" },
+  chebyshev: { name: "Chebyshev", theme: "energy" },
 };
 
 export interface SimulationState {
@@ -153,7 +121,6 @@ export interface SimulationEngineOptions {
   /** Backwards compatibility alias for visualizer */
   domAdapter?: SimulationVisualizer;
 }
-
 
 /**
  * The deep SimulationEngine module.
@@ -308,7 +275,7 @@ export class SimulationEngine {
     };
 
     return this.cachedSnapshot;
-  };
+  }
 
   private notify(): void {
     this.cachedSnapshot = null;
@@ -363,7 +330,10 @@ export class SimulationEngine {
     this.rows = rows;
     this.cellSize = cellSize;
 
-    const { clampedRobotR, clampedRobotC, clampedDestR, clampedDestC } = this.terrain.setDimensions(cols, rows);
+    const { clampedRobotR, clampedRobotC, clampedDestR, clampedDestC } = this.terrain.setDimensions(
+      cols,
+      rows,
+    );
     this.visualizer.resetRobot(clampedRobotC, clampedRobotR, this.robotHeading, this.cellSize);
     this.visualizer.setDestinationPosition(clampedDestC, clampedDestR, this.cellSize);
     this.notify();
@@ -380,7 +350,6 @@ export class SimulationEngine {
       showGradients: this.showGradients,
     });
   }
-
 
   // --- Configuration Mutators ---
 
@@ -638,7 +607,6 @@ export class SimulationEngine {
     this.notify();
   }
 
-
   // --- Animation & Simulation Playback Management ---
 
   private clearTimers(): void {
@@ -706,7 +674,6 @@ export class SimulationEngine {
     this.notify();
   }
 
-
   // --- Pathfinding Visualization ---
 
   /**
@@ -755,7 +722,10 @@ export class SimulationEngine {
     const scenario = this.getScenario();
     const config = ALGO_CONFIGS[algo];
     const theme = config.theme;
-    const result = findPath(scenario, { algorithm: algo, use3DStandard: this.use3DStandard });
+    const result = findPath(scenario, {
+      algorithm: algo,
+      use3DStandard: this.use3DStandard,
+    });
 
     const { visitedNodesInOrder, shortestPath, totalEnergy, totalDistance, energyBreakdown } =
       result;
@@ -908,10 +878,7 @@ export class SimulationEngine {
 
   // --- Scenario Loading & Instant Solving ---
 
-  public loadPreset(
-    presetId: ScenarioPresetId,
-    options?: { instantSolve?: boolean },
-  ): void {
+  public loadPreset(presetId: ScenarioPresetId, options?: { instantSolve?: boolean }): void {
     const preset = getScenarioPreset(presetId);
     if (!preset) return;
     this.loadScenario(preset.scenario, {
@@ -987,7 +954,6 @@ export class SimulationEngine {
       this.notify();
     }
   }
-
 
   public resetToFreeform(cols?: number, rows?: number, cellSize?: number): void {
     this.isFixedDimensions = false;

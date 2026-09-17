@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { SimulationEngine } from "./simulationEngine";
 import {
-  SimulationEngine,
   type SimulationVisualizer,
   MemoryVisualizer,
-} from "./simulationEngine";
+} from "./simulationVisualizer";
 import type { Scenario } from "../shared/types";
 import { TERRAIN_CONFIG } from "../config/simulationConfig";
+
 
 describe("SimulationEngine", () => {
   beforeEach(() => {

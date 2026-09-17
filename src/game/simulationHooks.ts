@@ -15,14 +15,10 @@ import type {
 import type {
   SimulationEngine,
   SimulationState,
-  PlaybackStatus,
 } from "./simulationEngine";
+import type { PlaybackStatus } from "./simulationPlayback";
 
-export {
-  SCENARIO_PRESETS,
-  type ScenarioPresetId,
-  type ScenarioPresetDescriptor,
-} from "./simulationEngine";
+
 
 export interface SimulationPathMetrics {
   algorithm: string;
