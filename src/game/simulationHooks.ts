@@ -157,14 +157,6 @@ export interface GridCanvasState {
   currentPath: string[] | null;
 }
 
-/**
- * Domain model returned by `useGridCanvas`, packaging canvas state and pointer stroke actions.
- */
-export interface GridCanvasModel extends GridCanvasState {
-  handleMouseDown: (key: string) => void;
-  handleMouseEnter: (key: string) => void;
-  handleMouseUp: () => void;
-}
 
 /**
  * Pure selector projecting SimulationState into GridCanvasState.
@@ -211,30 +203,6 @@ export function selectGridCanvas(s: SimulationState): GridCanvasState {
 }
 
 /**
- * Unified domain hook for the Grid Canvas viewport.
- * Consolidates grid dimensions, terrain collections, actor positions,
- * search polyline rendering, and stroke pointer handlers into one cohesive seam.
- */
-export function useGridCanvas(): GridCanvasModel {
-  const engine = useSimulationEngine();
-  const canvasState = useSimulationSelector(selectGridCanvas, shallowEqual);
-
-  const handleMouseDown = useCallback((key: string) => engine.startPaint(key), [engine]);
-  const handleMouseEnter = useCallback((key: string) => engine.continuePaint(key), [engine]);
-  const handleMouseUp = useCallback(() => engine.endPaint(), [engine]);
-
-  return useMemo(
-    () => ({
-      ...canvasState,
-      handleMouseDown,
-      handleMouseEnter,
-      handleMouseUp,
-    }),
-    [canvasState, handleMouseDown, handleMouseEnter, handleMouseUp],
-  );
-}
-
-/**
  * State required by simulation navigation, algorithm execution, and scenario control panels.
  */
 export interface SimulationControlsState {
@@ -257,22 +225,10 @@ export interface SimulationControlsState {
 }
 
 /**
- * Domain model returned by `useSimulationControls`, pairing control state with bound commands.
+ * Domain model returned by `useSimulationControls`, pairing reactive state with direct engine command dispatch.
  */
 export interface SimulationControlsModel extends SimulationControlsState {
-  loadPreset: (preset: ScenarioPresetId) => void;
-  loadProcedural: (seed?: number) => void;
-  resetToFreeform: () => void;
-  setSelectedAlgo: (algo: AlgorithmType, runImmediate?: boolean) => void;
-  setRobotHeading: (heading: Heading) => void;
-  setUse3DStandard: (enabled: boolean) => void;
-  toggleUse3DStandard: () => void;
-  visualize: (algo?: AlgorithmType) => void;
-  solveInstantly: (algo?: AlgorithmType) => void;
-  walk: () => void;
-  reset: () => void;
-  toggleManhattanSearch: () => void;
-  toggleEnergySearch: () => void;
+  engine: SimulationEngine;
 }
 
 /**
@@ -306,65 +262,12 @@ export function useSimulationControls(): SimulationControlsModel {
   const engine = useSimulationEngine();
   const state = useSimulationSelector(selectSimulationControls, shallowEqual);
 
-  const loadPreset = useCallback((preset: ScenarioPresetId) => engine.loadPreset(preset), [engine]);
-  const loadProcedural = useCallback((seed?: number) => engine.loadProcedural(seed), [engine]);
-  const resetToFreeform = useCallback(() => engine.resetToFreeform(), [engine]);
-  const setSelectedAlgo = useCallback(
-    (algo: AlgorithmType, runImmediate?: boolean) => engine.setSelectedAlgo(algo, runImmediate),
-    [engine],
-  );
-  const setRobotHeading = useCallback(
-    (heading: Heading) => engine.setRobotHeading(heading),
-    [engine],
-  );
-  const setUse3DStandard = useCallback(
-    (enabled: boolean) => engine.setUse3DStandard(enabled),
-    [engine],
-  );
-  const toggleUse3DStandard = useCallback(
-    () => engine.toggleUse3DStandard(),
-    [engine],
-  );
-  const visualize = useCallback((algo?: AlgorithmType) => engine.visualize(algo), [engine]);
-  const solveInstantly = useCallback((algo?: AlgorithmType) => engine.solveInstantly(algo), [engine]);
-  const walk = useCallback(() => engine.walk(), [engine]);
-  const reset = useCallback(() => engine.reset(), [engine]);
-  const toggleManhattanSearch = useCallback(() => engine.toggleManhattanSearch(), [engine]);
-  const toggleEnergySearch = useCallback(() => engine.toggleEnergySearch(), [engine]);
-
   return useMemo(
     () => ({
       ...state,
-      loadPreset,
-      loadProcedural,
-      resetToFreeform,
-      setSelectedAlgo,
-      setRobotHeading,
-      setUse3DStandard,
-      toggleUse3DStandard,
-      visualize,
-      solveInstantly,
-      walk,
-      reset,
-      toggleManhattanSearch,
-      toggleEnergySearch,
+      engine,
     }),
-    [
-      state,
-      loadPreset,
-      loadProcedural,
-      resetToFreeform,
-      setSelectedAlgo,
-      setRobotHeading,
-      setUse3DStandard,
-      toggleUse3DStandard,
-      visualize,
-      solveInstantly,
-      walk,
-      reset,
-      toggleManhattanSearch,
-      toggleEnergySearch,
-    ],
+    [state, engine],
   );
 }
 
@@ -381,18 +284,10 @@ export interface BrushControlsState {
 }
 
 /**
- * Domain model returned by `useBrushControls`, combining brush parameters with bound actions.
+ * Domain model returned by `useBrushControls`, pairing brush state with direct engine command dispatch.
  */
 export interface BrushControlsModel extends BrushControlsState {
-  setActiveBrush: (brush: BrushMode) => void;
-  setDirtBrushValue: (val: number) => void;
-  setWaterBrushValue: (val: number) => void;
-  setElevationBrushValue: (val: number) => void;
-  setMaxTraversableSlope: (val: number) => void;
-  setShowGradients: (val: boolean) => void;
-  toggleGradients: () => void;
-  clearWalls: () => void;
-  reset: () => void;
+  engine: SimulationEngine;
 }
 
 /**
@@ -416,65 +311,12 @@ export function useBrushControls(): BrushControlsModel {
   const engine = useSimulationEngine();
   const state = useSimulationSelector(selectBrushControls, shallowEqual);
 
-  const setActiveBrush = useCallback((brush: BrushMode) => engine.setActiveBrush(brush), [engine]);
-  const setDirtBrushValue = useCallback((val: number) => engine.setDirtBrushValue(val), [engine]);
-  const setWaterBrushValue = useCallback((val: number) => engine.setWaterBrushValue(val), [engine]);
-  const setElevationBrushValue = useCallback((val: number) => engine.setElevationBrushValue(val), [engine]);
-  const setMaxTraversableSlope = useCallback((val: number) => engine.setMaxTraversableSlope(val), [engine]);
-  const setShowGradients = useCallback((val: boolean) => engine.setShowGradients(val), [engine]);
-  const toggleGradients = useCallback(() => engine.toggleGradients(), [engine]);
-  const clearWalls = useCallback(() => engine.clearWalls(), [engine]);
-  const reset = useCallback(() => engine.reset(), [engine]);
-
   return useMemo(
     () => ({
       ...state,
-      setActiveBrush,
-      setDirtBrushValue,
-      setWaterBrushValue,
-      setElevationBrushValue,
-      setMaxTraversableSlope,
-      setShowGradients,
-      toggleGradients,
-      clearWalls,
-      reset,
+      engine,
     }),
-    [
-      state,
-      setActiveBrush,
-      setDirtBrushValue,
-      setWaterBrushValue,
-      setElevationBrushValue,
-      setMaxTraversableSlope,
-      setShowGradients,
-      toggleGradients,
-      clearWalls,
-      reset,
-    ],
-  );
-}
-
-/**
- * Domain model for robot heading controls.
- */
-export interface HeadingControlsModel {
-  robotHeading: Heading;
-  isEnergyAware: boolean;
-  setRobotHeading: (heading: Heading) => void;
-}
-
-/**
- * Caller-aligned hook for Robot Heading orientation controls.
- */
-export function useHeadingControls(): HeadingControlsModel {
-  const { robotHeading, isEnergyAware, setRobotHeading } = useSimulationControls();
-  return useMemo(
-    () => ({
-      robotHeading,
-      isEnergyAware,
-      setRobotHeading,
-    }),
-    [robotHeading, isEnergyAware, setRobotHeading],
+    [state, engine],
   );
 }
 

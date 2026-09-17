@@ -34,12 +34,10 @@ function resolveActiveScenarioKey(
 
 export function ScenarioControls() {
   const {
+    engine,
     isFixedDimensions,
     isLocked,
     loadedScenarioName,
-    loadPreset,
-    loadProcedural,
-    resetToFreeform,
   } = useSimulationControls();
 
   const [seed, setSeed] = useState<number>(1);
@@ -52,11 +50,11 @@ export function ScenarioControls() {
   function handleSelectChange(e: SelectChangeEvent<ScenarioKey>) {
     const key = e.target.value as ScenarioKey;
     if (key === "freeform") {
-      resetToFreeform();
+      engine.resetToFreeform();
     } else if (key === "procedural") {
-      loadProcedural(seed);
+      engine.loadProcedural(seed);
     } else {
-      loadPreset(key);
+      engine.loadPreset(key);
     }
   }
 
@@ -64,23 +62,23 @@ export function ScenarioControls() {
     const nextSeed = Math.max(1, parseInt(e.target.value, 10) || 1);
     setSeed(nextSeed);
     if (activeKey === "procedural") {
-      loadProcedural(nextSeed);
+      engine.loadProcedural(nextSeed);
     }
   }
 
   function handleRandomSeed() {
     const randomSeed = Math.floor(Math.random() * 50) + 1;
     setSeed(randomSeed);
-    loadProcedural(randomSeed);
+    engine.loadProcedural(randomSeed);
   }
 
   function handleReload() {
     if (activeKey === "procedural") {
-      loadProcedural(seed);
+      engine.loadProcedural(seed);
     } else if (activeKey !== "freeform") {
-      loadPreset(activeKey);
+      engine.loadPreset(activeKey);
     } else {
-      resetToFreeform();
+      engine.resetToFreeform();
     }
   }
 

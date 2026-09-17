@@ -54,17 +54,11 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
   const handleOpenResults = onOpenResults ?? hud.openMetrics;
 
   const {
+    engine,
     selectedAlgo,
-    setSelectedAlgo,
     use3DStandard,
-    toggleUse3DStandard,
     robotHeading,
-    setRobotHeading,
     isEnergyAware,
-    visualize,
-    walk,
-    toggleManhattanSearch,
-    toggleEnergySearch,
     isManhattanFinished,
     isEnergyFinished,
     showManhattanSearch,
@@ -113,7 +107,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           fullWidth
           size="small"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => setSelectedAlgo(algo.type)}
+          onClick={() => engine.setSelectedAlgo(algo.type)}
         >
           {algo.label}
         </Button>
@@ -148,7 +142,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           fullWidth
           size="small"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => toggleUse3DStandard()}
+          onClick={() => engine.toggleUse3DStandard()}
         >
           {use3DStandard ? "ON" : "OFF"}
         </Button>
@@ -193,7 +187,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
                 aspectRatio: "1/1",
               }}
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => setRobotHeading(h)}
+              onClick={() => engine.setRobotHeading(h)}
             >
               {HEADING_ICONS[h]}
             </Button>
@@ -208,7 +202,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
         fullWidth
         sx={{ mt: 0.5, py: 1, fontWeight: "bold" }}
         onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => visualize(selectedAlgo)}
+        onClick={() => engine.visualize(selectedAlgo)}
       >
         Visualize
       </Button>
@@ -219,7 +213,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
           color="primary"
           fullWidth
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => walk()}
+          onClick={() => engine.walk()}
           sx={{ mt: 0.5 }}
         >
           {isWalking ? "Walking..." : "Walk Path"}
@@ -236,7 +230,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
               fullWidth
               color="primary"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => toggleManhattanSearch()}
+              onClick={() => engine.toggleManhattanSearch()}
             >
               {showManhattanSearch ? "Hide Search Map" : "Show Search Map"}
             </Button>
@@ -248,7 +242,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
               fullWidth
               color="primary"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => toggleEnergySearch()}
+              onClick={() => engine.toggleEnergySearch()}
             >
               {showEnergySearch ? "Hide Search Map" : "Show Search Map"}
             </Button>
@@ -335,8 +329,3 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
     </Box>
   );
 }
-
-/**
- * Backward compatibility alias for PlanningControls.
- */
-export const HeuristicControls = PlanningControls;

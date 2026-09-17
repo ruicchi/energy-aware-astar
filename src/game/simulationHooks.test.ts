@@ -286,5 +286,29 @@ describe("simulationHooks - Consolidated Control Seams", () => {
     // Simulation controls remain identical
     expect(shallowEqual(simControls1, simControls2)).toBe(true);
   });
+
+  it("allows direct engine command execution without shallow callback wrappers", () => {
+    const engine = new SimulationEngine({ cols: 20, rows: 20 });
+    const s1 = engine.getSnapshot();
+    const simControls = selectSimulationControls(s1);
+
+    expect(simControls.selectedAlgo).toBe("energyAware");
+
+    // Execute direct command on engine
+    engine.setSelectedAlgo("euclidean", false);
+    const s2 = engine.getSnapshot();
+    const updatedControls = selectSimulationControls(s2);
+
+    expect(updatedControls.selectedAlgo).toBe("euclidean");
+
+    // Execute brush command on engine
+    engine.setActiveBrush("elevation");
+    engine.setElevationBrushValue(8);
+    const s3 = engine.getSnapshot();
+    const updatedBrush = selectBrushControls(s3);
+
+    expect(updatedBrush.activeBrush).toBe("elevation");
+    expect(updatedBrush.elevationBrushValue).toBe(8);
+  });
 });
 
