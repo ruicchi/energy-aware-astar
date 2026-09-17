@@ -16,12 +16,10 @@ export interface HudPanelLayout {
   };
   manual: {
     width: number | string;
-    maxWidth: string;
     initialPosition: { x: number; y: number };
   };
   metrics: {
     width: number;
-    maxWidth: string;
     initialPosition: { x: number; y: number };
     zIndex: number;
     elevation: number;
@@ -69,7 +67,6 @@ export function resolveHudLayout(
     },
     manual: {
       width: isMobile ? "calc(100vw - 40px)" : UI_CONFIG.panelWidth.manual,
-      maxWidth: "calc(100vw - 32px)",
       initialPosition: {
         x: isMobile ? UI_CONFIG.initialPosition.x : UI_CONFIG.initialPosition.x + 235,
         y: UI_CONFIG.initialPosition.y,
@@ -77,7 +74,6 @@ export function resolveHudLayout(
     },
     metrics: {
       width: isMobile ? UI_CONFIG.panelWidth.metricsMobile : UI_CONFIG.panelWidth.metrics,
-      maxWidth: "calc(100vw - 24px)",
       initialPosition: {
         x: isMobile ? UI_CONFIG.initialPosition.x : UI_CONFIG.initialPosition.x + 235,
         y: UI_CONFIG.initialPosition.y + 225,

@@ -69,8 +69,7 @@ export const SimulationHud = memo(function SimulationHud() {
         title="Manual"
         initialPosition={layout.manual.initialPosition}
         width={layout.manual.width}
-        maxWidth={layout.manual.maxWidth}
-        collapsible
+        onClose={closeMetrics}
       >
         <SimulationManual />
       </FloatingPanel>
@@ -83,7 +82,6 @@ export const SimulationHud = memo(function SimulationHud() {
           zIndex={layout.metrics.zIndex}
           elevation={layout.metrics.elevation}
           width={layout.metrics.width}
-          maxWidth={layout.metrics.maxWidth}
           onClose={closeMetrics}
         >
           <MetricsModal />

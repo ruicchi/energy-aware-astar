@@ -16,7 +16,6 @@ export interface FloatingPanelProps {
   title: string;
   initialPosition?: { x: number; y: number };
   width?: number | string;
-  maxWidth?: number | string;
   zIndex?: number;
   elevation?: number;
   collapsible?: boolean;
@@ -38,7 +37,6 @@ export function FloatingPanel({
   title,
   initialPosition = UI_CONFIG.initialPosition,
   width,
-  maxWidth,
   zIndex = UI_CONFIG.zIndex.panels,
   elevation = UI_CONFIG.elevation.panel,
   collapsible = false,
@@ -106,7 +104,6 @@ export function FloatingPanel({
         backgroundColor: THEME_CONFIG.panelBackgroundColor,
         borderRadius: 2,
         width,
-        maxWidth,
         cursor: isDragging ? "grabbing" : "grab",
         userSelect: "none",
         overflow: "hidden",
