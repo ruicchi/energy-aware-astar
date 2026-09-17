@@ -79,8 +79,8 @@ export function resolveHudLayout(
       width: isMobile ? UI_CONFIG.panelWidth.metricsMobile : UI_CONFIG.panelWidth.metrics,
       maxWidth: "calc(100vw - 24px)",
       initialPosition: {
-        x: isMobile ? UI_CONFIG.initialPosition.x : UI_CONFIG.initialPosition.x + 220,
-        y: 240,
+        x: isMobile ? UI_CONFIG.initialPosition.x : UI_CONFIG.initialPosition.x + 235,
+        y: UI_CONFIG.initialPosition.y + 225,
       },
       zIndex: UI_CONFIG.zIndex.modal,
       elevation: UI_CONFIG.elevation.modal,
