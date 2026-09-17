@@ -36,9 +36,6 @@ import {
   createDefaultDomAdapter,
 } from "./simulationVisualizer";
 
-
-
-
 const ALGO_CONFIGS: Record<AlgorithmType, { name: string; theme: "manhattan" | "energy" }> = {
   energyAware: { name: "Energy-Aware", theme: "energy" },
   manhattan: { name: "Manhattan", theme: "manhattan" },

@@ -61,7 +61,10 @@ export class DomVisualizer implements SimulationVisualizer {
   private getRobotArrowNode(): HTMLElement | SVGElement | null {
     if (this.actors.robotArrow) return this.actors.robotArrow;
     if (typeof document !== "undefined") {
-      return (document.getElementById("robot-actor-arrow") as unknown as HTMLElement | SVGElement | null);
+      return document.getElementById("robot-actor-arrow") as unknown as
+        | HTMLElement
+        | SVGElement
+        | null;
     }
     return null;
   }
@@ -74,7 +77,11 @@ export class DomVisualizer implements SimulationVisualizer {
     return null;
   }
 
-  public renderSearchNode(key: string, type: "open" | "closed", theme: "manhattan" | "energy"): void {
+  public renderSearchNode(
+    key: string,
+    type: "open" | "closed",
+    theme: "manhattan" | "energy",
+  ): void {
     if (typeof document === "undefined") return;
     const node = document.getElementById(`cell-${key}`);
     if (node) {
@@ -217,12 +224,30 @@ export class NullVisualizer implements SimulationVisualizer {
  */
 export class MemoryVisualizer implements SimulationVisualizer {
   public boundActors: ActorElements = {};
-  public searchNodes: { key: string; type: "open" | "closed"; theme: "manhattan" | "energy" }[] = [];
+  public searchNodes: {
+    key: string;
+    type: "open" | "closed";
+    theme: "manhattan" | "energy";
+  }[] = [];
   public searchVisualsCleared: boolean = false;
-  public robotPositions: { col: number; row: number; cellSize: number; animated?: boolean }[] = [];
+  public robotPositions: {
+    col: number;
+    row: number;
+    cellSize: number;
+    animated?: boolean;
+  }[] = [];
   public robotHeadings: { heading: Heading; animated?: boolean }[] = [];
-  public robotResets: { col: number; row: number; heading: Heading; cellSize: number }[] = [];
-  public destinationPositions: { col: number; row: number; cellSize: number }[] = [];
+  public robotResets: {
+    col: number;
+    row: number;
+    heading: Heading;
+    cellSize: number;
+  }[] = [];
+  public destinationPositions: {
+    col: number;
+    row: number;
+    cellSize: number;
+  }[] = [];
   public draggingActor: "robot" | "destination" | null = null;
   public previews: Map<string, { color: string; isWall?: boolean }> = new Map();
 
@@ -234,7 +259,11 @@ export class MemoryVisualizer implements SimulationVisualizer {
     this.boundActors = {};
   }
 
-  public renderSearchNode(key: string, type: "open" | "closed", theme: "manhattan" | "energy"): void {
+  public renderSearchNode(
+    key: string,
+    type: "open" | "closed",
+    theme: "manhattan" | "energy",
+  ): void {
     this.searchNodes.push({ key, type, theme });
   }
 

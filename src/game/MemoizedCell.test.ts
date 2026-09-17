@@ -36,11 +36,19 @@ describe("MemoizedCell areCellDisplayPropsEqual", () => {
   it("returns false when isWall or bgColor changes", () => {
     const prevProps: MemoizedCellProps = {
       ...baseProps,
-      displayState: { ...baseProps.displayState, isWall: false, bgColor: "transparent" },
+      displayState: {
+        ...baseProps.displayState,
+        isWall: false,
+        bgColor: "transparent",
+      },
     };
     const nextProps: MemoizedCellProps = {
       ...baseProps,
-      displayState: { ...baseProps.displayState, isWall: true, bgColor: "#1a88e2" },
+      displayState: {
+        ...baseProps.displayState,
+        isWall: true,
+        bgColor: "#1a88e2",
+      },
     };
 
     expect(areCellDisplayPropsEqual(prevProps, nextProps)).toBe(false);

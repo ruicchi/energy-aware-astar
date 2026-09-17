@@ -56,17 +56,39 @@ describe("simulationHooks - Sliced Selectors & Re-render Isolation", () => {
     const s1 = engine.getSnapshot();
 
     // Select slices
-    const gridSlice1 = { cols: s1.cols, rows: s1.rows, cellSize: s1.cellSize, isFixedDimensions: s1.isFixedDimensions };
-    const brushSlice1 = { activeBrush: s1.activeBrush, dirtBrushValue: s1.dirtBrushValue };
-    const scenarioSlice1 = { isFixedDimensions: s1.isFixedDimensions, loadedScenarioName: s1.loadedScenarioName };
+    const gridSlice1 = {
+      cols: s1.cols,
+      rows: s1.rows,
+      cellSize: s1.cellSize,
+      isFixedDimensions: s1.isFixedDimensions,
+    };
+    const brushSlice1 = {
+      activeBrush: s1.activeBrush,
+      dirtBrushValue: s1.dirtBrushValue,
+    };
+    const scenarioSlice1 = {
+      isFixedDimensions: s1.isFixedDimensions,
+      loadedScenarioName: s1.loadedScenarioName,
+    };
 
     // Mutate brush setting
     engine.setActiveBrush("dirt");
     const s2 = engine.getSnapshot();
 
-    const gridSlice2 = { cols: s2.cols, rows: s2.rows, cellSize: s2.cellSize, isFixedDimensions: s2.isFixedDimensions };
-    const brushSlice2 = { activeBrush: s2.activeBrush, dirtBrushValue: s2.dirtBrushValue };
-    const scenarioSlice2 = { isFixedDimensions: s2.isFixedDimensions, loadedScenarioName: s2.loadedScenarioName };
+    const gridSlice2 = {
+      cols: s2.cols,
+      rows: s2.rows,
+      cellSize: s2.cellSize,
+      isFixedDimensions: s2.isFixedDimensions,
+    };
+    const brushSlice2 = {
+      activeBrush: s2.activeBrush,
+      dirtBrushValue: s2.dirtBrushValue,
+    };
+    const scenarioSlice2 = {
+      isFixedDimensions: s2.isFixedDimensions,
+      loadedScenarioName: s2.loadedScenarioName,
+    };
 
     // Brush slice changed: triggers re-render for brush panel
     expect(shallowEqual(brushSlice1, brushSlice2)).toBe(false);
@@ -81,15 +103,31 @@ describe("simulationHooks - Sliced Selectors & Re-render Isolation", () => {
     const engine = new SimulationEngine({ cols: 20, rows: 20 });
     const s1 = engine.getSnapshot();
 
-    const gridSlice1 = { cols: s1.cols, rows: s1.rows, cellSize: s1.cellSize, isFixedDimensions: s1.isFixedDimensions };
-    const brushSlice1 = { activeBrush: s1.activeBrush, dirtBrushValue: s1.dirtBrushValue };
+    const gridSlice1 = {
+      cols: s1.cols,
+      rows: s1.rows,
+      cellSize: s1.cellSize,
+      isFixedDimensions: s1.isFixedDimensions,
+    };
+    const brushSlice1 = {
+      activeBrush: s1.activeBrush,
+      dirtBrushValue: s1.dirtBrushValue,
+    };
 
     // Mutate viewport dimensions
     engine.setDimensions(30, 25, 20);
     const s2 = engine.getSnapshot();
 
-    const gridSlice2 = { cols: s2.cols, rows: s2.rows, cellSize: s2.cellSize, isFixedDimensions: s2.isFixedDimensions };
-    const brushSlice2 = { activeBrush: s2.activeBrush, dirtBrushValue: s2.dirtBrushValue };
+    const gridSlice2 = {
+      cols: s2.cols,
+      rows: s2.rows,
+      cellSize: s2.cellSize,
+      isFixedDimensions: s2.isFixedDimensions,
+    };
+    const brushSlice2 = {
+      activeBrush: s2.activeBrush,
+      dirtBrushValue: s2.dirtBrushValue,
+    };
 
     expect(shallowEqual(gridSlice1, gridSlice2)).toBe(false);
     expect(gridSlice2.cols).toBe(30);
@@ -102,14 +140,26 @@ describe("simulationHooks - Sliced Selectors & Re-render Isolation", () => {
     const engine = new SimulationEngine({ cols: 20, rows: 20 });
     const s1 = engine.getSnapshot();
 
-    const telemetrySlice1 = { selectedAlgo: s1.selectedAlgo, isPathVisible: s1.isPathVisible };
-    const terrainSlice1 = { wallNodes: s1.wallNodes, elevations: s1.elevations };
+    const telemetrySlice1 = {
+      selectedAlgo: s1.selectedAlgo,
+      isPathVisible: s1.isPathVisible,
+    };
+    const terrainSlice1 = {
+      wallNodes: s1.wallNodes,
+      elevations: s1.elevations,
+    };
 
     engine.setSelectedAlgo("manhattan", false);
     const s2 = engine.getSnapshot();
 
-    const telemetrySlice2 = { selectedAlgo: s2.selectedAlgo, isPathVisible: s2.isPathVisible };
-    const terrainSlice2 = { wallNodes: s2.wallNodes, elevations: s2.elevations };
+    const telemetrySlice2 = {
+      selectedAlgo: s2.selectedAlgo,
+      isPathVisible: s2.isPathVisible,
+    };
+    const terrainSlice2 = {
+      wallNodes: s2.wallNodes,
+      elevations: s2.elevations,
+    };
 
     expect(shallowEqual(telemetrySlice1, telemetrySlice2)).toBe(false);
     expect(telemetrySlice2.selectedAlgo).toBe("manhattan");
@@ -311,4 +361,3 @@ describe("simulationHooks - Consolidated Control Seams", () => {
     expect(updatedBrush.elevationBrushValue).toBe(8);
   });
 });
-

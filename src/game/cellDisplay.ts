@@ -29,7 +29,10 @@ export function resolveMutationPreview(mutation: CellMutation): CellPreview {
   }
   if (mutation.layer === "elevation") {
     return Number(mutation.value) > 0
-      ? { color: TERRAIN_CONFIG.getElevationColor(Number(mutation.value)), isWall: false }
+      ? {
+          color: TERRAIN_CONFIG.getElevationColor(Number(mutation.value)),
+          isWall: false,
+        }
       : { color: "transparent", isWall: false };
   }
   return { color: "transparent", isWall: false };
@@ -72,9 +75,15 @@ export function resolveCellDisplayState({
     bgColor = TERRAIN_CONFIG.types.wall.color;
   } else if (isUnstable && showGradients) {
     bgColor = THEME_CONFIG.unstableOverlayColor;
-  } else if (terrainType === "dirt" || (!terrainType && terrainFactor === TERRAIN_CONFIG.types.dirt.cost)) {
+  } else if (
+    terrainType === "dirt" ||
+    (!terrainType && terrainFactor === TERRAIN_CONFIG.types.dirt.cost)
+  ) {
     bgColor = TERRAIN_CONFIG.types.dirt.color;
-  } else if (terrainType === "water" || (!terrainType && terrainFactor === TERRAIN_CONFIG.types.water.cost)) {
+  } else if (
+    terrainType === "water" ||
+    (!terrainType && terrainFactor === TERRAIN_CONFIG.types.water.cost)
+  ) {
     bgColor = TERRAIN_CONFIG.types.water.color;
   } else if (elevation > 0) {
     bgColor = TERRAIN_CONFIG.getElevationColor(elevation);
@@ -166,4 +175,3 @@ export function resolveRobotCoordinates(params: {
   const parts = params.robotNode.split("-");
   return [Number(parts[0]), Number(parts[1])];
 }
-

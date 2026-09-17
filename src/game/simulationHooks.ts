@@ -6,19 +6,9 @@ import {
   useRef,
   useSyncExternalStore,
 } from "react";
-import type {
-  Heading,
-  BrushMode,
-  AlgorithmType,
-  EnergyBreakdown,
-} from "../shared/types";
-import type {
-  SimulationEngine,
-  SimulationState,
-} from "./simulationEngine";
+import type { Heading, BrushMode, AlgorithmType, EnergyBreakdown } from "../shared/types";
+import type { SimulationEngine, SimulationState } from "./simulationEngine";
 import type { PlaybackStatus } from "./simulationPlayback";
-
-
 
 export interface SimulationPathMetrics {
   algorithm: string;
@@ -89,10 +79,7 @@ export function useSimulationSelector<T>(
       return cacheRef.current.selected as T;
     }
     const nextSelected = selector(currentState);
-    if (
-      cacheRef.current.hasSelected &&
-      isEqual(cacheRef.current.selected as T, nextSelected)
-    ) {
+    if (cacheRef.current.hasSelected && isEqual(cacheRef.current.selected as T, nextSelected)) {
       cacheRef.current.state = currentState;
       return cacheRef.current.selected as T;
     }
@@ -153,22 +140,19 @@ export interface GridCanvasState {
   currentPath: string[] | null;
 }
 
-
 /**
  * Pure selector projecting SimulationState into GridCanvasState.
  */
 export function selectGridCanvas(s: SimulationState): GridCanvasState {
   const isLineVisible = Boolean(
     s.isPathVisible &&
-      s.currentPath &&
-      s.currentPath.length > 1 &&
-      ((s.pathTheme === "manhattan" && s.showManhattanSearch) ||
-        (s.pathTheme === "energy" && s.showEnergySearch)),
+    s.currentPath &&
+    s.currentPath.length > 1 &&
+    ((s.pathTheme === "manhattan" && s.showManhattanSearch) ||
+      (s.pathTheme === "energy" && s.showEnergySearch)),
   );
 
-  const polylinePoints = isLineVisible
-    ? computePolylinePoints(s.currentPath, s.cellSize)
-    : "";
+  const polylinePoints = isLineVisible ? computePolylinePoints(s.currentPath, s.cellSize) : "";
 
   return {
     cols: s.cols,

@@ -115,16 +115,12 @@ describe("Cell Display Resolver", () => {
 
   describe("resolveMutationPreview", () => {
     it("resolves wall layer mutations", () => {
-      expect(
-        resolveMutationPreview({ key: "1-1", layer: "wall", value: true }),
-      ).toEqual({
+      expect(resolveMutationPreview({ key: "1-1", layer: "wall", value: true })).toEqual({
         color: TERRAIN_CONFIG.types.wall.color,
         isWall: true,
       });
 
-      expect(
-        resolveMutationPreview({ key: "1-1", layer: "wall", value: false }),
-      ).toEqual({
+      expect(resolveMutationPreview({ key: "1-1", layer: "wall", value: false })).toEqual({
         color: "transparent",
         isWall: false,
       });
@@ -142,9 +138,7 @@ describe("Cell Display Resolver", () => {
         isWall: false,
       });
 
-      expect(
-        resolveMutationPreview({ key: "1-1", layer: "dirt", value: 0 }),
-      ).toEqual({
+      expect(resolveMutationPreview({ key: "1-1", layer: "dirt", value: 0 })).toEqual({
         color: "transparent",
         isWall: false,
       });
@@ -162,25 +156,19 @@ describe("Cell Display Resolver", () => {
         isWall: false,
       });
 
-      expect(
-        resolveMutationPreview({ key: "1-1", layer: "water", value: 0 }),
-      ).toEqual({
+      expect(resolveMutationPreview({ key: "1-1", layer: "water", value: 0 })).toEqual({
         color: "transparent",
         isWall: false,
       });
     });
 
     it("resolves elevation layer mutations", () => {
-      expect(
-        resolveMutationPreview({ key: "1-1", layer: "elevation", value: 4 }),
-      ).toEqual({
+      expect(resolveMutationPreview({ key: "1-1", layer: "elevation", value: 4 })).toEqual({
         color: TERRAIN_CONFIG.getElevationColor(4),
         isWall: false,
       });
 
-      expect(
-        resolveMutationPreview({ key: "1-1", layer: "elevation", value: 0 }),
-      ).toEqual({
+      expect(resolveMutationPreview({ key: "1-1", layer: "elevation", value: 0 })).toEqual({
         color: "transparent",
         isWall: false,
       });

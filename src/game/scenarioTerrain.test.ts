@@ -28,7 +28,11 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(terrain.hasWall("1-1")).toBe(true);
     expect(terrain.getSnapshot().wallNodes.has("1-1")).toBe(true);
     expect(startResult.modified).toBe(true);
-    expect(startResult.mutation).toEqual({ key: "1-1", layer: "wall", value: true });
+    expect(startResult.mutation).toEqual({
+      key: "1-1",
+      layer: "wall",
+      value: true,
+    });
 
     // Continue painting wall at 1-2
     const continueResult = terrain.continueStroke("1-2");
@@ -44,7 +48,11 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     const toggleResult = terrain.startStroke("1-1", context);
     expect(terrain.hasWall("1-1")).toBe(false);
     expect(toggleResult.modified).toBe(true);
-    expect(toggleResult.mutation).toEqual({ key: "1-1", layer: "wall", value: false });
+    expect(toggleResult.mutation).toEqual({
+      key: "1-1",
+      layer: "wall",
+      value: false,
+    });
 
     const toggleModified = terrain.commitStroke();
     expect(toggleModified).toEqual(["1-1"]);
@@ -79,7 +87,10 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
       initialWallNodes: new Set(["3-3"]),
     });
 
-    const context = createContext({ activeBrush: "water", waterBrushValue: 2.5 });
+    const context = createContext({
+      activeBrush: "water",
+      waterBrushValue: 2.5,
+    });
 
     const result = terrain.startStroke("3-3", context);
     expect(result.modified).toBe(true);
@@ -101,11 +112,18 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
       initialTerrainTypes: new Map([["4-4", "dirt"]]),
     });
 
-    const context = createContext({ activeBrush: "elevation", elevationBrushValue: 5 });
+    const context = createContext({
+      activeBrush: "elevation",
+      elevationBrushValue: 5,
+    });
 
     const result = terrain.startStroke("4-4", context);
     expect(result.modified).toBe(true);
-    expect(result.mutation).toEqual({ key: "4-4", layer: "elevation", value: 5 });
+    expect(result.mutation).toEqual({
+      key: "4-4",
+      layer: "elevation",
+      value: 5,
+    });
 
     expect(terrain.getElevation("4-4")).toBe(5);
     expect(terrain.hasWall("4-4")).toBe(false);
@@ -203,7 +221,10 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     const terrain = new ScenarioTerrain({
       initialRobotNode: "1-1",
       initialDestinationNode: "3-3",
-      initialElevations: new Map([["1-2", 20], ["3-4", 20]]),
+      initialElevations: new Map([
+        ["1-2", 20],
+        ["3-4", 20],
+      ]),
     });
 
     const elevContext = createContext({
@@ -257,8 +278,14 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     const terrain = new ScenarioTerrain({
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
-      initialTerrainFactors: new Map([["2-2", 1.5], ["2-3", 1.5]]),
-      initialTerrainTypes: new Map([["2-2", "dirt"], ["2-3", "dirt"]]),
+      initialTerrainFactors: new Map([
+        ["2-2", 1.5],
+        ["2-3", 1.5],
+      ]),
+      initialTerrainTypes: new Map([
+        ["2-2", "dirt"],
+        ["2-3", "dirt"],
+      ]),
     });
 
     const context = createContext({ activeBrush: "dirt", dirtBrushValue: 1.5 });
@@ -268,13 +295,21 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(terrain.getTerrainFactor("2-2")).toBe(0);
     expect(terrain.getTerrainType("2-2")).toBeUndefined();
     expect(startResult.modified).toBe(true);
-    expect(startResult.mutation).toEqual({ key: "2-2", layer: "dirt", value: 0 });
+    expect(startResult.mutation).toEqual({
+      key: "2-2",
+      layer: "dirt",
+      value: 0,
+    });
 
     // Drag to 2-3 to delete it too
     const moveResult = terrain.continueStroke("2-3");
     expect(terrain.getTerrainFactor("2-3")).toBe(0);
     expect(moveResult.modified).toBe(true);
-    expect(moveResult.mutation).toEqual({ key: "2-3", layer: "dirt", value: 0 });
+    expect(moveResult.mutation).toEqual({
+      key: "2-3",
+      layer: "dirt",
+      value: 0,
+    });
 
     const modified = terrain.commitStroke();
     expect(modified).toEqual(["2-2", "2-3"]);
@@ -289,20 +324,34 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
       initialElevations: new Map([["3-2", 4]]),
     });
 
-    const waterContext = createContext({ activeBrush: "water", waterBrushValue: 2.0 });
-    const elevContext = createContext({ activeBrush: "elevation", elevationBrushValue: 4 });
+    const waterContext = createContext({
+      activeBrush: "water",
+      waterBrushValue: 2.0,
+    });
+    const elevContext = createContext({
+      activeBrush: "elevation",
+      elevationBrushValue: 4,
+    });
 
     const waterResult = terrain.startStroke("3-1", waterContext);
     expect(terrain.getTerrainFactor("3-1")).toBe(0);
     expect(terrain.getTerrainType("3-1")).toBeUndefined();
     expect(waterResult.modified).toBe(true);
-    expect(waterResult.mutation).toEqual({ key: "3-1", layer: "water", value: 0 });
+    expect(waterResult.mutation).toEqual({
+      key: "3-1",
+      layer: "water",
+      value: 0,
+    });
     terrain.commitStroke();
 
     const elevResult = terrain.startStroke("3-2", elevContext);
     expect(terrain.getElevation("3-2")).toBe(0);
     expect(elevResult.modified).toBe(true);
-    expect(elevResult.mutation).toEqual({ key: "3-2", layer: "elevation", value: 0 });
+    expect(elevResult.mutation).toEqual({
+      key: "3-2",
+      layer: "elevation",
+      value: 0,
+    });
     terrain.commitStroke();
   });
 
@@ -311,8 +360,14 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialWallNodes: new Set(["1-1"]),
-      initialTerrainFactors: new Map([["1-2", 1.5], ["1-3", 2.0]]),
-      initialTerrainTypes: new Map([["1-2", "dirt"], ["1-3", "water"]]),
+      initialTerrainFactors: new Map([
+        ["1-2", 1.5],
+        ["1-3", 2.0],
+      ]),
+      initialTerrainTypes: new Map([
+        ["1-2", "dirt"],
+        ["1-3", "water"],
+      ]),
       initialElevations: new Map([["1-4", 4]]),
     });
 
@@ -322,7 +377,11 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     const startResult = terrain.startStroke("1-1", context);
     expect(terrain.hasWall("1-1")).toBe(false);
     expect(startResult.modified).toBe(true);
-    expect(startResult.mutation).toEqual({ key: "1-1", layer: "wall", value: false });
+    expect(startResult.mutation).toEqual({
+      key: "1-1",
+      layer: "wall",
+      value: false,
+    });
 
     // Dragging over dirt, water, elevation should NOT modify or delete them
     const dragDirt = terrain.continueStroke("1-2");
@@ -345,8 +404,14 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
       initialRobotNode: "0-0",
       initialDestinationNode: "5-5",
       initialWallNodes: new Set(["2-2"]),
-      initialTerrainFactors: new Map([["2-1", 1.5], ["2-3", 2.0]]),
-      initialTerrainTypes: new Map([["2-1", "dirt"], ["2-3", "water"]]),
+      initialTerrainFactors: new Map([
+        ["2-1", 1.5],
+        ["2-3", 2.0],
+      ]),
+      initialTerrainTypes: new Map([
+        ["2-1", "dirt"],
+        ["2-3", "water"],
+      ]),
       initialElevations: new Map([["2-4", 4]]),
     });
 
@@ -357,7 +422,11 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
     expect(terrain.getTerrainFactor("2-1")).toBe(0);
     expect(terrain.getTerrainType("2-1")).toBeUndefined();
     expect(startResult.modified).toBe(true);
-    expect(startResult.mutation).toEqual({ key: "2-1", layer: "dirt", value: 0 });
+    expect(startResult.mutation).toEqual({
+      key: "2-1",
+      layer: "dirt",
+      value: 0,
+    });
 
     // Dragging over wall, water, elevation should NOT modify them
     const dragWall = terrain.continueStroke("2-2");
@@ -482,7 +551,10 @@ describe("ScenarioTerrain (Deep Terrain Model)", () => {
       initialElevations: new Map([["2-3", 15]]),
     });
 
-    const dirtContext = createContext({ activeBrush: "dirt", dirtBrushValue: 2.0 });
+    const dirtContext = createContext({
+      activeBrush: "dirt",
+      dirtBrushValue: 2.0,
+    });
 
     // 2-1 is unpainted. Start dirt stroke on 2-1.
     const startResult = terrain.startStroke("2-1", dirtContext);

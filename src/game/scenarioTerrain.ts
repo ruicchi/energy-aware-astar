@@ -515,7 +515,10 @@ export class ScenarioTerrain {
     return (this.elevations.get(key) ?? 0) > 0;
   }
 
-  private applyStrokeToCell(key: string): { modified: boolean; mutation?: CellMutation } {
+  private applyStrokeToCell(key: string): {
+    modified: boolean;
+    mutation?: CellMutation;
+  } {
     if (!this.strokeSession) return { modified: false };
 
     const { brush, drawValue } = this.strokeSession;

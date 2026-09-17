@@ -202,7 +202,12 @@ export function compileWalkTimeline({
     if (failure && failure.step === i) {
       frames.push({
         delayMs: stepDelayMs,
-        execute: () => onFailure?.({ row: failure.row, col: failure.col, reason: failure.reason }),
+        execute: () =>
+          onFailure?.({
+            row: failure.row,
+            col: failure.col,
+            reason: failure.reason,
+          }),
         tag: `walk-fail-${failure.row}-${failure.col}`,
       });
       break;

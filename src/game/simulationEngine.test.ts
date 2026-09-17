@@ -1,12 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { SimulationEngine } from "./simulationEngine";
-import {
-  type SimulationVisualizer,
-  MemoryVisualizer,
-} from "./simulationVisualizer";
+import { type SimulationVisualizer, MemoryVisualizer } from "./simulationVisualizer";
 import type { Scenario } from "../shared/types";
 import { TERRAIN_CONFIG } from "../config/simulationConfig";
-
 
 describe("SimulationEngine", () => {
   beforeEach(() => {
@@ -347,7 +343,6 @@ describe("SimulationEngine", () => {
       expect(setDestinationPosition).toHaveBeenCalledWith(4, 5, 25);
     });
 
-
     it("allows dragging robot onto an untraversable elevation slope", () => {
       const { domAdapter } = createMockDomAdapter();
       const engine = new SimulationEngine({
@@ -661,7 +656,9 @@ describe("SimulationEngine", () => {
       const stepped = engine.stepPlayback();
       expect(stepped).toBe(true);
       // At least one cell element received search visuals
-      const hasVisuals = Array.from(domStore.values()).some((r) => r.dataset.manhattan !== undefined);
+      const hasVisuals = Array.from(domStore.values()).some(
+        (r) => r.dataset.manhattan !== undefined,
+      );
       expect(hasVisuals).toBe(true);
     });
 
@@ -742,7 +739,10 @@ describe("SimulationEngine", () => {
         maxTraversableSlope: 45,
       };
 
-      engine.loadScenario(testScenario, { name: "Test Case", instantSolve: true });
+      engine.loadScenario(testScenario, {
+        name: "Test Case",
+        instantSolve: true,
+      });
 
       const snapshot = engine.getSnapshot();
       expect(snapshot.isFixedDimensions).toBe(true);
@@ -1120,4 +1120,3 @@ describe("SimulationEngine", () => {
     });
   });
 });
-

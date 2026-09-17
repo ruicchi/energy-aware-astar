@@ -51,8 +51,6 @@ export function SimulationProvider({ children, engine: externalEngine }: Simulat
   }, [engine, externalEngine]);
 
   return (
-    <SimulationEngineContext.Provider value={engine}>
-      {children}
-    </SimulationEngineContext.Provider>
+    <SimulationEngineContext.Provider value={engine}>{children}</SimulationEngineContext.Provider>
   );
 }

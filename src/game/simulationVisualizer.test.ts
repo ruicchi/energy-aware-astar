@@ -180,22 +180,16 @@ describe("SimulationVisualizer - Unified Actor Authority & Port Seam", () => {
       expect(visualizer.boundActors.robot).toBe(mockRobot);
 
       visualizer.setRobotPosition(3, 7, 24, true);
-      expect(visualizer.robotPositions).toEqual([
-        { col: 3, row: 7, cellSize: 24, animated: true },
-      ]);
+      expect(visualizer.robotPositions).toEqual([{ col: 3, row: 7, cellSize: 24, animated: true }]);
 
       visualizer.setRobotHeading("UP_LEFT", true);
       expect(visualizer.robotHeadings).toEqual([{ heading: "UP_LEFT", animated: true }]);
 
       visualizer.resetRobot(1, 2, "RIGHT", 28);
-      expect(visualizer.robotResets).toEqual([
-        { col: 1, row: 2, heading: "RIGHT", cellSize: 28 },
-      ]);
+      expect(visualizer.robotResets).toEqual([{ col: 1, row: 2, heading: "RIGHT", cellSize: 28 }]);
 
       visualizer.setDestinationPosition(9, 9, 24);
-      expect(visualizer.destinationPositions).toEqual([
-        { col: 9, row: 9, cellSize: 24 },
-      ]);
+      expect(visualizer.destinationPositions).toEqual([{ col: 9, row: 9, cellSize: 24 }]);
 
       visualizer.unbindActors();
       expect(visualizer.boundActors).toEqual({});
