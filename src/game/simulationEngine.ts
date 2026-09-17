@@ -38,6 +38,7 @@ import {
 } from "./simulationPlayback";
 import {
   type SimulationVisualizer,
+  type ActorElements,
   DomVisualizer,
   NullVisualizer,
   MemoryVisualizer,
@@ -60,6 +61,7 @@ export {
   type PlaybackStatus,
   type WalkFailurePoint,
   type SimulationVisualizer,
+  type ActorElements,
   DomVisualizer,
   NullVisualizer,
   MemoryVisualizer,
@@ -313,6 +315,18 @@ export class SimulationEngine {
     this.freeformCols = cols;
     this.freeformRows = rows;
     this.freeformCellSize = cellSize;
+  }
+
+  public bindActors(elements: ActorElements): void {
+    this.visualizer.bindActors(elements);
+  }
+
+  public unbindActors(): void {
+    this.visualizer.unbindActors();
+  }
+
+  public syncVisualizerActors(): void {
+    this.resetActorsVisuals();
   }
 
   private resetActorsVisuals(): void {

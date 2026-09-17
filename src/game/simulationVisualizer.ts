@@ -1,6 +1,12 @@
 import type { Heading } from "../shared/types";
 import { getHeadingRotation } from "../config/simulationConfig";
 
+export interface ActorElements {
+  robot?: HTMLElement | null;
+  robotArrow?: HTMLElement | SVGElement | null;
+  destination?: HTMLElement | null;
+}
+
 /**
  * Coarse-grained visualizer seam.
  * Decouples simulation engine and terrain mutations from low-level DOM queries,
@@ -14,6 +20,8 @@ export interface SimulationVisualizer {
   clearAllSearchVisuals?(): void;
 
   // --- Actor Kinematics & Posture ---
+  bindActors(elements: ActorElements): void;
+  unbindActors(): void;
   setRobotPosition(col: number, row: number, cellSize: number, animated?: boolean): void;
   setRobotHeading(heading: Heading, animated?: boolean): void;
   resetRobot(col: number, row: number, heading: Heading, cellSize: number): void;
@@ -32,6 +40,40 @@ export interface SimulationVisualizer {
  * for peak rendering performance without triggering React component tree re-renders.
  */
 export class DomVisualizer implements SimulationVisualizer {
+  private actors: ActorElements = {};
+
+  public bindActors(elements: ActorElements): void {
+    this.actors = { ...elements };
+  }
+
+  public unbindActors(): void {
+    this.actors = {};
+  }
+
+  private getRobotNode(): HTMLElement | null {
+    if (this.actors.robot) return this.actors.robot;
+    if (typeof document !== "undefined") {
+      return document.getElementById("robot-actor");
+    }
+    return null;
+  }
+
+  private getRobotArrowNode(): HTMLElement | SVGElement | null {
+    if (this.actors.robotArrow) return this.actors.robotArrow;
+    if (typeof document !== "undefined") {
+      return (document.getElementById("robot-actor-arrow") as unknown as HTMLElement | SVGElement | null);
+    }
+    return null;
+  }
+
+  private getDestinationNode(): HTMLElement | null {
+    if (this.actors.destination) return this.actors.destination;
+    if (typeof document !== "undefined") {
+      return document.getElementById("destination-actor");
+    }
+    return null;
+  }
+
   public renderSearchNode(key: string, type: "open" | "closed", theme: "manhattan" | "energy"): void {
     if (typeof document === "undefined") return;
     const node = document.getElementById(`cell-${key}`);
@@ -55,8 +97,7 @@ export class DomVisualizer implements SimulationVisualizer {
   }
 
   public setRobotPosition(col: number, row: number, cellSize: number, animated = false): void {
-    if (typeof document === "undefined") return;
-    const node = document.getElementById("robot-actor");
+    const node = this.getRobotNode();
     if (node) {
       node.style.transition = animated ? "transform 0.2s linear" : "none";
       node.style.willChange = animated ? "transform" : "auto";
@@ -65,8 +106,7 @@ export class DomVisualizer implements SimulationVisualizer {
   }
 
   public setRobotHeading(heading: Heading, animated = false): void {
-    if (typeof document === "undefined") return;
-    const node = document.getElementById("robot-actor-arrow");
+    const node = this.getRobotArrowNode();
     if (node) {
       node.style.display = heading && heading !== "NONE" ? "block" : "none";
       node.style.transition = animated ? "transform 0.2s ease-in-out" : "none";
@@ -75,14 +115,13 @@ export class DomVisualizer implements SimulationVisualizer {
   }
 
   public resetRobot(col: number, row: number, heading: Heading, cellSize: number): void {
-    if (typeof document === "undefined") return;
-    const node = document.getElementById("robot-actor");
+    const node = this.getRobotNode();
     if (node) {
       node.style.transition = "none";
       node.style.willChange = "auto";
       node.style.transform = `translate3d(${col * cellSize}px, ${row * cellSize}px, 0)`;
     }
-    const arrowNode = document.getElementById("robot-actor-arrow");
+    const arrowNode = this.getRobotArrowNode();
     if (arrowNode) {
       arrowNode.style.display = heading && heading !== "NONE" ? "block" : "none";
       arrowNode.style.transition = "none";
@@ -91,8 +130,7 @@ export class DomVisualizer implements SimulationVisualizer {
   }
 
   public setDestinationPosition(col: number, row: number, cellSize: number): void {
-    if (typeof document === "undefined") return;
-    const node = document.getElementById("destination-actor");
+    const node = this.getDestinationNode();
     if (node) {
       node.style.transition = "none";
       node.style.willChange = "auto";
@@ -101,13 +139,12 @@ export class DomVisualizer implements SimulationVisualizer {
   }
 
   public setDraggingActor(actor: "robot" | "destination" | null): void {
-    if (typeof document === "undefined") return;
-    const robotEl = document.getElementById("robot-actor");
+    const robotEl = this.getRobotNode();
     if (robotEl) {
       robotEl.style.pointerEvents = actor === "robot" ? "none" : "auto";
       robotEl.style.cursor = actor === "robot" ? "grabbing" : "grab";
     }
-    const destEl = document.getElementById("destination-actor");
+    const destEl = this.getDestinationNode();
     if (destEl) {
       destEl.style.pointerEvents = actor === "destination" ? "none" : "auto";
       destEl.style.cursor = actor === "destination" ? "grabbing" : "grab";
@@ -158,6 +195,8 @@ export class DomVisualizer implements SimulationVisualizer {
  * and tests that do not need visual telemetry.
  */
 export class NullVisualizer implements SimulationVisualizer {
+  public bindActors(): void {}
+  public unbindActors(): void {}
   public renderSearchNode(): void {}
   public clearSearchVisuals(): void {}
   public clearAllSearchVisuals(): void {}
@@ -177,6 +216,7 @@ export class NullVisualizer implements SimulationVisualizer {
  * without requiring real or mocked DOM trees.
  */
 export class MemoryVisualizer implements SimulationVisualizer {
+  public boundActors: ActorElements = {};
   public searchNodes: { key: string; type: "open" | "closed"; theme: "manhattan" | "energy" }[] = [];
   public searchVisualsCleared: boolean = false;
   public robotPositions: { col: number; row: number; cellSize: number; animated?: boolean }[] = [];
@@ -185,6 +225,14 @@ export class MemoryVisualizer implements SimulationVisualizer {
   public destinationPositions: { col: number; row: number; cellSize: number }[] = [];
   public draggingActor: "robot" | "destination" | null = null;
   public previews: Map<string, { color: string; isWall?: boolean }> = new Map();
+
+  public bindActors(elements: ActorElements): void {
+    this.boundActors = { ...elements };
+  }
+
+  public unbindActors(): void {
+    this.boundActors = {};
+  }
 
   public renderSearchNode(key: string, type: "open" | "closed", theme: "manhattan" | "energy"): void {
     this.searchNodes.push({ key, type, theme });

@@ -2,7 +2,7 @@ import { memo, useMemo, useCallback, useRef, useEffect } from "react";
 import Box from "@mui/material/Box";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { MemoizedCell } from "./MemoizedCell";
-import { resolveCellDisplayState, resolveRobotCoordinates } from "./cellDisplay";
+import { resolveCellDisplayState } from "./cellDisplay";
 import { computeGradientField } from "../physics/terrainPhysics";
 import {
   useSimulationEngine,
@@ -10,7 +10,7 @@ import {
   shallowEqual,
   selectGridCanvas,
 } from "./simulationHooks";
-import { THEME_CONFIG, UI_CONFIG, getHeadingRotation } from "../config/simulationConfig";
+import { THEME_CONFIG, UI_CONFIG } from "../config/simulationConfig";
 
 interface TerrainGridProps {
   cols: number;
@@ -99,6 +99,9 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
   const engine = useSimulationEngine();
   const state = useSimulationSelector(selectGridCanvas, shallowEqual);
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const robotRef = useRef<HTMLDivElement>(null);
+  const robotArrowRef = useRef<SVGSVGElement>(null);
+  const destinationRef = useRef<HTMLDivElement>(null);
 
   const {
     cols,
@@ -116,8 +119,6 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
     robotHeading,
     activeStrokeBrush,
     isWalking,
-    hasFinishedWalking,
-    walkingStep,
     isLocked,
     showManhattanSearch,
     showEnergySearch,
@@ -125,6 +126,18 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
     polylinePoints,
     currentPath,
   } = state;
+
+  useEffect(() => {
+    engine.bindActors({
+      robot: robotRef.current,
+      robotArrow: robotArrowRef.current,
+      destination: destinationRef.current,
+    });
+    engine.syncVisualizerActors();
+    return () => {
+      engine.unbindActors();
+    };
+  }, [engine, cols, rows, cellSize, robotNode, destinationNode, robotHeading]);
 
   const handleMouseDown = useCallback((key: string) => engine.startPaint(key), [engine]);
   const handleMouseEnter = useCallback((key: string) => engine.continuePaint(key), [engine]);
@@ -160,22 +173,6 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
       window.removeEventListener("pointerup", handleGlobalPointerUp);
     };
   }, [engine]);
-
-  const [robotRow, robotCol] = useMemo(
-    () =>
-      resolveRobotCoordinates({
-        hasFinishedWalking,
-        currentPath,
-        walkingStep,
-        robotNode,
-      }),
-    [hasFinishedWalking, currentPath, walkingStep, robotNode],
-  );
-
-  const [destRow, destCol] = useMemo(() => {
-    const parts = destinationNode.split("-");
-    return [Number(parts[0]), Number(parts[1])];
-  }, [destinationNode]);
 
   return (
     <Box
@@ -250,16 +247,13 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
 
         {/* Robot Kinematic Actor */}
         <Box
+          ref={robotRef}
           id="robot-actor"
           data-testid="robot-actor"
           onMouseDown={(e) => {
             if (isWalking) return;
             e.stopPropagation();
             handleMouseDown(robotNode);
-          }}
-          style={{
-            transform: `translate3d(${robotCol * cellSize}px, ${robotRow * cellSize}px, 0)`,
-            transition: "none",
           }}
           sx={{
             position: "absolute",
@@ -282,11 +276,8 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
           }}
         >
           <ArrowForwardIcon
+            ref={robotArrowRef}
             id="robot-actor-arrow"
-            style={{
-              transform: `rotate(${getHeadingRotation(robotHeading)})`,
-              display: robotHeading && robotHeading !== "NONE" ? "block" : "none",
-            }}
             sx={{
               fontSize: cellSize * 0.8,
               color: "#ffffff",
@@ -297,15 +288,13 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
 
         {/* Destination Target Actor */}
         <Box
+          ref={destinationRef}
           id="destination-actor"
           data-testid="destination-actor"
           onMouseDown={(e) => {
             if (isWalking) return;
             e.stopPropagation();
             handleMouseDown(destinationNode);
-          }}
-          style={{
-            transform: `translate3d(${destCol * cellSize}px, ${destRow * cellSize}px, 0)`,
           }}
           sx={{
             position: "absolute",
