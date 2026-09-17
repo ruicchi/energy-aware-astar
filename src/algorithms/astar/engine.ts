@@ -25,9 +25,7 @@ export interface PathfindingOptions {
   use3DStandard?: boolean;
 }
 
-/**
- * Directional vectors for 4-way movement (cardinal directions only).
- */
+// Directional vectors for 4-way movement (cardinal directions only).
 const NEIGHBORS_4: { dr: number; dc: number; heading: Heading }[] = [
   { dr: -1, dc: 0, heading: "UP" },
   { dr: 1, dc: 0, heading: "DOWN" },
@@ -35,9 +33,7 @@ const NEIGHBORS_4: { dr: number; dc: number; heading: Heading }[] = [
   { dr: 0, dc: 1, heading: "RIGHT" },
 ];
 
-/**
- * Directional vectors for 8-way movement (cardinal and diagonal directions).
- */
+// Directional vectors for 8-way movement (cardinal and diagonal directions).
 const NEIGHBORS_8: { dr: number; dc: number; heading: Heading }[] = [
   ...NEIGHBORS_4,
   { dr: -1, dc: -1, heading: "UP_LEFT" },
@@ -255,7 +251,7 @@ function getEnergyCostBreakdown(
   if (elevationDelta > 0) {
     gradientPenaltyMultiplier =
       slopeDegrees <= ENERGY_CONFIG.excessiveSlopeThreshold
-        ? scenario.climbingFactor ?? ENERGY_CONFIG.climbingFactor
+        ? (scenario.climbingFactor ?? ENERGY_CONFIG.climbingFactor)
         : ENERGY_CONFIG.excessiveSlopePenaltyMultiplier;
   }
 
@@ -412,7 +408,8 @@ function compilePathfindingResult(
       const isDiagonal = temp.row !== temp.parent.row && temp.col !== temp.parent.col;
       const step2D = isDiagonal ? SQRT2 : 1.0;
       if (use3D) {
-        const currElev = (scenario.elevations.get(`${temp.row}-${temp.col}`) || 0) * ELEVATION_SCALE;
+        const currElev =
+          (scenario.elevations.get(`${temp.row}-${temp.col}`) || 0) * ELEVATION_SCALE;
         const parentElev =
           (scenario.elevations.get(`${temp.parent.row}-${temp.parent.col}`) || 0) * ELEVATION_SCALE;
         totalDistance += Math.hypot(step2D, currElev - parentElev);
@@ -598,15 +595,19 @@ function createStandardPolicy(
         const cardinal2 = `${current.row}-${current.col + (nc - current.col)}`;
         if (scenario.wallNodes.has(cardinal1) || scenario.wallNodes.has(cardinal2)) return true;
       }
-      if (!isTraversableSlope(current, { row: nr, col: nc, heading: neighborHeading }, scenario, true)) {
+      if (
+        !isTraversableSlope(current, { row: nr, col: nc, heading: neighborHeading }, scenario, true)
+      ) {
         return true;
       }
       return false;
     },
     computeStepCost: (current, target) => {
       const d2D = getStepDistance(target.heading);
-      const currElev = (scenario.elevations.get(`${current.row}-${current.col}`) || 0) * ELEVATION_SCALE;
-      const targetElev = (scenario.elevations.get(`${target.row}-${target.col}`) || 0) * ELEVATION_SCALE;
+      const currElev =
+        (scenario.elevations.get(`${current.row}-${current.col}`) || 0) * ELEVATION_SCALE;
+      const targetElev =
+        (scenario.elevations.get(`${target.row}-${target.col}`) || 0) * ELEVATION_SCALE;
       const dz = targetElev - currElev;
       const dist3D = Math.hypot(d2D, dz);
       const turnCost = getTurnCost(current.heading, target.heading, turnPenalty);
@@ -787,4 +788,4 @@ export function findPath(scenario: Scenario, options?: PathfindingOptions): Path
       nodesEvaluated: nodesExpanded,
     },
   };
-};
+}

@@ -11,7 +11,7 @@ export const VEHICLE_CONFIG: VehicleConfig = {
   wheelBase: 1.2,
   comHeight: 0.6,
   stabilityMargin: 0.05,
-  maxTraversableSlope: 30, // Maximum elevation slope angle the robot can traverse (in degrees)
+  maxTraversableSlope: 30,
 };
 
 export const TERRAIN_CONFIG = {
