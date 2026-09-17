@@ -90,6 +90,30 @@ const TerrainGrid = memo(function TerrainGrid({
 });
 
 /**
+ * Pure coordinate resolution for the kinematic robot actor.
+ * Retains the final destination position when traversal has completed,
+ * while anchoring to the designated start node when idle or commencing search.
+ */
+export function resolveRobotCoordinates(params: {
+  hasFinishedWalking: boolean;
+  currentPath: readonly string[] | null;
+  walkingStep: number;
+  robotNode: string;
+}): [number, number] {
+  if (
+    params.hasFinishedWalking &&
+    params.currentPath &&
+    params.walkingStep >= 0 &&
+    params.walkingStep < params.currentPath.length
+  ) {
+    const parts = params.currentPath[params.walkingStep].split("-");
+    return [Number(parts[0]), Number(parts[1])];
+  }
+  const parts = params.robotNode.split("-");
+  return [Number(parts[0]), Number(parts[1])];
+}
+
+/**
  * The deep SimulationCanvas module.
  * Consolidates grid terrain rendering, cell elevation & gradient display,
  * kinematic actor positioning (robot and destination), search polyline geometry,
@@ -116,6 +140,8 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
     robotHeading,
     activeStrokeBrush,
     isWalking,
+    hasFinishedWalking,
+    walkingStep,
     isLocked,
     showManhattanSearch,
     showEnergySearch,
@@ -159,10 +185,16 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
     };
   }, [engine]);
 
-  const [robotRow, robotCol] = useMemo(() => {
-    const parts = robotNode.split("-");
-    return [Number(parts[0]), Number(parts[1])];
-  }, [robotNode]);
+  const [robotRow, robotCol] = useMemo(
+    () =>
+      resolveRobotCoordinates({
+        hasFinishedWalking,
+        currentPath,
+        walkingStep,
+        robotNode,
+      }),
+    [hasFinishedWalking, currentPath, walkingStep, robotNode],
+  );
 
   const [destRow, destCol] = useMemo(() => {
     const parts = destinationNode.split("-");
@@ -249,14 +281,10 @@ export const SimulationCanvas = memo(function SimulationCanvas() {
             e.stopPropagation();
             handleMouseDown(robotNode);
           }}
-          style={
-            isWalking
-              ? undefined
-              : {
-                  transform: `translate3d(${robotCol * cellSize}px, ${robotRow * cellSize}px, 0)`,
-                  transition: "none",
-                }
-          }
+          style={{
+            transform: `translate3d(${robotCol * cellSize}px, ${robotRow * cellSize}px, 0)`,
+            transition: "none",
+          }}
           sx={{
             position: "absolute",
             top: 0,

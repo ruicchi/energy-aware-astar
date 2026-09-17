@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { resolveRobotCoordinates } from "./SimulationCanvas";
 
 describe("SimulationCanvas - Kinematic Actor Coordinate Calculations", () => {
   it("translates robotNode string to grid pixel coordinates", () => {
@@ -30,5 +31,45 @@ describe("SimulationCanvas - Kinematic Actor Coordinate Calculations", () => {
 
     expect(row).toBe(1);
     expect(col).toBe(1);
+  });
+
+  describe("resolveRobotCoordinates", () => {
+    it("anchors to robotNode when not finished walking", () => {
+      const coords = resolveRobotCoordinates({
+        hasFinishedWalking: false,
+        currentPath: ["2-3", "2-4", "2-5"],
+        walkingStep: 0,
+        robotNode: "2-3",
+      });
+      expect(coords).toEqual([2, 3]);
+    });
+
+    it("anchors to final step coordinate when walk has completed", () => {
+      const coords = resolveRobotCoordinates({
+        hasFinishedWalking: true,
+        currentPath: ["2-3", "2-4", "2-5"],
+        walkingStep: 2,
+        robotNode: "2-3",
+      });
+      expect(coords).toEqual([2, 5]);
+    });
+
+    it("safely falls back to robotNode if currentPath is null or walkingStep is invalid", () => {
+      const coords1 = resolveRobotCoordinates({
+        hasFinishedWalking: true,
+        currentPath: null,
+        walkingStep: -1,
+        robotNode: "4-6",
+      });
+      expect(coords1).toEqual([4, 6]);
+
+      const coords2 = resolveRobotCoordinates({
+        hasFinishedWalking: true,
+        currentPath: ["4-6"],
+        walkingStep: 10,
+        robotNode: "4-6",
+      });
+      expect(coords2).toEqual([4, 6]);
+    });
   });
 });

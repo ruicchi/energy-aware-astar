@@ -783,6 +783,10 @@ export class SimulationEngine {
     this.walkFailure = null;
     this.walkingStep = 0;
     this.playbackStatus = "walking";
+
+    const [startR, startC] = this.currentPath[0].split("-").map(Number);
+    this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
+
     this.notify();
 
     const scenario = this.getScenario();

@@ -147,6 +147,8 @@ export interface GridCanvasState {
   robotHeading: Heading;
   activeStrokeBrush: BrushMode | "robot" | "destination" | null;
   isWalking: boolean;
+  hasFinishedWalking: boolean;
+  walkingStep: number;
   isLocked: boolean;
   showManhattanSearch: boolean;
   showEnergySearch: boolean;
@@ -197,6 +199,8 @@ export function selectGridCanvas(s: SimulationState): GridCanvasState {
     robotHeading: s.robotHeading,
     activeStrokeBrush: s.activeStrokeBrush,
     isWalking: s.isWalking,
+    hasFinishedWalking: s.hasFinishedWalking,
+    walkingStep: s.walkingStep,
     isLocked: s.isLocked,
     showManhattanSearch: s.showManhattanSearch,
     showEnergySearch: s.showEnergySearch,
