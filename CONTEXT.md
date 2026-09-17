@@ -36,6 +36,15 @@ _Avoid_: Direction, Orientation, Angle
 The telemetry and route produced by the pathfinding engine, containing visited node sequences for animation, shortest path coordinates, total distance, and itemized energy expenditure breakdowns.
 _Avoid_: SearchOutput, PlanResult
 
+**Nodes Expanded**:
+The total count of state-space pose nodes $(r, c, \theta)$ popped from the open priority queue and closed during path search to explore outgoing transitions.
+_Avoid_: NodesEvaluated, ClosedNodes, VisitedStates
+
+**Nodes Generated**:
+The total count of candidate successor state-space pose nodes $(r, c, \theta)$ produced and evaluated by the evaluation function $f(n) = g(n) + h(n)$ during path search.
+_Avoid_: NodesCreated, OpenCount, EvaluatedSuccessors
+
+
 **Simulation Engine**:
 The deep module coordinating grid terrain state, vehicle parameters, path planning triggers, and locomotion playback across the interface.
 _Avoid_: SimulationContext, Store, GameManager

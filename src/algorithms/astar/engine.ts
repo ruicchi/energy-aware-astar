@@ -308,6 +308,8 @@ function getEnergyCostBreakdown(
     turnCost,
     stabilityPenalty,
     total,
+    nodesExpanded: 0,
+    nodesGenerated: 0,
     nodesEvaluated: 0,
   };
 }
@@ -332,6 +334,8 @@ function createEmptyEnergyBreakdown(): EnergyBreakdown {
     turnCost: 0,
     stabilityPenalty: 0,
     total: 0,
+    nodesExpanded: 0,
+    nodesGenerated: 0,
     nodesEvaluated: 0,
   };
 }
@@ -348,6 +352,8 @@ function addEnergyBreakdown(total: EnergyBreakdown, step: EnergyBreakdown): Ener
     turnCost: total.turnCost + step.turnCost,
     stabilityPenalty: total.stabilityPenalty + step.stabilityPenalty,
     total: total.total + step.total,
+    nodesExpanded: total.nodesExpanded + step.nodesExpanded,
+    nodesGenerated: total.nodesGenerated + step.nodesGenerated,
     nodesEvaluated: total.nodesEvaluated + step.nodesEvaluated,
   };
 }
@@ -391,7 +397,8 @@ function getPathEnergyBreakdown(endNode: EnergyNode, scenario: Scenario): Energy
 function compilePathfindingResult(
   current: EnergyNode,
   scenario: Scenario,
-  nodesEvaluated: number,
+  nodesExpanded: number,
+  nodesGenerated: number,
   visitedNodesInOrder: VisitedNode[],
   use3D = false,
 ): PathfindingResult {
@@ -418,7 +425,9 @@ function compilePathfindingResult(
   shortestPath.reverse();
 
   const energyBreakdown = getPathEnergyBreakdown(current, scenario);
-  energyBreakdown.nodesEvaluated = nodesEvaluated;
+  energyBreakdown.nodesExpanded = nodesExpanded;
+  energyBreakdown.nodesGenerated = nodesGenerated;
+  energyBreakdown.nodesEvaluated = nodesExpanded;
 
   return {
     visitedNodesInOrder,
@@ -668,19 +677,27 @@ export function findPath(scenario: Scenario, options?: PathfindingOptions): Path
   visitedNodesInOrder.push({ key: scenario.robotNode, type: "open" });
   openedCells.add(scenario.robotNode);
 
-  let nodesEvaluated = 0;
+  let nodesExpanded = 0;
+  let nodesGenerated = 1;
 
   while (openSet.length > 0) {
     const current = MinHeap.pop(openSet)!;
 
     if (closedSet.has(current.key)) continue;
     closedSet.add(current.key);
-    nodesEvaluated++;
+    nodesExpanded++;
 
     const cellKey = `${current.row}-${current.col}`;
 
     if (current.row === destRow && current.col === destCol) {
-      return compilePathfindingResult(current, scenario, nodesEvaluated, visitedNodesInOrder, is3D);
+      return compilePathfindingResult(
+        current,
+        scenario,
+        nodesExpanded,
+        nodesGenerated,
+        visitedNodesInOrder,
+        is3D,
+      );
     }
 
     recordVisit(cellKey, "closed");
@@ -737,6 +754,7 @@ export function findPath(scenario: Scenario, options?: PathfindingOptions): Path
 
       allNodes.set(neighborStateKey, neighborNode);
       MinHeap.push(openSet, { ...neighborNode });
+      nodesGenerated++;
 
       recordVisit(neighborCellKey, "open");
     }
@@ -747,6 +765,11 @@ export function findPath(scenario: Scenario, options?: PathfindingOptions): Path
     shortestPath: [],
     totalEnergy: 0,
     totalDistance: 0,
-    energyBreakdown: createEmptyEnergyBreakdown(),
+    energyBreakdown: {
+      ...createEmptyEnergyBreakdown(),
+      nodesExpanded,
+      nodesGenerated,
+      nodesEvaluated: nodesExpanded,
+    },
   };
 };

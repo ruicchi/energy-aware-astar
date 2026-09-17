@@ -197,6 +197,8 @@ export function runAlgorithmBenchmark(
     pathLength: pathResult.shortestPath.length,
     totalDistance: parseFloat(pathResult.totalDistance.toFixed(2)),
     totalEnergy: parseFloat(pathResult.totalEnergy.toFixed(2)),
+    nodesExpanded: pathResult.energyBreakdown.nodesExpanded,
+    nodesGenerated: pathResult.energyBreakdown.nodesGenerated,
     nodesEvaluated: pathResult.energyBreakdown.nodesEvaluated,
     executionTimeMs,
     isSafe: safety.isSafe,

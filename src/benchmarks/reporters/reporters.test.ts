@@ -18,6 +18,8 @@ describe("Benchmark Reporters", () => {
     pathLength: 12,
     totalDistance: 14.5,
     totalEnergy: 92.3,
+    nodesExpanded: 120,
+    nodesGenerated: 250,
     nodesEvaluated: 120,
     executionTimeMs: 2.34,
     isSafe: true,
@@ -29,6 +31,8 @@ describe("Benchmark Reporters", () => {
       dirtPenalty: 7.3,
       waterPenalty: 5.0,
       stabilityPenalty: 0.0,
+      nodesExpanded: 120,
+      nodesGenerated: 250,
       nodesEvaluated: 120,
     },
   };

@@ -8,6 +8,8 @@ export interface AlgorithmBenchmarkResult {
   pathLength: number;
   totalDistance: number;
   totalEnergy: number;
+  nodesExpanded: number;
+  nodesGenerated: number;
   nodesEvaluated: number;
   executionTimeMs: number;
   isSafe: boolean;

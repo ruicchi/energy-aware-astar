@@ -126,9 +126,22 @@ export function MetricsModal() {
                   pt: 0.5,
                 }}
               >
-                <Typography variant="caption">Evaluated nodes</Typography>
+                <Typography variant="caption">Nodes expanded</Typography>
                 <Typography variant="caption" fontWeight="bold">
-                  {energyBreakdown.nodesEvaluated}
+                  {energyBreakdown.nodesExpanded ?? energyBreakdown.nodesEvaluated}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 1,
+                  pt: 0.5,
+                }}
+              >
+                <Typography variant="caption">Nodes generated</Typography>
+                <Typography variant="caption" fontWeight="bold">
+                  {energyBreakdown.nodesGenerated ?? 0}
                 </Typography>
               </Box>
             </Box>

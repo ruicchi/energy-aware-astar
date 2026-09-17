@@ -33,6 +33,8 @@ export type EnergyBreakdown = {
   turnCost: number
   stabilityPenalty: number
   total: number
+  nodesExpanded: number
+  nodesGenerated: number
   nodesEvaluated: number
 }
 

@@ -16,7 +16,7 @@ export function generateMarkdownSummary(
   let md = `# Chapter 4: Simulation Results & Discussion Summary\n\n`;
   md += `Evaluated **${trialsCount}** randomly generated procedural terrains ($25 \\times 25$ grids) comparing **Energy-Aware A*** with four standard A* heuristics (**Manhattan, Euclidean, Octile, Chebyshev**).\n\n`;
   md += `## Statistical Performance Table\n\n`;
-  md += `| Algorithm | Mean Distance (m) | Mean Energy (J) | Energy Reduction (%) | Nodes Evaluated | Safety Rate (%) | $p$-value |\n`;
+  md += `| Algorithm | Mean Distance (m) | Mean Energy (J) | Energy Reduction (%) | Nodes Expanded | Safety Rate (%) | $p$-value |\n`;
   md += `| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n`;
 
   for (const [algo, s] of summaryMap.entries()) {

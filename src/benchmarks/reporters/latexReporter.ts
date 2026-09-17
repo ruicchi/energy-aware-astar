@@ -20,7 +20,7 @@ export function generateDeterministicLatexTable(
 \\label{tab:deterministic_benchmarks}
 \\begin{tabular}{llcccccc}
 \\toprule
-\\textbf{Scenario} & \\textbf{Algorithm} & \\textbf{Distance (m)} & \\textbf{Energy (J)} & \\textbf{Climbing (J)} & \\textbf{Turning (J)} & \\textbf{Nodes Evaluated} & \\textbf{Safe?} \\\\
+\\textbf{Scenario} & \\textbf{Algorithm} & \\textbf{Distance (m)} & \\textbf{Energy (J)} & \\textbf{Climbing (J)} & \\textbf{Turning (J)} & \\textbf{Nodes Expanded} & \\textbf{Safe?} \\\\
 \\midrule\n`;
 
   const scenarios = Array.from(new Set(results.map((r) => r.scenarioName)));
@@ -36,7 +36,8 @@ export function generateDeterministicLatexTable(
           ? `${baseAlgoLabel} (3D)`
           : baseAlgoLabel;
       const safeLabel = r.isSafe ? "\\checkmark" : "\\texttimes";
-      latex += `${scenLabel} & ${algoLabel} & ${r.totalDistance.toFixed(2)} & ${r.totalEnergy.toFixed(2)} & ${r.energyBreakdown.climbingCost.toFixed(2)} & ${r.energyBreakdown.turnCost.toFixed(2)} & ${r.nodesEvaluated} & ${safeLabel} \\\\\n`;
+      const nodesCount = r.nodesExpanded ?? r.nodesEvaluated;
+      latex += `${scenLabel} & ${algoLabel} & ${r.totalDistance.toFixed(2)} & ${r.totalEnergy.toFixed(2)} & ${r.energyBreakdown.climbingCost.toFixed(2)} & ${r.energyBreakdown.turnCost.toFixed(2)} & ${nodesCount} & ${safeLabel} \\\\\n`;
     });
     if (scenIdx < scenarios.length - 1) {
       latex += `\\midrule\n`;
@@ -62,7 +63,7 @@ export function generateMonteCarloLatexTable(
 \\label{tab:monte_carlo_results}
 \\begin{tabular}{lcccccr}
 \\toprule
-\\textbf{Algorithm} & \\textbf{Distance (m)} & \\textbf{Total Energy (J)} & \\textbf{Energy Reduction (\\%)} & \\textbf{Nodes Evaluated} & \\textbf{Safety Rate (\\%)} & \\textbf{$p$-value} \\\\
+\\textbf{Algorithm} & \\textbf{Distance (m)} & \\textbf{Total Energy (J)} & \\textbf{Energy Reduction (\\%)} & \\textbf{Nodes Expanded} & \\textbf{Safety Rate (\\%)} & \\textbf{$p$-value} \\\\
 \\midrule\n`;
 
   for (const algo of ALGORITHMS) {

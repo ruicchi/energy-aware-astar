@@ -292,7 +292,10 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
             Energy: {pathMetrics.energy.toFixed(2)} units
           </Typography>
           <Typography variant="caption" display="block">
-            Evaluated Nodes: {pathMetrics.energyBreakdown.nodesEvaluated}
+            Nodes Expanded: {pathMetrics.energyBreakdown.nodesExpanded ?? pathMetrics.energyBreakdown.nodesEvaluated}
+          </Typography>
+          <Typography variant="caption" display="block">
+            Nodes Generated: {pathMetrics.energyBreakdown.nodesGenerated ?? 0}
           </Typography>
           {pathMetrics.isSafe !== undefined && (
             <Typography variant="caption" display="block">

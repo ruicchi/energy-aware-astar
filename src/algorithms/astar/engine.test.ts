@@ -64,6 +64,22 @@ describe("Pathfinding Engine", () => {
       expect(result.shortestPath).toEqual([])
       expect(result.totalDistance).toBe(0)
       expect(result.totalEnergy).toBe(0)
+      expect(result.energyBreakdown.nodesExpanded).toBeGreaterThan(0)
+      expect(result.energyBreakdown.nodesGenerated).toBeGreaterThan(0)
+      expect(result.energyBreakdown.nodesEvaluated).toBe(result.energyBreakdown.nodesExpanded)
+    })
+
+    it("evaluates nodes adhering to industry standards (nodesExpanded, nodesGenerated, nodesEvaluated)", () => {
+      const scenario = createTestScenario({
+        robotNode: "0-0",
+        destinationNode: "2-2",
+      })
+
+      const result = findPath(scenario, { algorithm: "manhattan" })
+
+      expect(result.energyBreakdown.nodesExpanded).toBeGreaterThan(0)
+      expect(result.energyBreakdown.nodesGenerated).toBeGreaterThanOrEqual(result.energyBreakdown.nodesExpanded)
+      expect(result.energyBreakdown.nodesEvaluated).toBe(result.energyBreakdown.nodesExpanded)
     })
 
     it("supports euclidean, chebyshev, and octile distance heuristics", () => {
