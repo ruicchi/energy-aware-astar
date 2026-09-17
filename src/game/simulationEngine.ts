@@ -803,6 +803,9 @@ export class SimulationEngine {
     this.playbackStatus = "walking";
 
     const [startR, startC] = this.currentPath[0].split("-").map(Number);
+    const walkOriginHeading: Heading = this.robotHeading;
+    const walkOriginRow = startR;
+    const walkOriginCol = startC;
     this.visualizer.resetRobot(startC, startR, this.robotHeading, this.cellSize);
 
     this.notify();
@@ -851,6 +854,12 @@ export class SimulationEngine {
       this.isWalking = false;
       this.hasFinishedWalking = true;
       this.playbackStatus = "idle";
+      // Instant teleport back to original pose on success; stay on failure cell
+      if (!this.walkFailure) {
+        this.robotHeading = walkOriginHeading;
+        this.walkingStep = -1;
+        this.visualizer.resetRobot(walkOriginCol, walkOriginRow, walkOriginHeading, this.cellSize);
+      }
       this.notify();
     });
   }
