@@ -43,24 +43,14 @@ export function MetricsModal() {
         <Typography variant="body2">{pathMetrics.energy.toFixed(2)} units</Typography>
       </Box>
 
-      <Box
-        sx={{
-          borderTop: `1px solid ${THEME_CONFIG.panelHeaderBorderColor}`,
-          pt: 1,
-        }}
-      >
+      <Box>
         <Typography variant="caption" color="textSecondary" display="block">
           Energy / distance
         </Typography>
         <Typography variant="body2">{energyPerUnit.toFixed(2)} energy / unit</Typography>
       </Box>
 
-      <Box
-        sx={{
-          borderTop: `1px solid ${THEME_CONFIG.panelHeaderBorderColor}`,
-          pt: 1,
-        }}
-      >
+      <Box>
         <Typography variant="caption" color="textSecondary" display="block">
           Safety
         </Typography>

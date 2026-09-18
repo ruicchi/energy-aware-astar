@@ -187,6 +187,7 @@ export interface SimulationControlsState {
   loadedScenarioName: string | null;
   isFixedDimensions: boolean;
   isLocked: boolean;
+  isAnimating: boolean;
   selectedAlgo: AlgorithmType;
   isEnergyAware: boolean;
   use3DStandard: boolean;
@@ -217,6 +218,7 @@ export function selectSimulationControls(s: SimulationState): SimulationControls
     loadedScenarioName: s.loadedScenarioName,
     isFixedDimensions: s.isFixedDimensions,
     isLocked: s.isLocked,
+    isAnimating: s.isAnimating,
     selectedAlgo: s.selectedAlgo,
     isEnergyAware: s.selectedAlgo === "energyAware",
     use3DStandard: s.use3DStandard,

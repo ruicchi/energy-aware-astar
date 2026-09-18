@@ -68,6 +68,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
     isWalking,
     walkFailure,
     isLocked,
+    isAnimating,
   } = useSimulationControls();
 
   const algorithms: { type: AlgorithmType; label: string }[] = [
@@ -205,7 +206,7 @@ export function PlanningControls({ onOpenResults }: PlanningControlsProps = {}) 
         onClick={() => engine.visualize(selectedAlgo)}
         sx={{ mt: 0.5 }}
       >
-        Visualize
+        {isAnimating ? "Visualizing" : "Visualize"}
       </Button>
 
       {hasPath && (
