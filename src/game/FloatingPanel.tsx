@@ -133,7 +133,7 @@ export function FloatingPanel({
               onClick={() => setIsExpanded(!isExpanded)}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              {isExpanded ? <ExpandLess /> : <ExpandMore />}
+              {isExpanded ? <ExpandLess fontSize="inherit" /> : <ExpandMore fontSize="inherit" />}
             </IconButton>
           )}
           {onClose && (
